@@ -196,7 +196,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        "Mediastarr v6.0.1 gestartet",
+        "app_start":        "Mediastarr v6.0.2 gestartet",
         "setup_required":   "Einrichtung erforderlich – http://localhost:7979/setup",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -210,7 +210,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "app_start":        "Mediastarr v6.0.1 started",
+        "app_start":        "Mediastarr v6.0.2 started",
         "setup_required":   "Setup required – http://localhost:7979/setup",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -775,12 +775,16 @@ def api_setup_complete():
     if len(instances) > MAX_INSTANCES:
         return jsonify({"ok":False,"errors":[f"Maximal {MAX_INSTANCES} Instanzen"]}),400
     errors=[]; validated=[]
+    req_lang = safe_str(d.get("language","en"),5)
+    is_de = req_lang == "de"
     for i, inst in enumerate(instances):
-        label = f"#{i+1} ({inst.get('name','?')})"
-        nm    = safe_str(inst.get("name",""),40); itype = safe_str(inst.get("type",""),10)
-        url   = safe_str(inst.get("url",""),URL_MAX_LEN); key = safe_str(inst.get("api_key",""),128)
-        ok,e=validate_name(nm);    errors+=[f"{label} Name: {e}"]    if not ok else []
-        if itype not in ALLOWED_TYPES: errors.append(f"{label}: Unbekannter Typ '{itype}'")
+        nm    = safe_str(inst.get("name",""),40).strip()
+        itype = safe_str(inst.get("type",""),10)
+        url   = safe_str(inst.get("url",""),URL_MAX_LEN)
+        key   = safe_str(inst.get("api_key",""),128)
+        label = f"#{i+1} ({nm or '?'})"
+        ok,e=validate_name(nm);    errors+=[f"{label} {'Name' if is_de else 'Name'}: {e}"]    if not ok else []
+        if itype not in ALLOWED_TYPES: errors.append(f"{label}: {'Unbekannter Typ' if is_de else 'Unknown type'} '{itype}'")
         ok,e=validate_url(url);    errors+=[f"{label} URL: {e}"]     if not ok else []
         ok,e=validate_api_key(key);errors+=[f"{label} API Key: {e}"] if not ok else []
         if not errors:
@@ -1048,7 +1052,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": "v6.0.1", "inline": True},
+        {"name": f_ver,     "value": "v6.0.2", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": (
             ("Fehlend" if dc.get("notify_missing") else "") + " " +

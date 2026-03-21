@@ -353,7 +353,9 @@ function updateStepLabels() {
 
 function addInstance(defaults = {}) {
   const id = `tmp_${nextTempId++}`;
-  instances.push({id, type: defaults.type || 'sonarr', name: defaults.name || '',
+  const type = defaults.type || 'sonarr';
+  const defaultName = type === 'sonarr' ? 'Sonarr' : 'Radarr';
+  instances.push({id, type, name: defaults.name || defaultName,
                   url: defaults.url || '', api_key: '', tested: false, version: ''});
   renderInstances();
 }
@@ -435,7 +437,17 @@ async function testInst(id) {
       statusEl.textContent = `✗ ${d.msg||'Fehler'}`; statusEl.className = 'inst-status fail';
     }
   } catch { statusEl.textContent = '✗ Netzwerkfehler'; statusEl.className = 'inst-status fail'; }
+  // Sync rendered input values → instances array (catches init values)
+  setTimeout(() => {
+    instances.forEach(inst => {
+      const nameEl = document.getElementById(`name-${inst.id}`);
+      const urlEl  = document.getElementById(`url-${inst.id}`);
+      if (nameEl && nameEl.value && !inst.name) inst.name = nameEl.value;
+      if (urlEl  && urlEl.value  && !inst.url)  inst.url  = urlEl.value;
+    });
+  }, 0);
 }
+
 
 function goToDiscord() {
   if (instances.length === 0) {
@@ -477,16 +489,60 @@ async function finishSetup() {
     errEl.textContent = lang === 'de' ? 'Mindestens eine Instanz erforderlich.' : 'At least one instance required.';
     errEl.style.display = 'block'; return;
   }
+  // Client-side validation — catch empty names/URLs before sending
+  for (let i = 0; i < instances.length; i++) {
+    const inst = instances[i];
+    const num = i + 1;
+    if (!inst.name || !inst.name.trim()) {
+      errEl.textContent = lang === 'de'
+        ? `Instanz ${num}: Bitte einen Namen eingeben.`
+        : `Instance ${num}: Please enter a name.`;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = btnOrigText;
+      return;
+    }
+    if (!inst.url || !inst.url.trim()) {
+      errEl.textContent = lang === 'de'
+        ? `Instanz ${num} (${inst.name}): URL fehlt.`
+        : `Instance ${num} (${inst.name}): URL is missing.`;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = btnOrigText;
+      return;
+    }
+    if (!inst.api_key || inst.api_key.trim().length < 8) {
+      errEl.textContent = lang === 'de'
+        ? `Instanz ${num} (${inst.name}): API Key fehlt oder zu kurz.`
+        : `Instance ${num} (${inst.name}): API key is missing or too short.`;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = btnOrigText;
+      return;
+    }
+  }
   const btn = document.getElementById('finish-btn');
   const btnOrigText = lang === 'de' ? '✓ Setup abschließen' : '✓ Finish setup';
   btn.disabled = true;
   btn.textContent = lang === 'de' ? '⏳ Speichere...' : '⏳ Saving...';
   const dcUrl = document.getElementById('wiz-dc-url')?.value?.trim() || '';
+  // Client-side validation — catch empty fields before hitting the server
+  const valErrors = [];
+  instances.forEach((inst, i) => {
+    const label = `#${i+1}`;
+    if (!inst.name || !inst.name.trim())    valErrors.push(`${label}: ${lang==='de'?'Name fehlt':'Name is required'}`);
+    if (!inst.url  || !inst.url.trim())     valErrors.push(`${label}: ${lang==='de'?'URL fehlt':'URL is required'}`);
+    if (!inst.api_key || !inst.api_key.trim()) valErrors.push(`${label}: ${lang==='de'?'API Key fehlt':'API Key is required'}`);
+  });
+  if (valErrors.length) {
+    errEl.innerHTML = valErrors.join('<br>');
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = btnOrigText;
+    return;
+  }
+
   const payload = {
     language: lang,
     instances: instances.map(inst => ({
-      id: inst.id, type: inst.type, name: inst.name,
-      url: inst.url, api_key: inst.api_key, enabled: true
+      id: inst.id, type: inst.type, name: inst.name.trim(),
+      url: inst.url.trim(), api_key: inst.api_key.trim(), enabled: true
     })),
     discord: dcUrl ? {
       enabled: true,
@@ -507,7 +563,16 @@ async function finishSetup() {
     const d = await r.json();
     if (d.ok) { buildSummary(); goTo(4); }
     else {
-      const errMsg = d.errors ? d.errors.join('<br>') : (d.error || (lang === 'de' ? 'Fehler beim Speichern.' : 'Failed to save.'));
+      const rawErrors = d.errors || [d.error || (lang === 'de' ? 'Fehler beim Speichern.' : 'Failed to save.')];
+      const errMsg = rawErrors.map(e => {
+        if (lang === 'en') {
+          return e.replace('Name fehlt', 'Name is missing')
+                  .replace('URL fehlt', 'URL is missing')
+                  .replace('API Key fehlt', 'API key is missing')
+                  .replace('Mindestens eine Instanz erforderlich', 'At least one instance required');
+        }
+        return e;
+      }).join('<br>');
       errEl.innerHTML = errMsg;
       errEl.style.display = 'block';
       btn.disabled = false; btn.textContent = btnOrigText;

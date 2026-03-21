@@ -1,5 +1,12 @@
 # Changelog
 
+## [6.0.2] — 2025
+
+### Fixed
+- Setup wizard: validation error "#2 () Name: Name fehlt" when clicking Finish Setup on Discord step — client-side validation now runs before server call and shows errors directly in the visible pane
+- New instances added via "+ Add instance" now default to name "Sonarr" or "Radarr" (type-dependent) instead of empty string, reducing chance of missing name
+- Backend validation error messages now respect selected language (DE/EN)
+
 ## [6.0.1] — 2025
 
 ### Fixed
