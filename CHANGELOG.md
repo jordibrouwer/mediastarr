@@ -1,5 +1,23 @@
 # Changelog
 
+## [6.0.3] — 2025
+
+### Improved (from community fork review)
+- `db.py`: `threading.Lock()` → `threading.RLock()` (prevents deadlock on recursive calls)
+- `db.py`: `_require_init()` guard on all public functions (clear error instead of silent crash)
+- `db.py`: SQL injection fix in `get_history` — cutoff value now passed as query parameter
+- `main.py`: `CYCLE_LOCK` prevents two cycles running simultaneously (e.g. rapid Run Now clicks)
+- `main.py`: `_bootstrap_host()` auto-detects container IP for Sonarr/Radarr fallback URLs
+- `main.py`: Discord enabled_parts now language-aware (DE/EN) and uses filter() instead of string concat
+- `main.py`: `clamp_int()` used consistently for Discord rate-limit and stats-interval validation
+- `main.py`: Run Now when stopped now starts a single cycle instead of full hunt loop
+- `index.html` + `setup.html`: `escHtml()` prevents XSS in instance name/URL fields
+- `index.html` + `setup.html`: `defaultArrUrl()` uses browser hostname for URL suggestions
+- `index.html` + `setup.html`: All UI messages (save, delete, ping, errors) fully translated DE/EN
+- `setup.html`: Changing instance type auto-updates URL placeholder
+- `setup.html`: Step counter corrected to "Step 1 of 4"
+- `README.md`: Instance URL examples use `[IP]` instead of Docker hostnames
+
 ## [6.0.2] — 2025
 
 ### Fixed

@@ -140,7 +140,7 @@
       </div>
       <div class="card-body">
         <div class="lang-grid">
-          <div class="lang-card selected" onclick="selectLang('de',this)">
+          <div class="lang-card selected" id="lc-de" onclick="selectLang('de',this)">
             <div class="lang-flag">🇩🇪</div>
             <div class="lang-name">Deutsch</div>
             <div class="lang-sub">German</div>
@@ -153,7 +153,7 @@
         </div>
       </div>
       <div class="card-footer">
-        <div style="font-size:11px;color:var(--muted)">Schritt 1 von 2</div>
+        <div style="font-size:11px;color:var(--muted)">Schritt 1 von 4</div>
         <button class="btn btn-accent" onclick="goTo(2)">Weiter →</button>
       </div>
     </div>
@@ -259,6 +259,36 @@ let instances = [];  // [{id(temp), type, name, url, api_key, tested, version}]
 let nextTempId = 1;
 let discordUrl = '';
 
+function escHtml(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function localizeServerMsg(msg) {
+  const text = String(msg || '');
+  if (lang === 'de') return text;
+  return text
+    .replace('Unbekannter Typ', 'Unknown type')
+    .replace('URL ungültig:', 'Invalid URL:')
+    .replace('URL fehlt', 'URL is missing')
+    .replace('Kein Hostname', 'Missing hostname')
+    .replace('API Key fehlt', 'API key is missing')
+    .replace('Ungültiges Format', 'Invalid format')
+    .replace('Verbindung fehlgeschlagen', 'Connection failed')
+    .replace('Fehler beim Speichern.', 'Failed to save.')
+    .replace('Mindestens eine Instanz erforderlich', 'At least one instance required');
+}
+function getInstallHost() {
+  const host = window.location.hostname || '127.0.0.1';
+  return host === 'localhost' ? '127.0.0.1' : host;
+}
+function defaultArrUrl(type) {
+  const port = type === 'sonarr' ? '8989' : '7878';
+  return `http://${getInstallHost()}:${port}`;
+}
 function selectLang(l, el) {
   lang = l;
   document.querySelectorAll('.lang-card').forEach(c => c.className = 'lang-card');
@@ -279,7 +309,7 @@ function applyWizardLang() {
   const p1s = document.querySelector('#pane-1 .card-sub');
   if (p1s) p1s.textContent = isDE ? 'Kann jederzeit im Dashboard geändert werden.' : 'Can be changed at any time in the dashboard.';
   const p1step = document.querySelector('#pane-1 .card-footer span');
-  if (p1step) p1step.textContent = isDE ? 'Schritt 1 von 2' : 'Step 1 of 2';
+  if (p1step) p1step.textContent = isDE ? 'Schritt 1 von 4' : 'Step 1 of 4';
   const p1next = document.querySelector('#pane-1 .btn-accent');
   if (p1next) p1next.textContent = isDE ? 'Weiter →' : 'Next →';
   // Pane 2 (Instances)
@@ -356,7 +386,7 @@ function addInstance(defaults = {}) {
   const type = defaults.type || 'sonarr';
   const defaultName = type === 'sonarr' ? 'Sonarr' : 'Radarr';
   instances.push({id, type, name: defaults.name || defaultName,
-                  url: defaults.url || '', api_key: '', tested: false, version: ''});
+                  url: defaults.url || defaultArrUrl(type), api_key: '', tested: false, version: ''});
   renderInstances();
 }
 
@@ -367,14 +397,25 @@ function removeInstance(id) {
 
 function updateInst(id, field, value) {
   const inst = instances.find(i => i.id === id);
-  if (inst) { inst[field] = value; if (field !== 'api_key') inst.tested = false; }
+  if (!inst) return;
+  if (field === 'type') {
+    const prevDefault = defaultArrUrl(inst.type);
+    inst.type = value;
+    if (!inst.url || inst.url.trim() === '' || inst.url === prevDefault) {
+      inst.url = defaultArrUrl(value);
+    }
+    inst.tested = false;
+    return;
+  }
+  inst[field] = value;
+  if (field !== 'api_key') inst.tested = false;
 }
 
 function renderInstances() {
   const el = document.getElementById('inst-list');
   if (!instances.length) {
     el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted2);font-size:12px">
-      Keine Instanzen.</div>`;
+      ${lang === 'de' ? 'Keine Instanzen.' : 'No instances.'}</div>`;
     return;
   }
   el.innerHTML = instances.map((inst,idx) => `
@@ -422,7 +463,8 @@ async function testInst(id) {
   const inst = instances.find(i => i.id === id);
   if (!inst) return;
   const statusEl = document.getElementById(`status-${id}`);
-  statusEl.textContent = '⟳ teste...'; statusEl.className = 'inst-status pending';
+  statusEl.textContent = lang === 'de' ? '⟳ teste...' : '⟳ testing...';
+  statusEl.className = 'inst-status pending';
   try {
     const r = await fetch('/api/setup/ping', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -434,9 +476,9 @@ async function testInst(id) {
       statusEl.textContent = `✓ v${d.version}`; statusEl.className = 'inst-status ok';
     } else {
       inst.tested = false;
-      statusEl.textContent = `✗ ${d.msg||'Fehler'}`; statusEl.className = 'inst-status fail';
+      statusEl.textContent = `✗ ${localizeServerMsg(d.msg||(lang==='de'?'Fehler':'Error'))}`; statusEl.className = 'inst-status fail';
     }
-  } catch { statusEl.textContent = '✗ Netzwerkfehler'; statusEl.className = 'inst-status fail'; }
+  } catch { statusEl.textContent = lang==='de' ? '✗ Netzwerkfehler' : '✗ Network error'; statusEl.className = 'inst-status fail'; }
   // Sync rendered input values → instances array (catches init values)
   setTimeout(() => {
     instances.forEach(inst => {
@@ -566,10 +608,10 @@ async function finishSetup() {
       const rawErrors = d.errors || [d.error || (lang === 'de' ? 'Fehler beim Speichern.' : 'Failed to save.')];
       const errMsg = rawErrors.map(e => {
         if (lang === 'en') {
-          return e.replace('Name fehlt', 'Name is missing')
-                  .replace('URL fehlt', 'URL is missing')
-                  .replace('API Key fehlt', 'API key is missing')
-                  .replace('Mindestens eine Instanz erforderlich', 'At least one instance required');
+          return localizeServerMsg(e)
+                  .replace('Name fehlt', 'Name is missing')
+                  .replace('API Key fehlt oder zu kurz', 'API key missing or too short')
+                  .replace('Ungültige Zeichen oder zu lang', 'Invalid characters or too long');
         }
         return e;
       }).join('<br>');
@@ -587,10 +629,10 @@ async function finishSetup() {
 
 function buildSummary() {
   const rows = [
-    {key:'Sprache', val: lang === 'de' ? '🇩🇪 Deutsch' : '🇬🇧 English'},
+    {key: lang === 'de' ? 'Sprache' : 'Language', val: lang === 'de' ? '🇩🇪 Deutsch' : '🇬🇧 English'},
     ...instances.map(i => ({
       key: i.type === 'sonarr' ? '📺 ' + i.name : '🎬 ' + i.name,
-      val: i.tested ? `Online (v${i.version})` : 'Konfiguriert'
+      val: i.tested ? `Online (v${escHtml(i.version||'')})` : (lang === 'de' ? 'Konfiguriert' : 'Configured')
     }))
   ];
   document.getElementById('summary').innerHTML = rows.map(r => `
@@ -608,7 +650,7 @@ function buildSummary() {
   if (enCard) enCard.className = 'lang-card selected';
   lang = 'en';
   applyWizardLang();
-  addInstance({type:'sonarr', name:'Sonarr', url:'http://sonarr:8989'});
+  addInstance({type:'sonarr', name:'Sonarr', url: defaultArrUrl('sonarr')});
 applyWizardLang();
 })();
 </script>

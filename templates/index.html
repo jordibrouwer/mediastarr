@@ -302,7 +302,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.0.2</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.0.3</span></div>
         </div>
       </div>
     </div>
@@ -340,7 +340,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.0.2</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.0.3</span></a></div>
     </div>
   </aside>
 
@@ -420,12 +420,12 @@
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_missing">Missing-Intervall (s)</label>
-              <input class="form-input" id="cfg-missing" type="number" min="60" max="86400" value="900">
+              <input class="form-input" id="cfg-missing" type="number" min="900" max="86400" value="900">
               <div class="form-hint" data-i18n="hint_missing">Sekunden zwischen Suchzyklen. Min 60.</div>
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_upgrade">Upgrade-Intervall (s)</label>
-              <input class="form-input" id="cfg-upgrade" type="number" min="60" max="86400" value="1800">
+              <input class="form-input" id="cfg-upgrade" type="number" min="900" max="86400" value="1800">
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_max">Max. Searches pro Lauf</label>
@@ -517,8 +517,8 @@
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:10px" data-i18n="lbl_new_instance">Neue Instanz</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
               <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="new-inst-name" type="text" placeholder="z.B. Sonarr 4K"></div>
-              <div class="form-group"><label class="form-label">Typ</label><select class="form-input" id="new-inst-type"><option value="sonarr">Sonarr</option><option value="radarr">Radarr</option></select></div>
-              <div class="form-group" style="grid-column:1/-1"><label class="form-label">URL</label><input class="form-input" id="new-inst-url" type="text" placeholder="http://sonarr:8989"></div>
+              <div class="form-group"><label class="form-label">Typ</label><select class="form-input" id="new-inst-type" onchange="syncNewInstUrlHint()"><option value="sonarr">Sonarr</option><option value="radarr">Radarr</option></select></div>
+              <div class="form-group" style="grid-column:1/-1"><label class="form-label">URL</label><input class="form-input" id="new-inst-url" type="text" placeholder="http://127.0.0.1:8989"></div>
               <div class="form-group" style="grid-column:1/-1"><label class="form-label">API Key</label><input class="form-input" id="new-inst-key" type="password" placeholder="32-stelliger API Key"></div>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -914,6 +914,11 @@ function applyLang() {
   // History placeholder
   const hq = document.getElementById('hist-q');
   if (hq) hq.placeholder = isDE ? 'Suchen…' : 'Search…';
+  const newName = document.getElementById('new-inst-name');
+  if (newName) newName.placeholder = isDE ? 'z.B. Sonarr 4K' : 'e.g. Sonarr 4K';
+  const newKey = document.getElementById('new-inst-key');
+  if (newKey) newKey.placeholder = isDE ? '32-stelliger API Key' : '32-character API key';
+  if (typeof syncNewInstUrlHint === 'function') syncNewInstUrlHint();
   // History filter selects
   const hsvc = document.getElementById('hist-svc');
   if (hsvc && hsvc.options[0]) hsvc.options[0].text = isDE ? 'Alle' : 'All';
@@ -986,6 +991,33 @@ function toggleCfg(key) {
 }
 
 // ══ Format helpers ══
+function escHtml(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+function getInstallHost() {
+  const host = window.location.hostname || '127.0.0.1';
+  return host === 'localhost' ? '127.0.0.1' : host;
+}
+function defaultArrUrl(type) {
+  const port = type === 'sonarr' ? '8989' : '7878';
+  return `http://${getInstallHost()}:${port}`;
+}
+function syncNewInstUrlHint() {
+  const typeEl = document.getElementById('new-inst-type');
+  const urlEl  = document.getElementById('new-inst-url');
+  if (!typeEl || !urlEl) return;
+  const nextDefault = defaultArrUrl(typeEl.value);
+  const cur = (urlEl.value || '').trim();
+  if (!cur || cur === defaultArrUrl('sonarr') || cur === defaultArrUrl('radarr')) {
+    urlEl.value = nextDefault;
+  }
+  urlEl.placeholder = nextDefault;
+}
 function fmtSec(s) { return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s/60)}min` : `${Math.floor(s/3600)}h`; }
 function fmtDays(d) { return currentLang==='de' ? (d===1?'1 Tag':`${d} Tage`) : (d===1?'1 day':`${d} days`); }
 
@@ -1338,6 +1370,14 @@ function renderSettingsInstances() {
     const accentColor = inst.type === 'sonarr' ? 'var(--blue)' : 'var(--accent)';
     const accentBg    = inst.type === 'sonarr' ? 'rgba(77,156,255,.12)' : 'rgba(255,107,43,.12)';
     const ico = inst.type === 'sonarr' ? '📺' : '🎬';
+    const safeName = escHtml(inst.name || '');
+    const safeUrl  = escHtml(inst.url  || '');
+    const saveLabel   = isDE4 ? '💾 Speichern' : '💾 Save';
+    const deleteLabel = isDE4 ? '🗑 Löschen'   : '🗑 Delete';
+    const typeLabel   = isDE4 ? 'Typ' : 'Type';
+    const namePlaceholder = inst.type === 'sonarr'
+      ? (isDE4 ? 'z.B. Sonarr 4K' : 'e.g. Sonarr 4K')
+      : (isDE4 ? 'z.B. Radarr HD' : 'e.g. Radarr HD');
     return `
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px" id="icard-${inst.id}">
       <!-- Header bar -->
@@ -1358,19 +1398,19 @@ function renderSettingsInstances() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">
           <div class="form-group">
             <label class="form-label">Name</label>
-            <input class="form-input" id="iname-${inst.id}" type="text" value="${inst.name.replace(/"/g,'&quot;')}" placeholder="z.B. Sonarr 4K"
+            <input class="form-input" id="iname-${inst.id}" type="text" value="${safeName}" placeholder="${namePlaceholder}"
               style="border-color:${accentColor.replace('var(','').replace(')','') === '--blue' ? 'rgba(77,156,255,.4)' : 'rgba(255,107,43,.35)'}">
           </div>
           <div class="form-group">
             <label class="form-label">Typ</label>
             <select class="form-input" id="itype-${inst.id}" onchange="renderSettingsInstances()">
-              <option value="sonarr" ${inst.type==='sonarr'?'selected':''}>📺 Sonarr</option>
-              <option value="radarr" ${inst.type==='radarr'?'selected':''}>🎬 Radarr</option>
+              <option value="sonarr" ${inst.type==='sonarr'?'selected':''}>${isDE4 ? '📺 Sonarr (Serien)' : '📺 Sonarr (Series)'}</option>
+              <option value="radarr" ${inst.type==='radarr'?'selected':''}>${isDE4 ? '🎬 Radarr (Filme)' : '🎬 Radarr (Movies)'}</option>
             </select>
           </div>
           <div class="form-group" style="grid-column:1/-1">
             <label class="form-label">URL</label>
-            <input class="form-input" id="iurl-${inst.id}" type="text" value="${inst.url}" placeholder="http://sonarr:8989">
+            <input class="form-input" id="iurl-${inst.id}" type="text" value="${safeUrl}" placeholder="${defaultArrUrl(inst.type)}">
           </div>
           <div class="form-group" style="grid-column:1/-1">
             <label class="form-label" id="inst-key-lbl">API Key</label>
@@ -1381,9 +1421,9 @@ function renderSettingsInstances() {
         <!-- Action row -->
         <div style="display:flex;gap:7px;align-items:center">
           <button class="btn btn-now" style="font-size:11px" onclick="pingInstSave('${inst.id}')">🔌 Test</button>
-          <button class="btn btn-start" style="font-size:11px" onclick="saveInst('${inst.id}')">💾 Speichern</button>
+          <button class="btn btn-start" style="font-size:11px" onclick="saveInst('${inst.id}')">${saveLabel}</button>
           <div id="isave-msg-${inst.id}" style="font-size:10px;display:none"></div>
-          <button class="btn btn-stop" style="margin-left:auto;font-size:11px" onclick="deleteInst('${inst.id}')">🗑 Löschen</button>
+          <button class="btn btn-stop" style="margin-left:auto;font-size:11px" onclick="deleteInst('${inst.id}')">${deleteLabel}</button>
         </div>
       </div>
     </div>`;
@@ -1392,12 +1432,12 @@ function renderSettingsInstances() {
 
 async function pingInstSave(id) {
   const msg = document.getElementById(`isave-msg-${id}`);
-  if (msg) { msg.style.display='block'; msg.style.color='var(--muted2)'; msg.textContent='⟳ Teste...'; }
+  if (msg) { msg.style.display='block'; msg.style.color='var(--muted2)'; msg.textContent = currentLang==='de' ? '⟳ Teste...' : '⟳ Testing...'; }
   const r = await fetch(`/api/instances/${id}/ping`);
   const d = await r.json();
   if (msg) {
     msg.style.color = d.ok ? 'var(--green)' : 'var(--red)';
-    msg.textContent = d.ok ? `✓ Verbunden v${d.version}` : `✗ ${d.msg||'Fehler'}`;
+    msg.textContent = d.ok ? (currentLang==='de' ? `✓ Verbunden v${d.version}` : `✓ Connected v${d.version}`) : `✗ ${d.msg||(currentLang==='de'?'Fehler':'Error')}`;
   }
   fetchState();
 }
@@ -1415,7 +1455,7 @@ async function saveInst(id) {
   const msg  = document.getElementById(`isave-msg-${id}`);
 
   if (!name) {
-    if (msg) { msg.style.display='block'; msg.style.color='var(--red)'; msg.textContent='✗ Name darf nicht leer sein'; }
+    if (msg) { msg.style.display='block'; msg.style.color='var(--red)'; msg.textContent = currentLang==='de' ? '✗ Name darf nicht leer sein' : '✗ Name must not be empty'; }
     return;
   }
 
@@ -1431,7 +1471,7 @@ async function saveInst(id) {
   if (msg) {
     msg.style.display = 'block';
     msg.style.color   = d.ok ? 'var(--green)' : 'var(--red)';
-    msg.textContent   = d.ok ? '✓ Gespeichert' : `✗ ${d.error||'Fehler'}`;
+    msg.textContent   = d.ok ? (currentLang==='de' ? '✓ Gespeichert' : '✓ Saved') : `✗ ${d.error||(currentLang==='de'?'Fehler':'Error')}`;
     if (d.ok) setTimeout(() => { msg.style.display='none'; }, 2500);
   }
   if (d.ok) { fetchState(); setTimeout(renderSettingsInstances, 400); }
@@ -1445,7 +1485,7 @@ async function addInstFromSettings() {
   const msg  = document.getElementById('new-inst-msg');
 
   if (!name || !url || !key) {
-    if (msg) { msg.style.display='block'; msg.style.color='var(--red)'; msg.textContent='✗ Alle Felder ausfüllen'; }
+    if (msg) { msg.style.display='block'; msg.style.color='var(--red)'; msg.textContent = currentLang==='de' ? '✗ Alle Felder ausfüllen' : '✗ Fill in all fields'; }
     return;
   }
 
@@ -1458,7 +1498,7 @@ async function addInstFromSettings() {
     msg.style.display = 'block';
     if (d.ok) {
       msg.style.color = 'var(--green)';
-      msg.textContent = '✓ Instanz hinzugefügt';
+      msg.textContent = currentLang==='de' ? '✓ Instanz hinzugefügt' : '✓ Instance added';
       document.getElementById('new-inst-name').value = '';
       document.getElementById('new-inst-url').value  = '';
       document.getElementById('new-inst-key').value  = '';
@@ -1481,8 +1521,11 @@ async function toggleInst(id, enabled) {
 
 async function deleteInst(id) {
   const inst = appState.instances?.find(i=>i.id===id);
-  const name = inst?.name || 'diese Instanz';
-  if (!confirm(`"${name}" wirklich löschen?\nDer Suchverlauf dieser Instanz bleibt erhalten.`)) return;
+  const name = inst?.name || (currentLang==='de' ? 'diese Instanz' : 'this instance');
+  const delMsg = currentLang==='de'
+    ? `"${name}" wirklich löschen?\nDer Suchverlauf dieser Instanz bleibt erhalten.`
+    : `Delete "${name}"?\nThe search history for this instance will be kept.`;
+  if (!confirm(delMsg)) return;
   const r = await fetch(`/api/instances/${id}`, {method:'DELETE'});
   const d = await r.json();
   if (d.ok) { fetchState(); setTimeout(renderSettingsInstances, 300); }
@@ -1879,6 +1922,7 @@ async function statsNow() {
 
 // Init
 fetchState();
+syncNewInstUrlHint();
 setInterval(fetchState, 4000);
 setInterval(() => { if (document.getElementById('page-stats')?.style.display!=='none') loadStats(); }, 30000);
 setInterval(() => { if (document.getElementById('page-stats')?.style.display!=='none') loadStats(); }, 30000);
