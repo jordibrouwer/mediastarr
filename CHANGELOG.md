@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.0.1] — 2025
+
+### Fixed
+- Setup wizard: "Finish Setup" button stuck when skipping Discord step — error element was in wrong pane (Pane 2) causing button to stay disabled and page to not advance
+- Error messages in setup wizard now display correctly in Pane 3 (Discord step)
+- Button text reset now language-aware (was hardcoded German)
+- Catch block now shows user-facing error message in both DE and EN
+
 ## [6.0.0] — 2025
 
 ### Added

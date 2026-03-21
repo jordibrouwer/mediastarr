@@ -233,6 +233,7 @@
         <span id="p3-test-msg" style="font-size:11px;display:none;align-self:center"></span>
         <button class="btn btn-accent" id="finish-btn" onclick="finishSetup()">✓ Finish setup</button>
       </div>
+      <div id="setup-errors-p3" style="margin:0 20px 14px;font-size:11px;color:var(--red);display:none;padding:8px 12px;background:rgba(255,77,77,.08);border-radius:6px;border:1px solid rgba(255,77,77,.25)"></div>
     </div>
   </div>
 
@@ -443,6 +444,7 @@ function goToDiscord() {
     errEl.style.display = 'block'; return;
   }
   document.getElementById('setup-errors').style.display = 'none';
+  const _p3e = document.getElementById('setup-errors-p3'); if (_p3e) _p3e.style.display = 'none';
   goTo(3);
 }
 
@@ -469,13 +471,14 @@ async function testWizardDiscord() {
 }
 
 async function finishSetup() {
-  const errEl = document.getElementById('setup-errors');
+  const errEl = document.getElementById('setup-errors-p3') || document.getElementById('setup-errors');
   errEl.style.display = 'none';
   if (instances.length === 0) {
     errEl.textContent = lang === 'de' ? 'Mindestens eine Instanz erforderlich.' : 'At least one instance required.';
     errEl.style.display = 'block'; return;
   }
   const btn = document.getElementById('finish-btn');
+  const btnOrigText = lang === 'de' ? '✓ Setup abschließen' : '✓ Finish setup';
   btn.disabled = true;
   btn.textContent = lang === 'de' ? '⏳ Speichere...' : '⏳ Saving...';
   const dcUrl = document.getElementById('wiz-dc-url')?.value?.trim() || '';
@@ -504,11 +507,17 @@ async function finishSetup() {
     const d = await r.json();
     if (d.ok) { buildSummary(); goTo(4); }
     else {
-      errEl.innerHTML = (d.errors||['Fehler']).join('<br>');
+      const errMsg = d.errors ? d.errors.join('<br>') : (d.error || (lang === 'de' ? 'Fehler beim Speichern.' : 'Failed to save.'));
+      errEl.innerHTML = errMsg;
       errEl.style.display = 'block';
-      btn.disabled = false; btn.textContent = '✓ Setup abschließen';
+      btn.disabled = false; btn.textContent = btnOrigText;
     }
-  } catch { btn.disabled = false; btn.textContent = '✓ Setup abschließen'; }
+  } catch (e) {
+    console.error('finishSetup error:', e);
+    errEl.textContent = lang === 'de' ? 'Verbindungsfehler — bitte neu versuchen.' : 'Connection error — please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = btnOrigText;
+  }
 }
 
 function buildSummary() {

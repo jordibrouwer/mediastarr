@@ -7,7 +7,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-kroeberd%2Fmediastarr-orange?logo=github)](https://github.com/kroeberd/mediastarr)
 [![Docker Hub](https://img.shields.io/docker/pulls/kroeberd/mediastarr?label=Docker%20Pulls&logo=docker)](https://hub.docker.com/r/kroeberd/mediastarr)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v6.0-ff6b2b)](https://github.com/kroeberd/mediastarr/releases)
+[![Version](https://img.shields.io/badge/Version-v6.0.1-ff6b2b)](https://github.com/kroeberd/mediastarr/releases)
 
 ---
 
