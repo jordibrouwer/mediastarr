@@ -277,6 +277,8 @@
       .form-grid { grid-template-columns: 1fr; }
       .topbar, .controls-bar { padding: 10px 14px; }
       .meta-strip { display: none; }
+      #page-history .card { overflow-x: auto; }
+      .hist-row { min-width: 500px; }
     }
   </style>
 </head>
@@ -303,7 +305,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.2.0</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.0</span></div>
         </div>
       </div>
     </div>
@@ -341,12 +343,19 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.2.0</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.0</span></a></div>
     </div>
   </aside>
 
   <!-- ══ MAIN ══ -->
   <div class="main">
+    {% if default_pw %}
+    <div class="pw-warn" id="pw-warn-bar">
+      <span>⚠</span>
+      <span>Default password <code>change-me</code> is active — set <code>MEDIASTARR_PASSWORD</code> to a secure value before exposing to a network.</span>
+      <button class="pw-warn-close" onclick="this.closest('.pw-warn').style.display='none'" aria-label="Dismiss">✕</button>
+    </div>
+    {% endif %}
     <div class="topbar">
       <div class="page-title" id="pageTitle">Dashboard</div>
       <div class="dry-tag" id="dryTag">DRY RUN</div>
@@ -446,7 +455,7 @@
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_dryrun">Dry Run</label>
               <div class="toggle-row">
-                <div class="toggle" id="tog-dry" onclick="toggleCfg('dry')"></div>
+                <div class="toggle" id="tog-dry" onclick="toggleCfg('dry', true)"></div>
                 <span class="toggle-label" id="lab-dry">Aus</span>
               </div>
             </div>
@@ -881,8 +890,10 @@ const t = k => T[currentLang]?.[k] || k;
 
 // ══ Theme ══
 function setTheme(theme) {
-  currentTheme = theme;
-  document.documentElement.setAttribute('data-theme', theme);
+  // Normalize legacy theme names to 'system'
+  const _aliases = {dark:'dark', light:'light', oled:'oled'};
+  currentTheme = _aliases[theme] || theme;
+  document.documentElement.setAttribute('data-theme', currentTheme);
   document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.id === `theme-${theme}`));
   if (!_syncingFromServer) saveConfig();
 }
@@ -1193,6 +1204,9 @@ function updateUI() {
     if (c.radarr?.url && el('cfg-radarr-url')) el('cfg-radarr-url').placeholder = c.radarr.url;
     syncField('cfg-jitter',  c.jitter_max ?? 300);
     syncField('cfg-timeout', c.request_timeout ?? 30);
+    syncField('cfg-imdb',    c.imdb_min_rating ?? 0);
+    const _tResEl = document.getElementById('cfg-target-res');
+    if (_tResEl && c.upgrade_target_resolution !== undefined) _tResEl.value = c.upgrade_target_resolution || '';
     const modeEl = el('cfg-sonarr-mode');
     if (modeEl && document.activeElement !== modeEl) modeEl.value = c.sonarr_search_mode || 'season';
     const tzEl = el('cfg-timezone');
@@ -1312,7 +1326,7 @@ async function saveConfig() {
     imdb_min_rating:      parseFloat(document.getElementById('cfg-imdb')?.value || '0') || 0,
     upgrade_target_resolution: document.getElementById('cfg-target-res')?.value || '',
     sonarr_search_mode:   el('cfg-sonarr-mode')?.value || 'season',
-    imdb_min_rating:      parseFloat(el('cfg-imdb-min')?.value || '0') || 0,
+
     upgrade_target_resolution: el('cfg-target-res')?.value || '',
     search_upgrades:      toggleStates2.upgrades,
     timezone:             el('cfg-timezone')?.value || 'UTC',

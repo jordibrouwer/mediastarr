@@ -14,7 +14,7 @@ New in v6:
   - Language switch now persists and reloads sidebar correctly
   - Instance management fully in main settings (no wizard redirect needed)
 """
-import os, re, json, time, logging, threading, requests, random, string, zoneinfo, socket
+import os, re, json, time, logging, threading, requests, random, string, zoneinfo, socket, ipaddress
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -235,7 +235,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        "Mediastarr v6.2.0 gestartet",
+        "app_start":        "Mediastarr v6.3.0 gestartet",
         "setup_required":   "Einrichtung erforderlich – {setup_url}",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -249,7 +249,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "app_start":        "Mediastarr v6.2.0 started",
+        "app_start":        "Mediastarr v6.3.0 started",
         "setup_required":   "Setup required – {setup_url}",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -994,7 +994,7 @@ def logout():
 @_login_required
 def index():
     if not CONFIG.get("setup_complete"): return redirect("/setup")
-    return render_template("index.html", csrf_token=_csrf_token())
+    return render_template("index.html", csrf_token=_csrf_token(), default_pw=(_PASSWORD == "change-me" and bool(_PASSWORD)))
 
 @app.route("/setup")
 def setup_page(): return render_template("setup.html", csrf_token=_csrf_token())
@@ -1338,7 +1338,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": "v6.2.0", "inline": True},
+        {"name": f_ver,     "value": "v6.3.0", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": enabled_text, "inline": False},
     ]

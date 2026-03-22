@@ -1,5 +1,24 @@
 # Changelog
 
+## [6.3.0]
+
+### Added
+- Dashboard: warning banner when `MEDIASTARR_PASSWORD=change-me` is set — prompts to use a secure password before network exposure
+- Homepage (mediastarr.de): bilingual DE/EN comparison section "Why Mediastarr" explaining the Huntarr security incident and why forks don't solve the underlying problem
+- Homepage: DE/EN language switcher persisted via localStorage
+
+### Changed
+- Settings → Dry Run toggle now saves immediately on click without requiring "Save" button
+- Intervals in UI remain in minutes (introduced in v6.2.0); no further changes
+
+### Fixed
+- Homepage: comparison section showed empty fields on language switch — stale `_cmpT` translation map referenced 30 non-existent IDs after section redesign; replaced with correct `_why` map (40 IDs, both DE + EN)
+- Homepage: hero badge overlap with glow element fixed via `z-index` and glow repositioned to `top:40%`
+- Mobile: history table now has horizontal scroll on small screens (`min-width: 500px` on rows)
+
+### Security
+- Theme name normalization: legacy values `dark`, `light`, `oled` accepted without error (backward compatibility for existing configs)
+
 ## [6.2.0]
 
 ### Added
