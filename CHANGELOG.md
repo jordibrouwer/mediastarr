@@ -3,21 +3,36 @@
 ## [6.3.0]
 
 ### Added
-- Dashboard: warning banner when `MEDIASTARR_PASSWORD=change-me` is set — prompts to use a secure password before network exposure
-- Homepage (mediastarr.de): bilingual DE/EN comparison section "Why Mediastarr" explaining the Huntarr security incident and why forks don't solve the underlying problem
-- Homepage: DE/EN language switcher persisted via localStorage
+- Settings → Filter: IMDb minimum rating — only search content with IMDb ≥ threshold (0 = off, applies to Sonarr series and Radarr movies)
+- Settings → Filter: Target resolution for upgrades — skip upgrade search if current quality already meets or exceeds target (WEB-DL 720p … Bluray 2160p)
+- `_parse_release_dt()` / `_is_released()` — unreleased episodes and movies are now skipped automatically
+- `MEDIASTARR_PUBLIC_URL` / `MEDIASTARR_PUBLIC_PORT` env vars — startup log shows the actual externally reachable setup URL
+- `MEDIASTARR_SESSION_SECURE` env var — enables Secure flag on session cookie for HTTPS deployments
+- Default-password warning bar in dashboard — shown when `MEDIASTARR_PASSWORD=change-me` is still set
+- Mobile history view — horizontal scroll for narrow screens
 
 ### Changed
-- Settings → Dry Run toggle now saves immediately on click without requiring "Save" button
-- Intervals in UI remain in minutes (introduced in v6.2.0); no further changes
-
-### Fixed
-- Homepage: comparison section showed empty fields on language switch — stale `_cmpT` translation map referenced 30 non-existent IDs after section redesign; replaced with correct `_why` map (40 IDs, both DE + EN)
-- Homepage: hero badge overlap with glow element fixed via `z-index` and glow repositioned to `top:40%`
-- Mobile: history table now has horizontal scroll on small screens (`min-width: 500px` on rows)
+- Search intervals changed from seconds to minutes in the UI (stored as seconds internally for backward compatibility)
+- Default missing interval: 15 min → 30 min
+- Default upgrade interval: 30 min → 60 min
+- Minimum interval remains 15 minutes
+- Dashboard overview now shows interval in minutes
+- Dry Run toggle now saves immediately without requiring manual Save
+- Homepage (mediastarr.de) fully rewritten with DE/EN language switcher
 
 ### Security
-- Theme name normalization: legacy values `dark`, `light`, `oled` accepted without error (backward compatibility for existing configs)
+- Session cookies now set `HttpOnly`, `SameSite=Lax`, and optionally `Secure`
+- Setup connection test validates that Sonarr/Radarr URLs resolve to private/internal hosts only (SSRF protection)
+- `config.json` file permissions set to 0600 after every save
+- All 18 API routes verified to have auth protection when `MEDIASTARR_PASSWORD` is set
+- Setup log message uses dynamic URL instead of hardcoded `localhost:7979`
+
+### Improved
+- `db.py`: `_get_conn()` helper + `Optional` type annotations
+- History clear log messages now respect UI language (DE/EN)
+- README: added "Why not Huntarr or its forks" comparison section (DE + EN)
+- Homepage: new "Why Mediastarr" section with security incident summary and feature comparison table
+
 
 ## [6.2.0]
 
