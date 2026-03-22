@@ -326,7 +326,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.4</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.5</span></div>
         </div>
       </div>
     </div>
@@ -371,7 +371,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.4</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.5</span></a></div>
     </div>
   </aside>
 
@@ -385,7 +385,7 @@
     </div>
     {% endif %}
     <div class="topbar">
-      <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
+      <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar(event)" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>
       <div class="page-title" id="pageTitle">Dashboard</div>
@@ -903,7 +903,7 @@ const T = {
         lbl_cooldown:'Cooldown (Tage)', lbl_timeout:'API Timeout (s)',
         lbl_search_behavior:'Suchverhalten', lbl_sonarr_mode:'Sonarr Suchmodus',
         lbl_upgrades:'Upgrades suchen', lbl_jitter:'Jitter Max (Sekunden)',
-        lbl_interval_adv:'Intervall & Jitter', lbl_system:'System', lbl_timezone:'Zeitzone',
+        lbl_interval_adv:'Intervall & Jitter', lbl_system:'System', lbl_timezone:'Zeitzone', hint_timezone:'Aktuelle Zeitzone. Alle IANA-Zeitzonen verfügbar — tippe zum Suchen.',
         lbl_manage_instances:'Instanzen verwalten', btn_add_instance:'+ Hinzufügen',
         opt_episode:'Episode (Standard)', opt_season:'Staffel', opt_series:'Ganze Serie',
         hint_jitter:'0 = kein Jitter. Zufällig 0–N Sek. addiert.',
@@ -950,7 +950,7 @@ const T = {
         lbl_cooldown:'Cooldown (days)', lbl_timeout:'API timeout (s)',
         lbl_search_behavior:'Search behavior', lbl_sonarr_mode:'Sonarr search mode',
         lbl_upgrades:'Search upgrades', lbl_jitter:'Jitter max (s)',
-        lbl_interval_adv:'Interval & jitter', lbl_system:'System', lbl_timezone:'Timezone',
+        lbl_interval_adv:'Interval & jitter', lbl_system:'System', lbl_timezone:'Timezone', hint_timezone:'Current timezone. All IANA timezones available — type to search.',
         lbl_manage_instances:'Manage instances', btn_add_instance:'+ Add instance',
         opt_episode:'Episode (default)', opt_season:'Season', opt_series:'Full series',
         hint_jitter:'0 = no jitter. Random 0–N sec added to interval.',
@@ -1074,6 +1074,24 @@ function applyLang() {
   // Translate resolution select option 0
   const resEl = document.getElementById('cfg-target-res');
   if (resEl && resEl.options[0]) resEl.options[0].text = t('opt_res_off');
+  // Bulk-translate all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const val = t(key);
+    if (val && val !== key) el.textContent = val;
+  });
+  // Update placeholders
+  const sonarrImdb = document.getElementById('cfg-sonarr-imdb');
+  const radarrImdb = document.getElementById('cfg-radarr-imdb');
+  const sonarrRes  = document.getElementById('cfg-sonarr-target-res');
+  const radarrRes  = document.getElementById('cfg-radarr-target-res');
+  const tzSearch   = document.getElementById('cfg-timezone-search');
+  const isDE_apply = currentLang === 'de';
+  if (sonarrImdb) sonarrImdb.placeholder = isDE_apply ? 'Wie global' : 'Same as global';
+  if (radarrImdb) radarrImdb.placeholder = isDE_apply ? 'Wie global' : 'Same as global';
+  if (sonarrRes && sonarrRes.options[0]) sonarrRes.options[0].text = isDE_apply ? 'Wie global' : 'Same as global';
+  if (radarrRes && radarrRes.options[0]) radarrRes.options[0].text = isDE_apply ? 'Wie global' : 'Same as global';
+  if (tzSearch) tzSearch.placeholder = isDE_apply ? 'Suchen oder tippen...' : 'Search or type...';
   // History filter selects
   const hsvc = document.getElementById('hist-svc');
   if (hsvc && hsvc.options[0]) hsvc.options[0].text = isDE ? 'Alle' : 'All';
@@ -2170,11 +2188,12 @@ function selectTimezone(tz) {
 
 // Mobile sidebar
 let _sidebarOpen = false;
-function toggleSidebar() {
+function toggleSidebar(e) {
+  if (e) e.stopPropagation();
   _sidebarOpen = !_sidebarOpen;
   document.querySelector('.sidebar').classList.toggle('open', _sidebarOpen);
   document.getElementById('sidebar-overlay').classList.toggle('open', _sidebarOpen);
-  document.getElementById('hamburger-btn').setAttribute('aria-expanded', _sidebarOpen);
+  document.getElementById('hamburger-btn').setAttribute('aria-expanded', String(_sidebarOpen));
 }
 function closeSidebar() {
   _sidebarOpen = false;
@@ -2182,15 +2201,12 @@ function closeSidebar() {
   document.getElementById('sidebar-overlay').classList.remove('open');
   document.getElementById('hamburger-btn').setAttribute('aria-expanded', 'false');
 }
-// Close sidebar on nav-item click (mobile only) — use capture to fire before showPage
-document.addEventListener('click', e => {
-  if (window.innerWidth > 900) return;
-  if (e.target.closest('.nav-item') && !e.target.closest('.sidebar-bottom')) {
-    closeSidebar();
-  }
-}, true);
-// Prevent sidebar itself from closing when clicked
-document.querySelector('.sidebar')?.addEventListener('click', e => e.stopPropagation());
+// Close on overlay click
+document.getElementById('sidebar-overlay')?.addEventListener('click', closeSidebar);
+// Close sidebar when navigating on mobile
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => { if (_sidebarOpen) setTimeout(closeSidebar, 150); });
+});
 
 // Init
 fetchState();

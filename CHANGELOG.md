@@ -1,5 +1,14 @@
 # Changelog
 
+## [6.3.5] — 2026-03-22
+
+### Fixed
+- Language mixup (Issue #8): new filter labels (Sonarr/Radarr IMDb, resolution, timezone) showed in German even when English was selected — `applyLang()` now runs a bulk `data-i18n` translator on every language switch
+- Placeholders ("Wie global" / "Same as global") now correctly translate on language switch
+- `hint_timezone` T-dict key added to both DE and EN
+- Mobile sidebar: hamburger now passes `event` to `toggleSidebar()` for proper `stopPropagation()`, prevents instant-close on some mobile browsers
+- Mobile sidebar: nav-item close uses `setTimeout(150ms)` to avoid race with page navigation
+
 ## [6.3.4] — 2026-03-22
 
 ### Fixed
