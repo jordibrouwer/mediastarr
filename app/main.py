@@ -39,7 +39,7 @@ ALLOWED_TYPES       = frozenset({"sonarr","radarr"})
 ALLOWED_LANGUAGES   = frozenset({"de","en"})
 ALLOWED_ACTIONS     = frozenset({"start","stop","run_now"})
 ALLOWED_SCHEMES     = frozenset({"http","https"})
-ALLOWED_THEMES      = frozenset({"dark","light","oled"})
+ALLOWED_THEMES      = frozenset({"dark","light","oled","system","github-inspired","discord-inspired","plex-inspired"})
 ALLOWED_SONARR_MODES= frozenset({"episode","season","series"})
 ALLOWED_RESOLUTIONS = frozenset({"","SDTV","WEBDL-480p","Bluray-480p",
     "WEBDL-720p","Bluray-720p","WEBDL-1080p","Bluray-1080p",
@@ -219,6 +219,17 @@ def _stats_loop():
         last = dc.get("stats_last_sent_at", 0.0)
         if time.time() - float(last) >= interval_min * 60:
             discord_send_stats()
+            # Notify if update available
+            if is_update_available():
+                latest = _version_cache.get("latest","")
+                lang = CONFIG.get("language","de")
+                if lang == "de":
+                    _upd_title = f"🆕 Update verfügbar: {latest}"
+                    _upd_desc  = f"Mediastarr {latest} ist auf GitHub verfügbar. Aktuell läuft {_CURRENT_VERSION}."
+                else:
+                    _upd_title = f"🆕 Update available: {latest}"
+                    _upd_desc  = f"Mediastarr {latest} is available on GitHub. Currently running {_CURRENT_VERSION}."
+                discord_send("info", _upd_title, _upd_desc, "System", force=True)
             CONFIG["discord"]["stats_last_sent_at"] = time.time()
             save_config(CONFIG)
 
@@ -235,7 +246,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        "Mediastarr v6.3.0 gestartet",
+        "app_start":        "Mediastarr v6.3.1 gestartet",
         "setup_required":   "Einrichtung erforderlich – {setup_url}",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -249,7 +260,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "app_start":        "Mediastarr v6.3.0 started",
+        "app_start":        "Mediastarr v6.3.1 started",
         "setup_required":   "Setup required – {setup_url}",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -307,6 +318,42 @@ def _year(val):
         y = int(str(val)[:4])
         return y if 1900 < y < 2100 else None
     except: return None
+
+
+# ─── Version check ────────────────────────────────────────────────────────
+_CURRENT_VERSION = "v6.3.1"
+_version_cache   = {"latest": None, "checked_at": 0.0}
+
+def check_latest_version() -> str | None:
+    """Fetch latest GitHub release tag. Returns tag string or None on error."""
+    import time as _time
+    now = _time.time()
+    if _version_cache["latest"] and now - _version_cache["checked_at"] < 3600:
+        return _version_cache["latest"]
+    try:
+        r = requests.get(
+            "https://api.github.com/repos/kroeberd/mediastarr/releases/latest",
+            timeout=8, headers={"Accept": "application/vnd.github+json",
+                                 "User-Agent": "Mediastarr-UpdateCheck"}
+        )
+        if r.status_code == 200:
+            tag = r.json().get("tag_name", "")
+            _version_cache["latest"] = tag
+            _version_cache["checked_at"] = now
+            return tag
+    except Exception:
+        pass
+    return None
+
+def is_update_available() -> bool:
+    latest = check_latest_version()
+    if not latest: return False
+    try:
+        def _parse(v):
+            return tuple(int(x) for x in v.lstrip("v").split("."))
+        return _parse(latest) > _parse(_CURRENT_VERSION)
+    except Exception:
+        return False
 
 # ─── Default config ───────────────────────────────────────────────────────────
 DEFAULT_CONFIG = {
@@ -678,7 +725,8 @@ def hunt_sonarr_instance(inst: dict):
         recs  = data.get("records", [])
         random.shuffle(recs)
         # IMDb filter — series_cache has titles, build separate imdb map from same /series endpoint
-        imdb_min_s = float(CONFIG.get("imdb_min_rating", 0) or 0)
+        _sonarr_imdb_override = CONFIG.get("sonarr_imdb_min_rating")
+        imdb_min_s = float(_sonarr_imdb_override if _sonarr_imdb_override is not None else CONFIG.get("imdb_min_rating", 0) or 0)
         if imdb_min_s > 0 and series_cache:
             series_imdb: dict[int,float] = {}
             try:
@@ -735,7 +783,7 @@ def hunt_sonarr_instance(inst: dict):
         data  = client.get("wanted/cutoff", params={"pageSize":500})
         recs  = data.get("records", [])
         random.shuffle(recs)  # random selection
-        target_res_s  = CONFIG.get("upgrade_target_resolution","")
+        target_res_s  = CONFIG.get("sonarr_upgrade_target_resolution","") or CONFIG.get("upgrade_target_resolution","")
         target_rank_s = _res_rank(target_res_s) if target_res_s else 0
         stats["upgrades_found"] = int(data.get("totalRecords", len(recs)))
         searched = 0
@@ -773,7 +821,8 @@ def hunt_radarr_instance(inst: dict):
         movies  = client.get("movie")
         random.shuffle(movies)  # random selection
         missing = [m for m in movies if not m.get("hasFile") and m.get("monitored")]
-        imdb_min = float(CONFIG.get("imdb_min_rating", 0) or 0)
+        _radarr_imdb_override = CONFIG.get("radarr_imdb_min_rating")
+        imdb_min = float(_radarr_imdb_override if _radarr_imdb_override is not None else CONFIG.get("imdb_min_rating", 0) or 0)
         if imdb_min > 0:
             before = len(missing)
             missing = [m for m in missing if _imdb_rating(m) == 0.0 or _imdb_rating(m) >= imdb_min]
@@ -810,9 +859,9 @@ def hunt_radarr_instance(inst: dict):
         random.shuffle(recs)  # random selection
         stats["upgrades_found"] = int(data.get("totalRecords", len(recs)))
         searched = 0
-        target_res  = CONFIG.get("upgrade_target_resolution","")
+        target_res  = CONFIG.get("radarr_upgrade_target_resolution","") or CONFIG.get("upgrade_target_resolution","")
         target_rank = _res_rank(target_res) if target_res else 0
-        imdb_min_up = float(CONFIG.get("imdb_min_rating", 0) or 0)
+        imdb_min_up = float(_radarr_imdb_override if _radarr_imdb_override is not None else CONFIG.get("imdb_min_rating", 0) or 0)
         for movie in recs:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
             title = str(movie.get("title","?"))[:100]
@@ -1168,8 +1217,14 @@ def api_state():
             "request_timeout":      CONFIG.get("request_timeout",30),
             "jitter_max":           CONFIG.get("jitter_max",300),
             "sonarr_search_mode":   CONFIG.get("sonarr_search_mode","season"),
-            "imdb_min_rating":      CONFIG.get("imdb_min_rating", 0.0),
-            "upgrade_target_resolution": CONFIG.get("upgrade_target_resolution",""),
+            "imdb_min_rating":           CONFIG.get("imdb_min_rating", 0.0),
+            "sonarr_imdb_min_rating":     CONFIG.get("sonarr_imdb_min_rating", None),
+            "radarr_imdb_min_rating":     CONFIG.get("radarr_imdb_min_rating", None),
+            "upgrade_target_resolution":  CONFIG.get("upgrade_target_resolution",""),
+            "sonarr_upgrade_target_resolution": CONFIG.get("sonarr_upgrade_target_resolution",""),
+            "radarr_upgrade_target_resolution": CONFIG.get("radarr_upgrade_target_resolution",""),
+            "update_available":           is_update_available(),
+            "latest_version":             _version_cache.get("latest",""),
             "search_upgrades":      CONFIG.get("search_upgrades",True),
             "dry_run":              CONFIG["dry_run"],
             "language":             CONFIG["language"],
@@ -1224,9 +1279,17 @@ def api_config():
     if mode in ALLOWED_SONARR_MODES: CONFIG["sonarr_search_mode"] = mode
     if "imdb_min_rating" in d:
         CONFIG["imdb_min_rating"] = max(0.0, min(10.0, float(d.get("imdb_min_rating",0) or 0)))
+    for _app_imdb_key in ("sonarr_imdb_min_rating","radarr_imdb_min_rating"):
+        if _app_imdb_key in d:
+            _v = d.get(_app_imdb_key)
+            CONFIG[_app_imdb_key] = None if (_v is None or _v == "") else max(0.0, min(10.0, float(_v or 0)))
     if "upgrade_target_resolution" in d:
         res = safe_str(d.get("upgrade_target_resolution",""), 30)
         CONFIG["upgrade_target_resolution"] = res if res in ALLOWED_RESOLUTIONS else ""
+    for _app_res_key in ("sonarr_upgrade_target_resolution","radarr_upgrade_target_resolution"):
+        if _app_res_key in d:
+            res = safe_str(d.get(_app_res_key,""), 30)
+            CONFIG[_app_res_key] = res if res in ALLOWED_RESOLUTIONS else ""
     theme = safe_str(d.get("theme", CONFIG.get("theme","dark")), 10)
     if theme in ALLOWED_THEMES: CONFIG["theme"] = theme
     lang = safe_str(d.get("language", CONFIG["language"]), 5)
@@ -1338,7 +1401,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": "v6.3.0", "inline": True},
+        {"name": f_ver,     "value": "v6.3.1", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": enabled_text, "inline": False},
     ]

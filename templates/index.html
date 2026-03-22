@@ -269,9 +269,21 @@
     .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
     .activity-heatmap { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
     .heat-cell { aspect-ratio:1; border-radius:3px; background:var(--border); transition:background 0.3s; cursor:default; }
+    /* ── Mobile Sidebar ── */
+    .hamburger { display: none; width: 36px; height: 36px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border2); cursor: pointer;
+      flex-direction: column; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; }
+    .hamburger span { display: block; width: 16px; height: 1.5px; background: var(--text); border-radius: 2px; transition: all .2s; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      z-index: 49; backdrop-filter: blur(2px); }
+    .sidebar-overlay.open { display: block; }
     /* ── Responsive ── */
     @media (max-width: 900px) {
-      .sidebar { display: none; }
+      .hamburger { display: flex; }
+      .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
+        box-shadow: 4px 0 30px rgba(0,0,0,.5); }
+      .sidebar.open { display: flex; }
+      .topbar { padding-left: 10px; }
       .content { grid-template-columns: 1fr; padding: 14px; }
       .service-cards { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
@@ -287,6 +299,7 @@
 <div class="ambient ambient-1"></div>
 <div class="ambient ambient-2"></div>
 
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <div class="layout">
   <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
@@ -305,7 +318,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.0</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.1</span></div>
         </div>
       </div>
     </div>
@@ -343,7 +356,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.0</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.1</span></a></div>
     </div>
   </aside>
 
@@ -357,6 +370,9 @@
     </div>
     {% endif %}
     <div class="topbar">
+      <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
       <div class="page-title" id="pageTitle">Dashboard</div>
       <div class="dry-tag" id="dryTag">DRY RUN</div>
       <div class="pill" id="server-time-pill" style="font-size:10px;color:var(--muted2);border:none;padding:0;background:none">
@@ -482,15 +498,16 @@
             </div>
           </div>
           <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:10px" data-i18n="lbl_filter">Filter</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_filter">Filter</div>
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:10px" data-i18n="hint_filter_global">Globale Werte — werden von Sonarr/Radarr-spezifischen Werten überschrieben wenn gesetzt.</div>
             <div class="form-grid">
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_imdb">IMDb Mindestbewertung</label>
+                <label class="form-label" data-i18n="lbl_imdb">🌐 IMDb Mindestbewertung (global)</label>
                 <input class="form-input" id="cfg-imdb" type="number" min="0" max="10" step="0.1" value="0" placeholder="0 = aus">
-                <div class="form-hint" data-i18n="hint_imdb">0 = kein Filter. Nur Inhalte mit IMDb ≥ dieser Bewertung suchen.</div>
+                <div class="form-hint" data-i18n="hint_imdb">0 = kein Filter. Gilt für Sonarr und Radarr wenn kein spezifischer Wert gesetzt.</div>
               </div>
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_target_res">Zielauflösung (Upgrades)</label>
+                <label class="form-label" data-i18n="lbl_target_res">🌐 Zielauflösung Upgrades (global)</label>
                 <select class="form-input" id="cfg-target-res">
                   <option value="" data-i18n="opt_res_off">Aus (kein Filter)</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
@@ -500,7 +517,55 @@
                   <option value="WEBDL-2160p">WEB-DL 2160p (4K)</option>
                   <option value="Bluray-2160p">Bluray 2160p (4K)</option>
                 </select>
-                <div class="form-hint" data-i18n="hint_target_res">Upgrades nur suchen wenn aktuelle Qualität darunter liegt.</div>
+                <div class="form-hint" data-i18n="hint_target_res">Gilt für Sonarr und Radarr wenn kein spezifischer Wert gesetzt.</div>
+              </div>
+            </div>
+            <!-- Sonarr-specific -->
+            <div style="background:rgba(77,156,255,.05);border:1px solid rgba(77,156,255,.15);border-radius:8px;padding:12px 14px;margin-top:10px">
+              <div style="font-size:10px;font-weight:600;color:var(--blue);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📺 Sonarr</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" data-i18n="lbl_sonarr_imdb">IMDb Mindestbewertung</label>
+                  <input class="form-input" id="cfg-sonarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global">
+                  <div class="form-hint" data-i18n="hint_sonarr_imdb">Leer = globalen Wert verwenden. Serienbewertung wird geprüft.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" data-i18n="lbl_sonarr_res">Zielauflösung Upgrades</label>
+                  <select class="form-input" id="cfg-sonarr-target-res">
+                    <option value="">Wie global</option>
+                    <option value="WEBDL-720p">WEB-DL 720p</option>
+                    <option value="Bluray-720p">Bluray 720p</option>
+                    <option value="WEBDL-1080p">WEB-DL 1080p</option>
+                    <option value="Bluray-1080p">Bluray 1080p</option>
+                    <option value="WEBDL-2160p">WEB-DL 2160p (4K)</option>
+                    <option value="Bluray-2160p">Bluray 2160p (4K)</option>
+                  </select>
+                  <div class="form-hint" data-i18n="hint_sonarr_res">Leer = globalen Wert verwenden.</div>
+                </div>
+              </div>
+            </div>
+            <!-- Radarr-specific -->
+            <div style="background:rgba(255,107,43,.05);border:1px solid rgba(255,107,43,.15);border-radius:8px;padding:12px 14px;margin-top:8px">
+              <div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🎬 Radarr</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label" data-i18n="lbl_radarr_imdb">IMDb Mindestbewertung</label>
+                  <input class="form-input" id="cfg-radarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global">
+                  <div class="form-hint" data-i18n="hint_radarr_imdb">Leer = globalen Wert verwenden. Filmbewertung wird geprüft.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" data-i18n="lbl_radarr_res">Zielauflösung Upgrades</label>
+                  <select class="form-input" id="cfg-radarr-target-res">
+                    <option value="">Wie global</option>
+                    <option value="WEBDL-720p">WEB-DL 720p</option>
+                    <option value="Bluray-720p">Bluray 720p</option>
+                    <option value="WEBDL-1080p">WEB-DL 1080p</option>
+                    <option value="Bluray-1080p">Bluray 1080p</option>
+                    <option value="WEBDL-2160p">WEB-DL 2160p (4K)</option>
+                    <option value="Bluray-2160p">Bluray 2160p (4K)</option>
+                  </select>
+                  <div class="form-hint" data-i18n="hint_radarr_res">Leer = globalen Wert verwenden.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -839,7 +904,13 @@ const T = {
         hint_max:'Pro Zyklus, pro Instanz.',
         hint_cooldown_range:'Standard: 7 Tage. Bereich: 1–365 Tage.',
         btn_reset_setup:'⚙ Setup zurücksetzen',
-        lbl_filter:'Filter', lbl_imdb:'IMDb Mindestbewertung', lbl_target_res:'Zielauflösung (Upgrades)',
+        lbl_filter:'Filter',
+        hint_filter_global:'Globale Werte — werden von Sonarr/Radarr-spezifischen Werten überschrieben wenn gesetzt.',
+        lbl_imdb:'🌐 IMDb Mindestbewertung (global)', lbl_target_res:'🌐 Zielauflösung Upgrades (global)',
+        lbl_sonarr_imdb:'IMDb Mindestbewertung', hint_sonarr_imdb:'Leer = globalen Wert verwenden. Serienbewertung.',
+        lbl_sonarr_res:'Zielauflösung Upgrades', hint_sonarr_res:'Leer = globalen Wert verwenden.',
+        lbl_radarr_imdb:'IMDb Mindestbewertung', hint_radarr_imdb:'Leer = globalen Wert verwenden. Filmbewertung.',
+        lbl_radarr_res:'Zielauflösung Upgrades', hint_radarr_res:'Leer = globalen Wert verwenden.',
         hint_imdb:'0 = kein Filter. Nur Inhalte mit IMDb ≥ dieser Bewertung suchen.',
         hint_target_res:'Upgrades nur suchen wenn aktuelle Qualität darunter liegt.',
         opt_res_off:'Aus (kein Filter)',
@@ -880,7 +951,13 @@ const T = {
         hint_max:'Per cycle, per instance.',
         hint_cooldown_range:'Default: 7 days. Range: 1–365 days.',
         btn_reset_setup:'⚙ Reset setup',
-        lbl_filter:'Filter', lbl_imdb:'IMDb minimum rating', lbl_target_res:'Target resolution (upgrades)',
+        lbl_filter:'Filter',
+        hint_filter_global:'Global values — overridden by Sonarr/Radarr-specific values if set.',
+        lbl_imdb:'🌐 IMDb minimum rating (global)', lbl_target_res:'🌐 Target resolution upgrades (global)',
+        lbl_sonarr_imdb:'IMDb minimum rating', hint_sonarr_imdb:'Empty = use global. Checks series rating.',
+        lbl_sonarr_res:'Target resolution upgrades', hint_sonarr_res:'Empty = use global.',
+        lbl_radarr_imdb:'IMDb minimum rating', hint_radarr_imdb:'Empty = use global. Checks movie rating.',
+        lbl_radarr_res:'Target resolution upgrades', hint_radarr_res:'Empty = use global.',
         hint_imdb:'0 = off. Only search content with IMDb ≥ this rating.',
         hint_target_res:'Only upgrade if current quality is below this target.',
         opt_res_off:'Off (no filter)',
@@ -1163,6 +1240,16 @@ function updateUI() {
     if (el('ov-max'))      el('ov-max').textContent      = c.max_searches_per_run;
     if (el('ov-cooldown')) el('ov-cooldown').textContent = fmtDays(c.cooldown_days ?? 7);
     if (el('ov-dry'))      { el('ov-dry').textContent = c.dry_run?t('on'):t('off'); el('ov-dry').style.color = c.dry_run?'var(--accent)':'var(--text)'; }
+    // Update available badge
+    const updBadge = el('update-badge');
+    if (updBadge) {
+      if (s?.config?.update_available && s?.config?.latest_version) {
+        updBadge.style.display = 'inline-flex';
+        updBadge.title = (currentLang==='de' ? 'Update verfügbar: ' : 'Update available: ') + s.config.latest_version;
+      } else {
+        updBadge.style.display = 'none';
+      }
+    }
     if (el('ov-total'))    el('ov-total').textContent = s.total_searches || 0;
     if (el('ov-db'))       el('ov-db').textContent    = s.total_searches || 0;
 
@@ -1325,6 +1412,14 @@ async function saveConfig() {
     request_timeout:      getInt('cfg-timeout', 30),
     imdb_min_rating:      parseFloat(document.getElementById('cfg-imdb')?.value || '0') || 0,
     upgrade_target_resolution: document.getElementById('cfg-target-res')?.value || '',
+    sonarr_imdb_min_rating:    document.getElementById('cfg-sonarr-imdb')?.value !== ''
+                               ? parseFloat(document.getElementById('cfg-sonarr-imdb')?.value || '0')
+                               : null,
+    radarr_imdb_min_rating:    document.getElementById('cfg-radarr-imdb')?.value !== ''
+                               ? parseFloat(document.getElementById('cfg-radarr-imdb')?.value || '0')
+                               : null,
+    sonarr_upgrade_target_resolution: document.getElementById('cfg-sonarr-target-res')?.value || '',
+    radarr_upgrade_target_resolution: document.getElementById('cfg-radarr-target-res')?.value || '',
     sonarr_search_mode:   el('cfg-sonarr-mode')?.value || 'season',
 
     upgrade_target_resolution: el('cfg-target-res')?.value || '',
@@ -2002,6 +2097,20 @@ async function statsNow() {
     setTimeout(() => { msg.style.display='none'; }, 4000);
   }
 }
+
+// Mobile sidebar
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+// Close sidebar when navigating
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => { if (window.innerWidth <= 900) closeSidebar(); });
+});
 
 // Init
 fetchState();

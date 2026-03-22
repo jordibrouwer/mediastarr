@@ -1,5 +1,21 @@
 # Changelog
 
+## [6.3.1]
+
+### Added
+- Settings → Filter: Separate IMDb minimum rating and upgrade target resolution for Sonarr and Radarr independently
+- Mobile sidebar: hamburger menu button opens/closes sidebar on small screens with overlay
+- Version check: Mediastarr queries GitHub Releases API hourly and notifies via Discord when an update is available
+- Discord notifications enriched: stats report and test message now include missing/upgrade/cycle counts and online instance ratio
+- Update badge in sidebar: green indicator when a new version is available on GitHub
+
+### Security
+- `_CURRENT_VERSION` constant — used for version comparison and Discord notifications
+
+### Fixed
+- Apostrophe syntax error in homepage JS (unescaped `'` in single-quoted strings)
+- Old `_cmpT` translation map replaced with correct `_why` map matching actual HTML IDs
+
 ## [6.3.0]
 
 ### Added
