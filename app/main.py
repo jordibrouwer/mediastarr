@@ -246,7 +246,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        "Mediastarr v6.3.2 gestartet",
+        "app_start":        "Mediastarr v6.3.3 gestartet",
         "setup_required":   "Einrichtung erforderlich – {setup_url}",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -260,7 +260,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "app_start":        "Mediastarr v6.3.2 started",
+        "app_start":        "Mediastarr v6.3.3 started",
         "setup_required":   "Setup required – {setup_url}",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -321,7 +321,7 @@ def _year(val):
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.3.2"
+_CURRENT_VERSION = "v6.3.3"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -392,15 +392,24 @@ DEFAULT_CONFIG = {
 }
 
 def load_config() -> dict:
+    cfg = DEFAULT_CONFIG.copy()
     if CFG_FILE.exists():
         try:
             raw = json.loads(CFG_FILE.read_text())
-            m = DEFAULT_CONFIG.copy(); m.update(raw)
-            for inst in m.get("instances",[]):
+            cfg.update(raw)
+            for inst in cfg.get("instances",[]):
                 if "id" not in inst: inst["id"] = make_id()
-            return m
         except Exception as e: logger.warning(f"Config load failed: {e}")
-    return DEFAULT_CONFIG.copy()
+    # Respect TZ environment variable if timezone is still default UTC
+    tz_env = os.environ.get("TZ","").strip()
+    if tz_env and cfg.get("timezone","UTC") == "UTC":
+        try:
+            zoneinfo.ZoneInfo(tz_env)
+            cfg["timezone"] = tz_env
+            logger.info(f"Timezone set from TZ env: {tz_env}")
+        except Exception:
+            logger.warning(f"TZ env value '{tz_env}' is not a valid IANA timezone, ignoring")
+    return cfg
 
 def save_config(cfg: dict):
     tmp = CFG_FILE.with_suffix(".tmp")
@@ -1358,15 +1367,24 @@ def api_history_clear_inst(inst_id:str):
 @app.route("/api/timezones")
 @_api_auth_required
 def api_timezones():
-    """Return common timezone list for the settings dropdown."""
-    common = [
-        "UTC","Europe/Berlin","Europe/Vienna","Europe/Zurich","Europe/London",
-        "Europe/Paris","Europe/Amsterdam","Europe/Rome","Europe/Madrid",
-        "America/New_York","America/Chicago","America/Denver","America/Los_Angeles",
-        "America/Sao_Paulo","Asia/Tokyo","Asia/Shanghai","Asia/Kolkata",
-        "Asia/Dubai","Australia/Sydney","Pacific/Auckland",
-    ]
-    return jsonify({"ok":True,"timezones":common})
+    """Return all available IANA timezones, grouped by region."""
+    try:
+        all_tz = sorted(zoneinfo.available_timezones())
+    except Exception:
+        all_tz = []
+    # Always put UTC first, then sort rest
+    ordered = ["UTC"] + [z for z in all_tz if z != "UTC"]
+    # Group by region prefix for UI
+    regions = {}
+    for tz in ordered:
+        region = tz.split("/")[0] if "/" in tz else "Other"
+        regions.setdefault(region, []).append(tz)
+    # Flat sorted list for simple select, current tz always available
+    current = CONFIG.get("timezone", "UTC")
+    flat = ordered if ordered else ["UTC"]
+    if current not in flat:
+        flat = [current] + flat
+    return jsonify({"ok": True, "timezones": flat, "current": current})
 
 # ── Discord test endpoint ─────────────────────────────────────────────────────
 @app.route("/api/discord/test", methods=["POST"])
@@ -1401,7 +1419,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": "v6.3.2", "inline": True},
+        {"name": f_ver,     "value": "v6.3.3", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": enabled_text, "inline": False},
     ]

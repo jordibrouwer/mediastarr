@@ -323,7 +323,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.2</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.3</span></div>
         </div>
       </div>
     </div>
@@ -368,7 +368,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.2</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.3</span></a></div>
     </div>
   </aside>
 
@@ -600,16 +600,23 @@
             <div class="form-grid">
               <div class="form-group full">
                 <label class="form-label" data-i18n="lbl_timezone">Zeitzone</label>
-                <select class="form-input" id="cfg-timezone">
-                  <option value="UTC">UTC</option>
-                  <option value="Europe/Berlin">Europe/Berlin</option>
-                  <option value="Europe/Vienna">Europe/Vienna</option>
-                  <option value="Europe/Zurich">Europe/Zurich</option>
-                  <option value="Europe/London">Europe/London</option>
-                  <option value="America/New_York">America/New_York</option>
-                  <option value="America/Los_Angeles">America/Los_Angeles</option>
-                  <option value="Asia/Tokyo">Asia/Tokyo</option>
-                </select>
+                <div style="position:relative">
+                  <input class="form-input" id="cfg-timezone-search" type="text"
+                    placeholder="Suchen oder tippen..." autocomplete="off"
+                    oninput="filterTimezones(this.value)"
+                    onfocus="showTzDropdown()"
+                    onblur="setTimeout(hideTzDropdown,200)"
+                    style="width:100%">
+                  <input type="hidden" id="cfg-timezone" value="UTC">
+                  <div id="tz-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
+                    background:var(--bg2);border:1px solid var(--border);border-radius:0 0 7px 7px;
+                    max-height:200px;overflow-y:auto;z-index:50;scrollbar-width:thin">
+                  </div>
+                </div>
+                <div class="form-hint" id="tz-hint" style="display:flex;align-items:center;gap:6px" data-i18n="hint_timezone">
+                  <span id="tz-current-display" style="color:var(--accent)">UTC</span>
+                  <span style="color:var(--muted)" id="tz-env-hint"></span>
+                </div>
               </div>
             </div>
           </div>
@@ -2108,6 +2115,54 @@ async function statsNow() {
     msg.textContent   = d.ok ? dcL('stats_ok') : `${dcL('err')}: ${d.error||''}`;
     setTimeout(() => { msg.style.display='none'; }, 4000);
   }
+}
+
+// ── Timezone search dropdown ─────────────────────────────────────────────
+let _allTimezones = [];
+async function loadTimezones() {
+  try {
+    const r = await fetch('/api/timezones');
+    const d = await r.json();
+    if (d.ok) {
+      _allTimezones = d.timezones || [];
+      const hint = document.getElementById('tz-env-hint');
+      if (hint && d.current && d.current !== 'UTC') {
+        hint.textContent = '(TZ: ' + d.current + ')';
+      }
+    }
+  } catch(e) {}
+}
+function buildTzOptions(list) {
+  const dd = document.getElementById('tz-dropdown');
+  if (!dd) return;
+  dd.innerHTML = list.slice(0, 200).map(tz => {
+    const cur = document.getElementById('cfg-timezone')?.value;
+    const sel = tz === cur ? 'background:var(--surface);color:var(--accent)' : '';
+    return `<div onclick="selectTimezone('${tz}')" style="padding:7px 12px;cursor:pointer;font-size:12px;${sel}"
+      onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">${tz}</div>`;
+  }).join('') + (list.length > 200 ? `<div style="padding:7px 12px;font-size:11px;color:var(--muted)">${list.length - 200} more — type to filter</div>` : '');
+}
+function showTzDropdown() {
+  if (!_allTimezones.length) loadTimezones().then(() => buildTzOptions(_allTimezones));
+  else buildTzOptions(_allTimezones);
+  const dd = document.getElementById('tz-dropdown');
+  if (dd) dd.style.display = 'block';
+}
+function hideTzDropdown() {
+  const dd = document.getElementById('tz-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+function filterTimezones(q) {
+  const list = q ? _allTimezones.filter(z => z.toLowerCase().includes(q.toLowerCase())) : _allTimezones;
+  buildTzOptions(list);
+  const dd = document.getElementById('tz-dropdown');
+  if (dd) dd.style.display = 'block';
+}
+function selectTimezone(tz) {
+  document.getElementById('cfg-timezone').value = tz;
+  document.getElementById('cfg-timezone-search').value = tz;
+  document.getElementById('tz-current-display').textContent = tz;
+  hideTzDropdown();
 }
 
 // Mobile sidebar

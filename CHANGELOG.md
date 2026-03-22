@@ -1,10 +1,27 @@
 # Changelog
 
+## [6.3.3] — 2026-03-22
+
+### Added
+- Timezone: `TZ` environment variable now respected on startup — applied automatically when config is still at default UTC (fixes Issue #7)
+- Timezone: settings dropdown now loads all 498 IANA timezones dynamically instead of 8 hardcoded options
+- Timezone: searchable text input replaces static select — type to filter (e.g. `chicago`, `berlin`)
+- Buy Me a Coffee link added to app sidebar and homepage (nav, hero, footer)
+
+### Fixed
+- CHANGELOG v6.3.2: removed incorrect line about ALLOWED_THEMES
+
+
 ## [6.3.2]
 
 ### Changed
 - Version bump: all references updated to v6.3.2
 - Code audit: 19/19 functional tests passed — all features verified
+
+### Fixed (Issue #7)
+- Timezone: `TZ` environment variable now respected on startup — if `TZ` is set and config is still at default UTC, the env var is applied automatically
+- Timezone: settings dropdown now loads all available IANA timezones from the server dynamically (previously showed only 8 hardcoded options)
+- Timezone: searchable input field — type any part of the timezone name (e.g. `chicago`, `america`) to filter the full list
 
 ### Verified
 - Per-app IMDb and resolution filters (Sonarr/Radarr independent)
