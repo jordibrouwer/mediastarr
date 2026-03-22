@@ -1,5 +1,22 @@
 # Changelog
 
+## [6.2.0]
+
+### Security
+- Fixed 8 API routes missing `@_api_auth_required` decorator (instances PATCH/DELETE/ping, history/clear/{id}, discord/stats, timezones, instances GET/POST) — only relevant when `MEDIASTARR_PASSWORD` is set
+
+### Added
+- **IMDb minimum rating filter**: skip content below a configurable IMDb score (0 = disabled). Applies to both missing content and upgrade searches in Sonarr and Radarr. Unrated items (IMDb = 0) are always included.
+- **Upgrade target resolution**: only trigger upgrade searches when the current file quality is below the configured target (e.g. stop at Bluray-1080p, skip anything already at or above). Supported resolutions: SDTV, WEBDL/Bluray 480p/720p/1080p/2160p, HDTV 720p/1080p.
+- Both filters appear as a new **Filter** section in Settings → General between Search Behavior and Interval & Jitter.
+- **Homepage (mediastarr.de)**: added German/English language toggle, updated feature list, improved layout.
+
+### Technical
+- `_res_rank()` helper for fuzzy resolution comparison (handles Sonarr/Radarr quality name variations)
+- `_imdb_rating()` helper extracts IMDb rating from Sonarr/Radarr API response
+- New config keys: `imdb_min_rating` (float, default 0.0) and `upgrade_target_resolution` (string, default "")
+- Both keys validated and exposed via `/api/state` and `/api/config`
+
 ## [6.1.2]
 
 ### Fixed

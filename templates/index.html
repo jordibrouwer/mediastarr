@@ -303,7 +303,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.1.2</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.2.0</span></div>
         </div>
       </div>
     </div>
@@ -341,7 +341,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.1.2</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.2.0</span></a></div>
     </div>
   </aside>
 
@@ -420,13 +420,13 @@
         <div class="tab-pane active" id="tab-general">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label" data-i18n="lbl_missing">Missing-Intervall (s)</label>
-              <input class="form-input" id="cfg-missing" type="number" min="900" max="86400" value="900">
-              <div class="form-hint" data-i18n="hint_missing">Sekunden zwischen Suchzyklen. Min 60.</div>
+              <label class="form-label" data-i18n="lbl_missing">Missing-Intervall (Min.)</label>
+              <input class="form-input" id="cfg-missing" type="number" min="15" max="1440" value="30">
+              <div class="form-hint" data-i18n="hint_missing">Minuten zwischen Suchzyklen. Min. 15 Min.</div>
             </div>
             <div class="form-group">
-              <label class="form-label" data-i18n="lbl_upgrade">Upgrade-Intervall (s)</label>
-              <input class="form-input" id="cfg-upgrade" type="number" min="900" max="86400" value="1800">
+              <label class="form-label" data-i18n="lbl_upgrade">Upgrade-Intervall (Min.)</label>
+              <input class="form-input" id="cfg-upgrade" type="number" min="15" max="1440" value="60">
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_max">Max. Searches pro Lauf</label>
@@ -469,6 +469,29 @@
                   <div class="toggle on" id="tog-upgrades" onclick="toggleCfg2('upgrades')"></div>
                   <span class="toggle-label" id="lab-upgrades">An</span>
                 </div>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:10px" data-i18n="lbl_filter">Filter</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_imdb">IMDb Mindestbewertung</label>
+                <input class="form-input" id="cfg-imdb" type="number" min="0" max="10" step="0.1" value="0" placeholder="0 = aus">
+                <div class="form-hint" data-i18n="hint_imdb">0 = kein Filter. Nur Inhalte mit IMDb ≥ dieser Bewertung suchen.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_target_res">Zielauflösung (Upgrades)</label>
+                <select class="form-input" id="cfg-target-res">
+                  <option value="" data-i18n="opt_res_off">Aus (kein Filter)</option>
+                  <option value="WEBDL-720p">WEB-DL 720p</option>
+                  <option value="Bluray-720p">Bluray 720p</option>
+                  <option value="WEBDL-1080p">WEB-DL 1080p</option>
+                  <option value="Bluray-1080p">Bluray 1080p</option>
+                  <option value="WEBDL-2160p">WEB-DL 2160p (4K)</option>
+                  <option value="Bluray-2160p">Bluray 2160p (4K)</option>
+                </select>
+                <div class="form-hint" data-i18n="hint_target_res">Upgrades nur suchen wenn aktuelle Qualität darunter liegt.</div>
               </div>
             </div>
           </div>
@@ -779,7 +802,7 @@ const T = {
         start:'Start', stop:'Stop', now:'Jetzt', save:'Speichern', connected:'✓ Verbunden', failed:'✗ Fehlgeschlagen',
         stats:'Statistiken', log:'Aktivitätslog', history:'Verlauf', settings:'Einstellungen',
         tab_general:'Allgemein', tab_instances:'Instanzen', tab_discord:'Discord',
-        lbl_missing:'Missing-Intervall (s)', lbl_upgrade:'Upgrade-Intervall (s)',
+        lbl_missing:'Missing-Intervall (Min.)', lbl_upgrade:'Upgrade-Intervall (Min.)',
         lbl_max:'Max. Searches pro Lauf', lbl_daily:'Tageslimit (0 = unbegrenzt)',
         lbl_cooldown:'Cooldown (Tage)', lbl_timeout:'API Timeout (s)',
         lbl_search_behavior:'Suchverhalten', lbl_sonarr_mode:'Sonarr Suchmodus',
@@ -791,18 +814,26 @@ const T = {
         hint_cooldown:'Tage bevor ein Item erneut gesucht wird.',
         hint_daily:'Gesamt pro Tag, alle Instanzen.',
         lbl_dryrun:'Dry Run', btn_save:'Speichern', lbl_new_instance:'Neue Instanz',
+        lbl_filter:'Filter', lbl_imdb:'IMDb Mindestbewertung', lbl_target_res:'Zielauflösung (Upgrades)',
+        hint_imdb:'0 = kein Filter. Nur Inhalte mit IMDb ≥ dieser Bewertung suchen.',
+        hint_target_res:'Upgrades nur suchen wenn aktuelle Qualität darunter liegt.',
+        opt_res_off:'Aus (kein Filter)',
         btn_refresh:'↺ Aktualisieren', btn_clear_all:'🗑 Alle löschen',
         lbl_entries:'Einträge:', hist_title:'Suchverlauf (SQLite)',
         hist_hint:'Items auf Cooldown werden nicht erneut gesucht',
         btn_clear:'Leeren',
-        ov_missing_lbl:'Missing-Intervall', ov_max_lbl:'Max. pro Lauf',
+        ov_missing_lbl:'Missing-Intervall (Min.)', ov_max_lbl:'Max. pro Lauf',
         ov_cooldown_lbl:'Cooldown', ov_db_lbl:'DB-Einträge',
         ov_dry_lbl:'Dry Run', ov_total_lbl:'Gesamt Searches',
         st_chart_timeline:'Aktivität letzte 24h',
-        hint_missing:'Sekunden zwischen Suchzyklen. Min. 900.',
+        hint_missing:'Minuten zwischen Suchzyklen. Min. 15 Min.',
         hint_max:'Pro Zyklus, pro Instanz.',
         hint_cooldown_range:'Standard: 7 Tage. Bereich: 1–365 Tage.',
         btn_reset_setup:'⚙ Setup zurücksetzen',
+        lbl_filter:'Filter', lbl_imdb:'IMDb Mindestbewertung', lbl_target_res:'Zielauflösung (Upgrades)',
+        hint_imdb:'0 = kein Filter. Nur Inhalte mit IMDb ≥ dieser Bewertung suchen.',
+        hint_target_res:'Upgrades nur suchen wenn aktuelle Qualität darunter liegt.',
+        opt_res_off:'Aus (kein Filter)',
   },
   en: { dashboard:'Dashboard', settings:'Settings', history:'History', log:'Activity Log',
         running:'Running', stopped:'Stopped', online:'Online', offline:'Offline', disabled:'Disabled',
@@ -812,7 +843,7 @@ const T = {
         start:'Start', stop:'Stop', now:'Run Now', save:'Save', connected:'✓ Connected', failed:'✗ Failed',
         stats:'Statistics', log:'Activity Log', history:'History', settings:'Settings',
         tab_general:'General', tab_instances:'Instances', tab_discord:'Discord',
-        lbl_missing:'Missing interval (s)', lbl_upgrade:'Upgrade interval (s)',
+        lbl_missing:'Missing interval (min)', lbl_upgrade:'Upgrade interval (min)',
         lbl_max:'Max searches per run', lbl_daily:'Daily limit (0 = unlimited)',
         lbl_cooldown:'Cooldown (days)', lbl_timeout:'API timeout (s)',
         lbl_search_behavior:'Search behavior', lbl_sonarr_mode:'Sonarr search mode',
@@ -824,18 +855,26 @@ const T = {
         hint_cooldown:'Days before re-searching same item.',
         hint_daily:'Total per day across all instances.',
         lbl_dryrun:'Dry Run', btn_save:'Save', lbl_new_instance:'New instance',
+        lbl_filter:'Filter', lbl_imdb:'IMDb minimum rating', lbl_target_res:'Target resolution (upgrades)',
+        hint_imdb:'0 = off. Only search content with IMDb ≥ this rating.',
+        hint_target_res:'Only upgrade if current quality is below this target.',
+        opt_res_off:'Off (no filter)',
         btn_refresh:'↺ Refresh', btn_clear_all:'🗑 Clear all',
         lbl_entries:'Entries:', hist_title:'Search history (SQLite)',
         hist_hint:'Items on cooldown are not re-searched',
         btn_clear:'Clear',
-        ov_missing_lbl:'Missing interval', ov_max_lbl:'Max per run',
+        ov_missing_lbl:'Missing interval (min)', ov_max_lbl:'Max per run',
         ov_cooldown_lbl:'Cooldown', ov_db_lbl:'DB entries',
         ov_dry_lbl:'Dry Run', ov_total_lbl:'Total searches',
         st_chart_timeline:'Activity last 24h',
-        hint_missing:'Seconds between hunt cycles. Min. 900.',
+        hint_missing:'Minutes between hunt cycles. Min. 15 min.',
         hint_max:'Per cycle, per instance.',
         hint_cooldown_range:'Default: 7 days. Range: 1–365 days.',
         btn_reset_setup:'⚙ Reset setup',
+        lbl_filter:'Filter', lbl_imdb:'IMDb minimum rating', lbl_target_res:'Target resolution (upgrades)',
+        hint_imdb:'0 = off. Only search content with IMDb ≥ this rating.',
+        hint_target_res:'Only upgrade if current quality is below this target.',
+        opt_res_off:'Off (no filter)',
   }
 };
 const t = k => T[currentLang]?.[k] || k;
@@ -905,6 +944,8 @@ function applyLang() {
     const opts = {episode: t('opt_episode'), season: t('opt_season'), series: t('opt_series')};
     [...modeEl.options].forEach(o => { if (opts[o.value]) o.text = opts[o.value]; });
   }
+  const trEl = document.getElementById('cfg-target-res');
+  if (trEl && trEl.options[0]) trEl.options[0].text = t('opt_res_disabled');
 
   // Log empty state
   ['logScroll','logScrollFull'].forEach(id => {
@@ -920,6 +961,9 @@ function applyLang() {
   const newKey = document.getElementById('new-inst-key');
   if (newKey) newKey.placeholder = isDE ? '32-stelliger API Key' : '32-character API key';
   if (typeof syncNewInstUrlHint === 'function') syncNewInstUrlHint();
+  // Translate resolution select option 0
+  const resEl = document.getElementById('cfg-target-res');
+  if (resEl && resEl.options[0]) resEl.options[0].text = t('opt_res_off');
   // History filter selects
   const hsvc = document.getElementById('hist-svc');
   if (hsvc && hsvc.options[0]) hsvc.options[0].text = isDE ? 'Alle' : 'All';
@@ -1104,7 +1148,7 @@ function updateUI() {
     });
 
     // Overview
-    if (el('ov-missing'))  el('ov-missing').textContent  = fmtSec(c.hunt_missing_delay);
+    if (el('ov-missing'))  el('ov-missing').textContent  = (c.hunt_missing_delay ?? 30) + ' min';
     if (el('ov-max'))      el('ov-max').textContent      = c.max_searches_per_run;
     if (el('ov-cooldown')) el('ov-cooldown').textContent = fmtDays(c.cooldown_days ?? 7);
     if (el('ov-dry'))      { el('ov-dry').textContent = c.dry_run?t('on'):t('off'); el('ov-dry').style.color = c.dry_run?'var(--accent)':'var(--text)'; }
@@ -1258,14 +1302,18 @@ async function saveConfig() {
   const el = id => document.getElementById(id);
   const getInt = (id, fb) => { const v = parseInt(el(id)?.value); return isNaN(v) ? fb : v; };
   const body = {
-    hunt_missing_delay:   getInt('cfg-missing', 900),
-    hunt_upgrade_delay:   getInt('cfg-upgrade', 1800),
+    hunt_missing_delay:   getInt('cfg-missing', 30),
+    hunt_upgrade_delay:   getInt('cfg-upgrade', 60),
     max_searches_per_run: getInt('cfg-max', 10),
     daily_limit:          getInt('cfg-daily', 20),
     cooldown_days:        getInt('cfg-cooldown', 7),
     jitter_max:           getInt('cfg-jitter', 300),
     request_timeout:      getInt('cfg-timeout', 30),
+    imdb_min_rating:      parseFloat(document.getElementById('cfg-imdb')?.value || '0') || 0,
+    upgrade_target_resolution: document.getElementById('cfg-target-res')?.value || '',
     sonarr_search_mode:   el('cfg-sonarr-mode')?.value || 'season',
+    imdb_min_rating:      parseFloat(el('cfg-imdb-min')?.value || '0') || 0,
+    upgrade_target_resolution: el('cfg-target-res')?.value || '',
     search_upgrades:      toggleStates2.upgrades,
     timezone:             el('cfg-timezone')?.value || 'UTC',
     dry_run:              toggleStates.dry,

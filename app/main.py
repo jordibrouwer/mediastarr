@@ -38,11 +38,37 @@ ALLOWED_ACTIONS     = frozenset({"start","stop","run_now"})
 ALLOWED_SCHEMES     = frozenset({"http","https"})
 ALLOWED_THEMES      = frozenset({"dark","light","oled"})
 ALLOWED_SONARR_MODES= frozenset({"episode","season","series"})
+ALLOWED_RESOLUTIONS = frozenset({"","SDTV","WEBDL-480p","Bluray-480p",
+    "WEBDL-720p","Bluray-720p","WEBDL-1080p","Bluray-1080p",
+    "WEBDL-2160p","Bluray-2160p","HDTV-720p","HDTV-1080p"})
+
+_RES_RANK = {
+    "":0,"SDTV":1,"WEBDL-480p":2,"Bluray-480p":3,
+    "HDTV-720p":4,"WEBDL-720p":5,"Bluray-720p":6,
+    "HDTV-1080p":7,"WEBDL-1080p":8,"Bluray-1080p":9,
+    "WEBDL-2160p":10,"Bluray-2160p":11,
+}
+
+def _res_rank(name: str) -> int:
+    if not name: return 0
+    n = name.strip()
+    if n in _RES_RANK: return _RES_RANK[n]
+    best = 0
+    for k, v in _RES_RANK.items():
+        if k and k.lower() in n.lower(): best = max(best, v)
+    return best
+
+def _imdb_rating(obj: dict) -> float:
+    try:
+        return float(obj.get("ratings",{}).get("imdb",{}).get("value",0) or 0)
+    except (TypeError, ValueError):
+        return 0.0
 API_KEY_RE          = re.compile(r'^[A-Za-z0-9\-_]{8,128}$')
 NAME_RE             = re.compile(r'^[A-Za-z0-9 \-_äöüÄÖÜß]{1,40}$')
 URL_MAX_LEN         = 256
 MAX_INSTANCES       = 20
 MIN_INTERVAL_SEC    = 900   # 15 minutes absolute minimum
+MIN_INTERVAL_MIN    = 15    # minutes
 
 # ─── Discord Webhook ─────────────────────────────────────────────────────────
 DISCORD_COLORS = {
@@ -206,7 +232,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        "Mediastarr v6.1.2 gestartet",
+        "app_start":        "Mediastarr v6.2.0 gestartet",
         "setup_required":   "Einrichtung erforderlich – http://localhost:7979/setup",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -220,7 +246,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "app_start":        "Mediastarr v6.1.2 started",
+        "app_start":        "Mediastarr v6.2.0 started",
         "setup_required":   "Setup required – http://localhost:7979/setup",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -278,8 +304,8 @@ DEFAULT_CONFIG = {
     "theme": "dark",
     "timezone": "UTC",
     "instances": [],
-    "hunt_missing_delay":    900,   # seconds (min 900 = 15 min)
-    "hunt_upgrade_delay":   1800,
+    "hunt_missing_delay":   1800,   # seconds internally (default 30min)
+    "hunt_upgrade_delay":   3600,   # seconds internally (default 60min)
     "max_searches_per_run":   10,
     "daily_limit":            20,
     "cooldown_days":           7,
@@ -573,7 +599,23 @@ def hunt_sonarr_instance(inst: dict):
     try:
         data  = client.get("wanted/missing", params={"pageSize":500,"sortKey":"airDateUtc","sortDir":"desc"})
         recs  = data.get("records", [])
-        random.shuffle(recs)  # random selection — avoids always hitting same items
+        random.shuffle(recs)
+        # IMDb filter — series_cache has titles, build separate imdb map from same /series endpoint
+        imdb_min_s = float(CONFIG.get("imdb_min_rating", 0) or 0)
+        if imdb_min_s > 0 and series_cache:
+            series_imdb: dict[int,float] = {}
+            try:
+                for s in client.get("series"):
+                    sid = s.get("id")
+                    if sid: series_imdb[int(sid)] = _imdb_rating(s)
+            except Exception: pass
+            before = len(recs)
+            def _ep_imdb_r(ep):
+                sid = ep.get("seriesId") or ep.get("series",{}).get("id")
+                r = series_imdb.get(int(sid), 0.0) if sid else 0.0
+                return r
+            recs = [ep for ep in recs if _ep_imdb_r(ep) == 0.0 or _ep_imdb_r(ep) >= imdb_min_s]
+            logger.debug(f"{name}: IMDb filter kept {len(recs)}/{before} missing episodes")
         stats["missing_found"] = int(data.get("totalRecords", len(recs)))
         searched = 0
         for ep in recs:
@@ -616,11 +658,18 @@ def hunt_sonarr_instance(inst: dict):
         data  = client.get("wanted/cutoff", params={"pageSize":500})
         recs  = data.get("records", [])
         random.shuffle(recs)  # random selection
+        target_res_s  = CONFIG.get("upgrade_target_resolution","")
+        target_rank_s = _res_rank(target_res_s) if target_res_s else 0
         stats["upgrades_found"] = int(data.get("totalRecords", len(recs)))
         searched = 0
         for ep in recs:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
             title = ep_title(ep)
+            if target_rank_s > 0:
+                cur_q = ep.get("episodeFile",{}).get("quality",{}).get("quality",{}).get("name","")
+                if _res_rank(cur_q) >= target_rank_s:
+                    logger.debug(f"{name}: skip upgrade {title} already at {cur_q}")
+                    continue
             ok, reason = should_search(iid, "episode_upgrade", ep["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
@@ -647,6 +696,11 @@ def hunt_radarr_instance(inst: dict):
         movies  = client.get("movie")
         random.shuffle(movies)  # random selection
         missing = [m for m in movies if not m.get("hasFile") and m.get("monitored")]
+        imdb_min = float(CONFIG.get("imdb_min_rating", 0) or 0)
+        if imdb_min > 0:
+            before = len(missing)
+            missing = [m for m in missing if _imdb_rating(m) == 0.0 or _imdb_rating(m) >= imdb_min]
+            logger.debug(f"{name}: IMDb filter ({imdb_min}+) kept {len(missing)}/{before} missing movies")
         stats["missing_found"] = len(missing)
         searched = 0
         for movie in missing:
@@ -679,11 +733,22 @@ def hunt_radarr_instance(inst: dict):
         random.shuffle(recs)  # random selection
         stats["upgrades_found"] = int(data.get("totalRecords", len(recs)))
         searched = 0
+        target_res  = CONFIG.get("upgrade_target_resolution","")
+        target_rank = _res_rank(target_res) if target_res else 0
+        imdb_min_up = float(CONFIG.get("imdb_min_rating", 0) or 0)
         for movie in recs:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
             title = str(movie.get("title","?"))[:100]
             year  = _year(movie.get("year"))
             if year: title = f"{title} ({year})"
+            if imdb_min_up > 0 and 0 < _imdb_rating(movie) < imdb_min_up:
+                logger.debug(f"{name}: skip upgrade {title} IMDb {_imdb_rating(movie):.1f}<{imdb_min_up}")
+                continue
+            if target_rank > 0:
+                cur_q = movie.get("movieFile",{}).get("quality",{}).get("quality",{}).get("name","")
+                if _res_rank(cur_q) >= target_rank:
+                    logger.debug(f"{name}: skip upgrade {title} already at {cur_q}")
+                    continue
             ok, reason = should_search(iid, "movie_upgrade", movie["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
@@ -936,11 +1001,13 @@ def api_setup_reset():
 
 # ── Instance CRUD ─────────────────────────────────────────────────────────────
 @app.route("/api/instances", methods=["GET"])
+@_api_auth_required
 def api_instances_get():
     safe = [{k:v for k,v in inst.items() if k!="api_key"} for inst in CONFIG["instances"]]
     return jsonify({"ok":True,"instances":safe,"stats":STATE["inst_stats"]})
 
 @app.route("/api/instances", methods=["POST"])
+@_api_auth_required
 def api_instances_add():
     if len(CONFIG["instances"]) >= MAX_INSTANCES:
         return jsonify({"ok":False,"error":f"Maximal {MAX_INSTANCES} Instanzen"}),400
@@ -958,6 +1025,7 @@ def api_instances_add():
     save_config(CONFIG); return jsonify({"ok":True,"id":inst["id"]})
 
 @app.route("/api/instances/<inst_id>", methods=["PATCH"])
+@_api_auth_required
 def api_instances_update(inst_id:str):
     inst = next((i for i in CONFIG["instances"] if i["id"]==inst_id), None)
     if not inst: return jsonify({"ok":False,"error":"Nicht gefunden"}),404
@@ -978,6 +1046,7 @@ def api_instances_update(inst_id:str):
     save_config(CONFIG); return jsonify({"ok":True})
 
 @app.route("/api/instances/<inst_id>", methods=["DELETE"])
+@_api_auth_required
 def api_instances_delete(inst_id:str):
     before = len(CONFIG["instances"])
     CONFIG["instances"] = [i for i in CONFIG["instances"] if i["id"]!=inst_id]
@@ -986,6 +1055,7 @@ def api_instances_delete(inst_id:str):
     return jsonify({"ok":True})
 
 @app.route("/api/instances/<inst_id>/ping")
+@_api_auth_required
 def api_instances_ping(inst_id:str):
     inst = next((i for i in CONFIG["instances"] if i["id"]==inst_id), None)
     if not inst: return jsonify({"ok":False,"error":"Nicht gefunden"}),404
@@ -1013,14 +1083,16 @@ def api_state():
         "server_tz":   CONFIG.get("timezone","UTC"),
         "activity_log":list(STATE["activity_log"])[:60],
         "config":{
-            "hunt_missing_delay":   CONFIG["hunt_missing_delay"],
-            "hunt_upgrade_delay":   CONFIG["hunt_upgrade_delay"],
+            "hunt_missing_delay":   CONFIG["hunt_missing_delay"] // 60,  # minutes for UI
+            "hunt_upgrade_delay":   CONFIG["hunt_upgrade_delay"] // 60,  # minutes for UI
             "max_searches_per_run": CONFIG["max_searches_per_run"],
             "daily_limit":          CONFIG.get("daily_limit",20),
             "cooldown_days":        CONFIG.get("cooldown_days",7),
             "request_timeout":      CONFIG.get("request_timeout",30),
             "jitter_max":           CONFIG.get("jitter_max",300),
             "sonarr_search_mode":   CONFIG.get("sonarr_search_mode","season"),
+            "imdb_min_rating":      CONFIG.get("imdb_min_rating", 0.0),
+            "upgrade_target_resolution": CONFIG.get("upgrade_target_resolution",""),
             "search_upgrades":      CONFIG.get("search_upgrades",True),
             "dry_run":              CONFIG["dry_run"],
             "language":             CONFIG["language"],
@@ -1058,9 +1130,11 @@ def api_config():
     d=request.get_json(silent=True)
     if d is None: return jsonify({"ok":False,"error":"Ungültiges JSON"}),400
     # Enforce minimum 15 minute interval
-    raw_delay = clamp_int(d.get("hunt_missing_delay", CONFIG["hunt_missing_delay"]), MIN_INTERVAL_SEC, 86400, CONFIG["hunt_missing_delay"])
-    CONFIG["hunt_missing_delay"]   = raw_delay
-    CONFIG["hunt_upgrade_delay"]   = clamp_int(d.get("hunt_upgrade_delay",   CONFIG["hunt_upgrade_delay"]),   MIN_INTERVAL_SEC, 86400, CONFIG["hunt_upgrade_delay"])
+    # UI sends minutes, store as seconds internally
+    raw_min = clamp_int(d.get("hunt_missing_delay", CONFIG["hunt_missing_delay"]//60), MIN_INTERVAL_MIN, 1440, CONFIG["hunt_missing_delay"]//60)
+    CONFIG["hunt_missing_delay"]   = raw_min * 60
+    raw_up_min = clamp_int(d.get("hunt_upgrade_delay", CONFIG["hunt_upgrade_delay"]//60), MIN_INTERVAL_MIN, 1440, CONFIG["hunt_upgrade_delay"]//60)
+    CONFIG["hunt_upgrade_delay"]   = raw_up_min * 60
     CONFIG["max_searches_per_run"] = clamp_int(d.get("max_searches_per_run", CONFIG["max_searches_per_run"]), 1, 500, CONFIG["max_searches_per_run"])
     CONFIG["daily_limit"]          = clamp_int(d.get("daily_limit",          CONFIG.get("daily_limit",20)),   0, 9999, CONFIG.get("daily_limit",20))
     CONFIG["cooldown_days"]        = clamp_int(d.get("cooldown_days",        CONFIG.get("cooldown_days",7)),  1, 365, CONFIG.get("cooldown_days",7))
@@ -1071,6 +1145,11 @@ def api_config():
     if "search_upgrades" in d: CONFIG["search_upgrades"] = bool(d["search_upgrades"])
     mode = safe_str(d.get("sonarr_search_mode",""), 10)
     if mode in ALLOWED_SONARR_MODES: CONFIG["sonarr_search_mode"] = mode
+    if "imdb_min_rating" in d:
+        CONFIG["imdb_min_rating"] = max(0.0, min(10.0, float(d.get("imdb_min_rating",0) or 0)))
+    if "upgrade_target_resolution" in d:
+        res = safe_str(d.get("upgrade_target_resolution",""), 30)
+        CONFIG["upgrade_target_resolution"] = res if res in ALLOWED_RESOLUTIONS else ""
     theme = safe_str(d.get("theme", CONFIG.get("theme","dark")), 10)
     if theme in ALLOWED_THEMES: CONFIG["theme"] = theme
     lang = safe_str(d.get("language", CONFIG["language"]), 5)
@@ -1125,12 +1204,14 @@ def api_history_clear():
     return jsonify({"ok":True,"removed":n})
 
 @app.route("/api/history/clear/<inst_id>", methods=["POST"])
+@_api_auth_required
 def api_history_clear_inst(inst_id:str):
     n=db.clear_service(inst_id); log_act("System",f"DB geleert ({inst_id})",f"{n}","warning")
     return jsonify({"ok":True,"removed":n})
 
 # ── Timezone helper ───────────────────────────────────────────────────────────
 @app.route("/api/timezones")
+@_api_auth_required
 def api_timezones():
     """Return common timezone list for the settings dropdown."""
     common = [
@@ -1175,7 +1256,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": "v6.1.2", "inline": True},
+        {"name": f_ver,     "value": "v6.2.0", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": enabled_text, "inline": False},
     ]
@@ -1188,6 +1269,7 @@ def api_discord_test():
 
 
 @app.route("/api/discord/stats", methods=["POST"])
+@_api_auth_required
 def api_discord_stats_now():
     """Manually trigger a stats report."""
     dc = CONFIG.get("discord", {})

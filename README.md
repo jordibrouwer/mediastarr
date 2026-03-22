@@ -10,7 +10,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-kroeberd%2Fmediastarr-orange?logo=github)](https://github.com/kroeberd/mediastarr)
 [![Docker Hub](https://img.shields.io/docker/pulls/kroeberd/mediastarr?label=Docker%20Pulls&logo=docker)](https://hub.docker.com/r/kroeberd/mediastarr)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-v6.1.2-ff6b2b)](https://github.com/kroeberd/mediastarr/releases)
+[![Version](https://img.shields.io/badge/Version-v6.2.0-ff6b2b)](https://github.com/kroeberd/mediastarr/releases)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865f2?logo=discord&logoColor=white)](https://discord.gg/8Vb9cj4ksv)
 
 </div>
@@ -36,6 +36,8 @@
 | ⏳ Cooldown | 1–365 days, configurable |
 | 📊 Daily limit | Max searches per day (0 = unlimited) |
 | 🎲 Random selection | Items picked randomly each cycle for even coverage |
+| ⭐ IMDb filter | Min. rating threshold — skip low-rated content (0 = off) |
+| 🎯 Target resolution | Only upgrade if current quality is below your target |
 | 🎲 Jitter | Random offset ±N sec (min. 15 min interval enforced) |
 | 🔔 Discord | 6 events + periodic stats report + rate-limit protection |
 | 🌐 Multilingual | German & English (UI + logs + Discord messages) |
@@ -93,7 +95,7 @@ Settings → Discord:
 
 | Setting | Default | Range |
 |---|---|---|
-| Missing interval | 900s | min. 900s (15 min) |
+| Missing interval | 30 min | min. 15 min |
 | Max searches/run | 10 | 1–500 |
 | Daily limit | 20 | 0 = unlimited |
 | Cooldown | 7 days | 1–365 days |
@@ -149,6 +151,8 @@ GET  /api/timezones                # Available timezones
 | ⏳ Cooldown | 1–365 Tage, konfigurierbar |
 | 📊 Tageslimit | Max. Searches pro Tag (0 = unbegrenzt) |
 | 🎲 Zufällige Auswahl | Items werden pro Zyklus zufällig gewählt für gleichmäßige Abdeckung |
+| ⭐ IMDb filter | Min. rating threshold — skip low-rated content (0 = off) |
+| 🎯 Target resolution | Only upgrade if current quality is below your target |
 | 🎲 Jitter | Zufälliger Versatz ±N Sek. (min. 15 Min. Intervall erzwungen) |
 | 🔔 Discord | 6 Events + periodischer Statistik-Bericht + Rate-Limit-Schutz |
 | 🌐 Mehrsprachig | Deutsch & Englisch (UI + Logs + Discord-Nachrichten) |
@@ -233,7 +237,7 @@ Beliebige Kombinationen direkt in den Einstellungen konfigurierbar:
 
 | Einstellung | Standard | Bereich |
 |---|---|---|
-| Missing-Intervall | 900s | min. 900s (15 Min.) |
+| Missing-Intervall | 30 Min. | min. 15 Min. |
 | Max. Searches/Lauf | 10 | 1–500 |
 | Tageslimit | 20 | 0 = unbegrenzt |
 | Cooldown | 7 Tage | 1–365 Tage |
@@ -267,7 +271,7 @@ GET  /api/timezones                # Verfügbare Zeitzonen
 
 ## 📜 Changelog
 
-### v6.1.2
+### v6.2.0
 - Multi-Instanz: Sonarr + Radarr beliebig kombinierbar, frei benennbar
 - Instanzen direkt in Einstellungen hinzufügen/umbenennen/löschen
 - Zufällige Item-Auswahl pro Zyklus für gleichmäßige Abdeckung
