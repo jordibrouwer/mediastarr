@@ -2,6 +2,10 @@
 name: Bug report
 description: Create a bug report
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
   - type: checkboxes
     attributes:
       label: Did you read the README?
