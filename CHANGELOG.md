@@ -1,5 +1,16 @@
 # Changelog
 
+## [6.3.6] — 2026-03-22
+
+### Fixed
+- Mobile sidebar closes immediately after tap — four root causes fixed:
+  1. `showPage()` was resetting `className` on nav-items, stripping all `addEventListener` bindings — navigation now uses `navClick()` with `onclick` attribute which survives className resets
+  2. `.layout` had `z-index: 1` creating a stacking context that capped the sidebar's effective z-index — removed
+  3. Sidebar `z-index` raised to 9999, overlay to 9998 — no longer cut off by other stacking contexts
+  4. `backdrop-filter: blur()` on the overlay was causing the darkening effect — removed; overlay now uses plain `rgba(0,0,0,.55)`
+- Sidebar navigation: `data-page` attribute used to set active state instead of index-based array lookup
+- `openSidebar()` / `closeSidebar()` split into separate functions for clarity; sidebar click stops propagation to prevent accidental close
+
 ## [6.3.5] — 2026-03-22
 
 ### Fixed

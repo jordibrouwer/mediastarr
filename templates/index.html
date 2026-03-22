@@ -56,7 +56,7 @@
     [data-theme="light"] .ambient { opacity: 0; }
 
     /* ══════════ LAYOUT ══════════ */
-    .layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+    .layout { display: flex; min-height: 100vh; }
 
     /* ── Sidebar ── */
     .sidebar {
@@ -281,15 +281,17 @@
     .hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
     .hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
     .hamburger:hover { border-color: var(--accent); }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
-      z-index: 48; backdrop-filter: blur(2px); cursor: pointer; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 9998; cursor: pointer; }
     .sidebar-overlay.open { display: block; }
     /* ── Responsive ── */
     @media (max-width: 900px) {
       .hamburger { display: flex; }
       .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100vh;
-        z-index: 50; box-shadow: 4px 0 30px rgba(0,0,0,.6); width: 240px; }
-      .sidebar.open { display: flex; flex-direction: column; }
+        z-index: 9999; box-shadow: 6px 0 40px rgba(0,0,0,.8); width: 260px;
+        background: var(--bg2) !important; overflow-y: auto; }
+      .sidebar.open { display: flex !important; flex-direction: column; animation: sidebarIn .2s ease; }
+      @keyframes sidebarIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
       .topbar { padding-left: 10px; position: relative; z-index: 10; }
       .controls-bar { position: relative; z-index: 10; }
       .content { grid-template-columns: 1fr; padding: 14px; }
@@ -326,17 +328,17 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.5</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.6</span></div>
         </div>
       </div>
     </div>
 
     <nav class="nav">
-      <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard"><span class="nav-icon">◉</span><span class="nav-label">Dashboard</span></div>
-      <div class="nav-item" onclick="showPage('settings')" data-page="settings"><span class="nav-icon">⚙</span><span class="nav-label">Einstellungen</span></div>
-      <div class="nav-item" onclick="showPage('history')" data-page="history"><span class="nav-icon">🗄</span><span class="nav-label">Verlauf</span></div>
-      <div class="nav-item" onclick="showPage('log')" data-page="log"><span class="nav-icon">≡</span><span class="nav-label">Aktivitätslog</span><span class="nav-badge" id="logBadge">0</span></div>
-      <div class="nav-item" onclick="showPage('stats')" data-page="stats"><span class="nav-icon">📊</span><span class="nav-label">Statistiken</span></div>
+      <div class="nav-item active" onclick="navClick('dashboard')" data-page="dashboard"><span class="nav-icon">◉</span><span class="nav-label">Dashboard</span></div>
+      <div class="nav-item" onclick="navClick('settings')" data-page="settings"><span class="nav-icon">⚙</span><span class="nav-label">Einstellungen</span></div>
+      <div class="nav-item" onclick="navClick('history')" data-page="history"><span class="nav-icon">🗄</span><span class="nav-label">Verlauf</span></div>
+      <div class="nav-item" onclick="navClick('log')" data-page="log"><span class="nav-icon">≡</span><span class="nav-label">Aktivitätslog</span><span class="nav-badge" id="logBadge">0</span></div>
+      <div class="nav-item" onclick="navClick('stats')" data-page="stats"><span class="nav-icon">📊</span><span class="nav-label">Statistiken</span></div>
       <a href="https://mediastarr.de/" target="_blank" style="text-decoration:none">
         <div class="nav-item" style="margin-top:4px;border-top:1px solid var(--border);padding-top:10px">
           <span class="nav-icon">🌐</span><span class="nav-label" style="font-size:11px">mediastarr.de</span>
@@ -371,7 +373,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.5</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.6</span></a></div>
     </div>
   </aside>
 
@@ -1139,8 +1141,8 @@ function showPage(name) {
   const pg = document.getElementById(`page-${name}`);
   if (pg) pg.style.display = 'grid';
   document.getElementById('pageTitle').textContent = t(name);
-  document.querySelectorAll('.nav-item').forEach((el,i) => {
-    el.className = 'nav-item' + (['dashboard','settings','history','log','stats'][i]===name ? ' active' : '');
+  document.querySelectorAll('.nav-item[data-page]').forEach(el => {
+    el.className = 'nav-item' + (el.dataset.page === name ? ' active' : '');
   });
   if (name === 'log') { document.getElementById('logBadge').textContent='0'; document.getElementById('logBadge').className='nav-badge'; }
   if (name === 'history') loadHistory();
@@ -2187,25 +2189,46 @@ function selectTimezone(tz) {
 }
 
 // Mobile sidebar
+// ── Mobile sidebar ────────────────────────────────────────────────────────
 let _sidebarOpen = false;
+
 function toggleSidebar(e) {
-  if (e) e.stopPropagation();
-  _sidebarOpen = !_sidebarOpen;
-  document.querySelector('.sidebar').classList.toggle('open', _sidebarOpen);
-  document.getElementById('sidebar-overlay').classList.toggle('open', _sidebarOpen);
-  document.getElementById('hamburger-btn').setAttribute('aria-expanded', String(_sidebarOpen));
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  _sidebarOpen ? closeSidebar() : openSidebar();
 }
+
+function openSidebar() {
+  _sidebarOpen = true;
+  document.querySelector('.sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+  document.getElementById('hamburger-btn').setAttribute('aria-expanded', 'true');
+}
+
 function closeSidebar() {
   _sidebarOpen = false;
   document.querySelector('.sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
   document.getElementById('hamburger-btn').setAttribute('aria-expanded', 'false');
 }
-// Close on overlay click
-document.getElementById('sidebar-overlay')?.addEventListener('click', closeSidebar);
-// Close sidebar when navigating on mobile
-document.querySelectorAll('.nav-item').forEach(el => {
-  el.addEventListener('click', () => { if (_sidebarOpen) setTimeout(closeSidebar, 150); });
+
+// navClick: navigate + close sidebar on mobile
+function navClick(page) {
+  showPage(page);
+  if (window.innerWidth <= 900 && _sidebarOpen) {
+    // Small delay so user sees the selection before sidebar closes
+    setTimeout(closeSidebar, 200);
+  }
+}
+
+// Overlay click closes sidebar
+document.getElementById('sidebar-overlay').addEventListener('click', function(e) {
+  e.stopPropagation();
+  closeSidebar();
+});
+
+// Prevent clicks inside sidebar from closing it
+document.querySelector('.sidebar').addEventListener('click', function(e) {
+  e.stopPropagation();
 });
 
 // Init
