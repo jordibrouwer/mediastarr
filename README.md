@@ -160,6 +160,17 @@ GET  /api/timezones                # Available timezones
 | 🕐 Zeitzone | Konfigurierbar — alle Timestamps lokal |
 | 🔒 Sicher | Whitelists, Input-Validierung, API-Keys nie im State |
 
+## 🔒 Warum nicht Huntarr oder seine Forks?
+
+Im Februar 2026 deckte ein öffentliches Sicherheitsaudit von Huntarr v9.4.2 **21 Schwachstellen auf — 7 kritisch, 6 hoch**. Die schwerwiegendste: Eine einzelne unauthentifizierte HTTP-Anfrage gab jeden API-Key jeder verbundenen *arr-App im Klartext zurück — ohne Login. GitHub-Repo, Subreddit und Discord wurden kurz danach gelöscht.
+
+Community-Forks sind entstanden — sie erben aber dieselbe Codebasis. Wie der Sicherheitsforscher schrieb: *„21 Findings zu fixen behebt nicht den Prozess, der sie erzeugt hat."*
+
+Mediastarr wurde unabhängig, von Grund auf neu gebaut. Siehe Vergleichstabelle im englischen Abschnitt.
+
+> Sicherheitsbefunde: [github.com/rfsbraz/huntarr-security-review](https://github.com/rfsbraz/huntarr-security-review) (Feb. 2026).
+
+
 ## 🚀 Schnellstart
 
 ```bash
@@ -292,6 +303,37 @@ GET  /api/timezones                # Verfügbare Zeitzonen
 - SQLite statt JSON für Suchverlauf
 - Cooldown in Tagen
 - 3 Themes (Dark / Light / OLED)
+
+
+## 🔒 Why not Huntarr or its forks?
+
+In February 2026, a public security audit of Huntarr v9.4.2 uncovered **21 vulnerabilities — 7 critical, 6 high**. The most severe finding: a single unauthenticated HTTP request returned every API key for every connected *arr application in cleartext. No login required. The project's GitHub repository, subreddit and Discord were taken offline shortly after.
+
+```bash
+# Anyone on your network could run this against a stock Huntarr install:
+curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: application/json"   -d '{"proxy_enabled": true}'
+# → Full config dump: Sonarr API key, Radarr API key, Prowlarr API key — all in cleartext
+```
+
+Community forks have appeared, but they inherit the same codebase. As the security researcher noted: *"Fixing 21 specific findings doesn't fix the process that created them."*
+
+Mediastarr was built independently from scratch — with security as a foundation, not an afterthought:
+
+| | Huntarr / Forks | Mediastarr |
+|---|---|---|
+| **Project status** | ✗ Abandoned / unmaintained forks | ✓ Actively maintained |
+| **Unauthenticated API access** | ✗ All endpoints without login | ✓ Auth on all write routes |
+| **API keys in responses** | ✗ Returned in cleartext | ✓ Never exposed in state |
+| **CSRF protection** | ✗ None | ✓ Token on all write requests |
+| **Config file permissions** | Default container permissions | ✓ chmod 0600 on every save |
+| **Scope** | Sonarr, Radarr, Lidarr, Readarr, Whisparr… | ✓ Sonarr + Radarr — focused |
+| **IMDb filter** | — | ✓ |
+| **Target resolution filter** | — | ✓ |
+| **Discord notifications** | ✓ via Apprise | ✓ 6 events, native webhook |
+| **Language** | English only | ✓ DE + EN, full UI & logs |
+
+> Security findings from the public audit: [github.com/rfsbraz/huntarr-security-review](https://github.com/rfsbraz/huntarr-security-review) (Feb 2026).
+
 
 ---
 
