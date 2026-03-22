@@ -270,20 +270,25 @@
     .activity-heatmap { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
     .heat-cell { aspect-ratio:1; border-radius:3px; background:var(--border); transition:background 0.3s; cursor:default; }
     /* ── Mobile Sidebar ── */
-    .hamburger { display: none; width: 36px; height: 36px; border-radius: 8px;
+    .hamburger {
+      display: none; width: 38px; height: 38px; border-radius: 8px;
       background: var(--surface); border: 1px solid var(--border2); cursor: pointer;
-      flex-direction: column; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; }
-    .hamburger span { display: block; width: 16px; height: 1.5px; background: var(--text); border-radius: 2px; transition: all .2s; }
-    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6);
-      z-index: 49; backdrop-filter: blur(2px); }
+      flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+      flex-shrink: 0; position: relative; z-index: 60; pointer-events: all;
+    }
+    .hamburger span { display: block; width: 16px; height: 2px; background: var(--text); border-radius: 2px; transition: all .2s; }
+    .hamburger:hover { border-color: var(--accent); }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      z-index: 48; backdrop-filter: blur(3px); }
     .sidebar-overlay.open { display: block; }
     /* ── Responsive ── */
     @media (max-width: 900px) {
       .hamburger { display: flex; }
-      .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
-        box-shadow: 4px 0 30px rgba(0,0,0,.5); }
-      .sidebar.open { display: flex; }
-      .topbar { padding-left: 10px; }
+      .sidebar { display: none; position: fixed; top: 0; left: 0; height: 100vh;
+        z-index: 50; box-shadow: 4px 0 30px rgba(0,0,0,.6); width: 240px; }
+      .sidebar.open { display: flex; flex-direction: column; }
+      .topbar { padding-left: 10px; position: relative; z-index: 10; }
+      .controls-bar { position: relative; z-index: 10; }
       .content { grid-template-columns: 1fr; padding: 14px; }
       .service-cards { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
@@ -318,7 +323,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.1</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.2</span></div>
         </div>
       </div>
     </div>
@@ -341,6 +346,13 @@
           <span style="font-size:9px;color:var(--muted)">↗</span>
         </div>
       </a>
+      <a href="https://buymeacoffee.com/kroeberd" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+        <div class="nav-item" style="background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.2);border-radius:8px;margin:4px 6px 0;padding:7px 10px">
+          <span style="font-size:14px">☕</span>
+          <span class="nav-label" style="font-size:11px;color:#f5c842">Buy me a coffee</span>
+          <span style="font-size:9px;color:var(--muted)">↗</span>
+        </div>
+      </a>
     </nav>
 
     <div class="sidebar-bottom">
@@ -356,7 +368,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.1</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.2</span></a></div>
     </div>
   </aside>
 

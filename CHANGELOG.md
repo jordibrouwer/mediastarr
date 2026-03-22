@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.3.2]
+
+### Changed
+- Version bump: all references updated to v6.3.2
+- Code audit: 19/19 functional tests passed — all features verified
+
+### Verified
+- Per-app IMDb and resolution filters (Sonarr/Radarr independent)
+- Mobile sidebar with hamburger menu and overlay
+- Version check against GitHub Releases API with Discord notification
+- Discord stats enriched with missing/upgrade/cycle counts
+- All 18+ API routes auth-protected
+- DB WAL mode, CYCLE_LOCK, interval minutes conversion all intact
+
 ## [6.3.1]
 
 ### Added
