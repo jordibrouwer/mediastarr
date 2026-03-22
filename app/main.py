@@ -206,7 +206,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        "Mediastarr v6.1.1 gestartet",
+        "app_start":        "Mediastarr v6.1.2 gestartet",
         "setup_required":   "Einrichtung erforderlich – http://localhost:7979/setup",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -220,7 +220,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "app_start":        "Mediastarr v6.1.1 started",
+        "app_start":        "Mediastarr v6.1.2 started",
         "setup_required":   "Setup required – http://localhost:7979/setup",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -1175,7 +1175,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": "v6.1.1", "inline": True},
+        {"name": f_ver,     "value": "v6.1.2", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": enabled_text, "inline": False},
     ]
@@ -1199,13 +1199,29 @@ def api_discord_stats_now():
 
 
 # ─── Startup ──────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
+_started = False
+_startup_lock = threading.Lock()
+
+def _do_startup():
+    """Run once on first request — works with both gunicorn and python direct."""
+    global _started
+    with _startup_lock:
+        if _started:
+            return
+        _started = True
     log_act("System", msg("app_start"), "", "info")
     if CONFIG.get("setup_complete"):
         _ensure_inst_stats(); ping_all()
         if CONFIG.get("auto_start", True):
-            hunt_thread = threading.Thread(target=hunt_loop, daemon=True); hunt_thread.start()
+            global hunt_thread
+            hunt_thread = threading.Thread(target=hunt_loop, daemon=True)
+            hunt_thread.start()
             log_act("System", msg("auto_start"), "", "info")
     else:
         log_act("System", msg("setup_required"), "", "warning")
-    app.run(host="0.0.0.0", port=7979, debug=False)
+@app.before_request
+def _before_request():
+    _do_startup()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=7979, debug=False, use_reloader=False)

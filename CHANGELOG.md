@@ -1,13 +1,20 @@
 # Changelog
 
+## [6.1.2]
+
+### Fixed
+- Settings → Instances tab: `ReferenceError: isDE4 is not defined` caused silent crash — list never rendered
+- `isDE4` was defined in `renderInstanceCards()` (dashboard) but missing in `renderSettingsInstances()` (settings)
+- Previous fix in v6.1.1 moved the re-render call outside the `fetchState` function body (dead code) — corrected
+
 ## [6.1.1]
 
 ### Fixed
-- Settings → Instances tab: list showed "Lade..." permanently and never rendered instances
-- Root cause 1: `renderSettingsInstances()` returned early when `appState.instances` was undefined (race condition on first load)
-- Root cause 2: `showPage('settings')` never called `renderSettingsInstances()` — only `switchTab('instances')` did
-- Root cause 3: No re-render triggered when `fetchState()` completed while the Instances tab was open
-- Fixes: loading placeholder instead of silent bail-out, `showPage` now renders the active tab, `fetchState` re-renders the list when tab is visible, `switchTab` retries once if appState not ready yet
+- **Critical (Unraid):** Container started but hunt loop never ran under gunicorn — startup code was inside `if __name__ == "__main__"` block which gunicorn never executes. Moved to `@app.before_request` hook with thread-safe lock so it runs correctly on first request regardless of how the server is started
+- Settings → Instances tab: list showed "Lade..." permanently — `isDE4` variable used in `renderSettingsInstances()` was not defined in that function scope (defined in `renderInstanceCards()` instead), causing a silent `ReferenceError`
+- Settings → Instances tab: re-render hook was placed outside `fetchState()` function body (dead code)
+- `showPage('settings')` never triggered instance list render — only `switchTab('instances')` did
+- `switchTab('instances')` now retries render if `appState` not yet populated
 
 ## [6.1.0]
 
