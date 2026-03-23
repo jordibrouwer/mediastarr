@@ -1,5 +1,30 @@
 # Changelog
 
+## [6.3.8] — 2026-03-22
+
+### Added
+- Action banner: non-blocking confirm/message bar replaces `window.confirm()` dialogs for delete, clear history, reset setup
+- `escHtml()` helper in frontend — XSS protection in all dynamic HTML rendering (instance names, titles, log entries)
+- `defaultArrUrl()` + `syncNewInstUrlHint()` — new instance URL field auto-fills with the correct host:port based on the browser URL
+- Settings → Instances tab: auto-refreshes instance list on tab switch
+
+### Improved
+- Instance cards: offline instances show the specific error reason instead of just "offline" (e.g. "Host not found", "Timed out", "Authentication failed")
+- Page navigation: `fetchState()` called on every page/tab switch to keep data fresh
+- `renderHistory()`, `renderInstanceCards()`: all user-data passed through `escHtml()`
+
+### Fixed
+- `get_history()` in db.py: `cutoff` value now passed as SQL parameter instead of f-string interpolation (SQL injection hardening)
+- `_detect_local_tz()`: 4-fallback OS timezone detection (TZ env → `ZoneInfo("localtime")` → `/etc/timezone` → `/etc/localtime` symlink) — improves timezone auto-detection in Docker containers
+- `ArrClient.ping()` returns structured error detail via `summarize_ping_error()` — all ping callers updated
+
+## [6.3.8] — 2026-03-22
+
+### Fixed
+- Upgrade search toggle (Issue #9): toggling "Search upgrades" off did not persist — the setting reverted to On after the next state refresh because no Save was triggered. Toggle now saves immediately on click, same behaviour as the Dry Run toggle.
+- Upgrade toggle now shows a hint "Change is saved immediately" (DE + EN)
+- Timezone UI (Issue #10): after saving a timezone change, the visible search input showed "UTC" again on next settings open — the hidden `cfg-timezone` field was synced from `fetchState` but the visible text input was not, making it look like the save had no effect (config.json was actually correct). Both fields are now synced together on every state refresh.
+
 ## [6.3.7] — 2026-03-22
 
 ### Changed

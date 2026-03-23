@@ -246,7 +246,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        "Mediastarr v6.3.7 gestartet",
+        "app_start":        "Mediastarr v6.3.8 gestartet",
         "setup_required":   "Einrichtung erforderlich – {setup_url}",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -260,7 +260,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "app_start":        "Mediastarr v6.3.7 started",
+        "app_start":        "Mediastarr v6.3.8 started",
         "setup_required":   "Setup required – {setup_url}",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -299,11 +299,52 @@ def fresh_inst_stats() -> dict:
             "upgrades_searched":0,"skipped_cooldown":0,"skipped_daily":0,
             "status":"unknown","version":"?","skipped_unreleased":0}
 
+
+def _detect_local_tz() -> str:
+    """Return the host OS IANA timezone name with 4 fallbacks."""
+    # 1. Honour an explicit TZ environment variable if set
+    env_tz = os.environ.get("TZ", "").strip()
+    if env_tz:
+        try:
+            zoneinfo.ZoneInfo(env_tz)
+            return env_tz
+        except Exception:
+            pass
+    # 2. Python 3.11+ exposes the local zone directly
+    try:
+        local = zoneinfo.ZoneInfo("localtime")
+        if local.key:
+            return local.key
+    except Exception:
+        pass
+    # 3. Read /etc/timezone (Debian/Ubuntu containers)
+    try:
+        tz_name = Path("/etc/timezone").read_text().strip()
+        if tz_name:
+            zoneinfo.ZoneInfo(tz_name)
+            return tz_name
+    except Exception:
+        pass
+    # 4. Resolve /etc/localtime symlink to IANA name (most Linux/macOS)
+    try:
+        lt = Path("/etc/localtime").resolve()
+        parts = lt.parts
+        zi_idx = next((i for i, p in enumerate(parts) if p == "zoneinfo"), None)
+        if zi_idx is not None:
+            tz_name = "/".join(parts[zi_idx + 1:])
+            zoneinfo.ZoneInfo(tz_name)
+            return tz_name
+    except Exception:
+        pass
+    return "UTC"
+
+_OS_TIMEZONE = _detect_local_tz()
+
 def now_local() -> datetime:
     """Current time in configured timezone."""
-    tz_name = CONFIG.get("timezone", "UTC")
+    tz_name = CONFIG.get("timezone", _OS_TIMEZONE)
     try: tz = zoneinfo.ZoneInfo(tz_name)
-    except Exception: tz = zoneinfo.ZoneInfo("UTC")
+    except Exception: tz = zoneinfo.ZoneInfo(_OS_TIMEZONE)
     return datetime.now(tz)
 
 def fmt_time(dt: datetime) -> str:
@@ -321,7 +362,7 @@ def _year(val):
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.3.7"
+_CURRENT_VERSION = "v6.3.8"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -557,6 +598,27 @@ def e405(e): return jsonify({"ok":False,"error":"Methode nicht erlaubt"}),405
 def e500(e): logger.error(f"500:{e}"); return jsonify({"ok":False,"error":"Interner Serverfehler"}),500
 
 # ─── *arr API Client ──────────────────────────────────────────────────────────
+
+def summarize_ping_error(raw: str) -> str:
+    """Turn a raw exception string into a short user-readable message."""
+    text = str(raw or "").strip()
+    lower = text.lower()
+    if not text: return "Connection failed"
+    if "401" in lower or "403" in lower or "unauthorized" in lower or "forbidden" in lower:
+        return "Authentication failed"
+    if "404" in lower: return "API endpoint not found"
+    if "name or service not known" in lower or "nodename nor servname" in lower:
+        return "Host not found"
+    if "timed out" in lower or "timeout" in lower: return "Timed out"
+    if "failed to establish a new connection" in lower or "connection refused" in lower:
+        return "Connection refused"
+    if "max retries exceeded" in lower or "connectionpool" in lower:
+        return "Host unreachable"
+    if "ssl" in lower or "certificate" in lower: return "TLS/SSL error"
+    compact = re.sub(r"\s+", " ", text)
+    if ":" in compact: compact = compact.split(":", 1)[0].strip()
+    return compact[:60] or "Connection failed"
+
 class ArrClient:
     def __init__(self, name:str, url:str, api_key:str):
         self.name = name; self.url = url.rstrip("/")
@@ -578,8 +640,9 @@ class ArrClient:
     def ping(self):
         try:
             d = self.get("system/status")
-            return True, str(d.get("version","?"))[:20]
-        except Exception as e: return False, str(e)[:200]
+            return True, str(d.get("version","?"))[:20], ""
+        except Exception as e:
+            return False, "?", summarize_ping_error(str(e)[:200])
 
 # ─── Activity Log ─────────────────────────────────────────────────────────────
 def log_act(service:str, action:str, item:str, status:str="info"):
@@ -905,10 +968,11 @@ def ping_all():
         stats = STATE["inst_stats"].setdefault(inst["id"], fresh_inst_stats())
         if not inst.get("enabled") or not inst.get("api_key"):
             stats["status"] = "disabled"; continue
-        ok, ver = ArrClient(inst["name"], inst["url"], inst["api_key"]).ping()
+        ok, ver, detail = ArrClient(inst["name"], inst["url"], inst["api_key"]).ping()
         prev_status = stats.get("status","unknown")
-        stats["status"]  = "online" if ok else "offline"
-        stats["version"] = ver
+        stats["status"]       = "online" if ok else "offline"
+        stats["version"]      = ver
+        stats["status_detail"] = "" if ok else detail
         # Notify only on transition online→offline
         if not ok and prev_status == "online":
             lang  = CONFIG.get("language","de")
@@ -1071,8 +1135,8 @@ def api_setup_ping():
     ok, err = validate_api_key(key)
     if not ok: return jsonify({"ok":False,"msg":f"API Key: {err}"}),400
     try:
-        ok, ver = ArrClient(itype, url, key).ping()
-        return jsonify({"ok":ok,"version":ver})
+        ok, ver, detail = ArrClient(itype, url, key).ping()
+        return jsonify({"ok":ok,"version":ver,"msg":detail})
     except: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
 
 @app.route("/api/setup/complete", methods=["POST"])
@@ -1196,10 +1260,12 @@ def api_instances_ping(inst_id:str):
     if not inst: return jsonify({"ok":False,"error":"Nicht gefunden"}),404
     if not inst.get("api_key"): return jsonify({"ok":False,"msg":"Kein API Key"})
     try:
-        ok,ver = ArrClient(inst["name"],inst["url"],inst["api_key"]).ping()
-        STATE["inst_stats"].setdefault(inst_id,fresh_inst_stats())["status"] = "online" if ok else "offline"
-        STATE["inst_stats"][inst_id]["version"] = ver
-        return jsonify({"ok":ok,"version":ver})
+        ok, ver, detail = ArrClient(inst["name"],inst["url"],inst["api_key"]).ping()
+        stats = STATE["inst_stats"].setdefault(inst_id,fresh_inst_stats())
+        stats["status"] = "online" if ok else "offline"
+        stats["version"] = ver
+        stats["status_detail"] = "" if ok else detail
+        return jsonify({"ok":ok,"version":ver,"msg":detail})
     except: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
 
 # ── Main API ──────────────────────────────────────────────────────────────────
@@ -1419,7 +1485,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": "v6.3.7", "inline": True},
+        {"name": f_ver,     "value": "v6.3.8", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": enabled_text, "inline": False},
     ]

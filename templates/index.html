@@ -307,6 +307,14 @@
       #page-history .card { overflow-x: auto; }
       .hist-row { min-width: 500px; }
     }
+    /* ── Action Banner ── */
+    .action-banner { display: none; align-items: center; gap: 10px; padding: 9px 18px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; font-size: 12px; }
+    .action-banner.visible { display: flex; }
+    .action-banner.success { border-color: rgba(61,230,139,.3); background: rgba(61,230,139,.07); color: var(--green); }
+    .action-banner.error { border-color: rgba(255,77,77,.3); background: rgba(255,77,77,.07); color: var(--red); }
+    .action-banner.warning { border-color: rgba(245,200,66,.3); background: rgba(245,200,66,.07); color: var(--yellow); }
+    .action-banner.info { border-color: rgba(77,156,255,.3); background: rgba(77,156,255,.07); color: var(--blue); }
   </style>
 </head>
 <body>
@@ -333,7 +341,7 @@
         </svg>
         <div>
           <div class="logo-name">Media<span>starr</span></div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.7</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.3.8</span></div>
         </div>
       </div>
     </div>
@@ -378,7 +386,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.7</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.3.8</span></a></div>
     </div>
   </aside>
 
@@ -401,6 +409,10 @@
         <span id="server-time">—</span> <span id="server-tz" style="color:var(--muted);font-size:9px"></span>
       </div>
       <div class="pill"><div class="pill-dot" id="statusDot"></div><span id="statusLabel">—</span></div>
+    </div>
+    <div id="action-banner" class="action-banner">
+      <div id="action-banner-copy" style="font-size:12px;flex:1;color:inherit"></div>
+      <div id="action-banner-actions" style="display:flex;gap:6px;flex-shrink:0"></div>
     </div>
     <div class="controls-bar">
       <button class="btn btn-start" onclick="control('start')">▶ <span id="lbl-start">Start</span></button>
@@ -513,9 +525,10 @@
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_upgrades">Upgrades suchen</label>
                 <div class="toggle-row">
-                  <div class="toggle on" id="tog-upgrades" onclick="toggleCfg2('upgrades')"></div>
+                  <div class="toggle on" id="tog-upgrades" onclick="toggleCfg2('upgrades', true)"></div>
                   <span class="toggle-label" id="lab-upgrades">An</span>
                 </div>
+                <div class="form-hint" data-i18n="hint_upgrades">Änderung wird sofort gespeichert.</div>
               </div>
             </div>
           </div>
@@ -909,7 +922,7 @@ const T = {
         lbl_max:'Max. Searches pro Lauf', lbl_daily:'Tageslimit (0 = unbegrenzt)',
         lbl_cooldown:'Cooldown (Tage)', lbl_timeout:'API Timeout (s)',
         lbl_search_behavior:'Suchverhalten', lbl_sonarr_mode:'Sonarr Suchmodus',
-        lbl_upgrades:'Upgrades suchen', lbl_jitter:'Jitter Max (Sekunden)',
+        lbl_upgrades:'Upgrades suchen', hint_upgrades:'Änderung wird sofort gespeichert.', lbl_jitter:'Jitter Max (Sekunden)',
         lbl_interval_adv:'Intervall & Jitter', lbl_system:'System', lbl_timezone:'Zeitzone', hint_timezone:'Aktuelle Zeitzone. Alle IANA-Zeitzonen verfügbar — tippe zum Suchen.',
         lbl_manage_instances:'Instanzen verwalten', btn_add_instance:'+ Hinzufügen',
         opt_episode:'Episode (Standard)', opt_season:'Staffel', opt_series:'Ganze Serie',
@@ -956,7 +969,7 @@ const T = {
         lbl_max:'Max searches per run', lbl_daily:'Daily limit (0 = unlimited)',
         lbl_cooldown:'Cooldown (days)', lbl_timeout:'API timeout (s)',
         lbl_search_behavior:'Search behavior', lbl_sonarr_mode:'Sonarr search mode',
-        lbl_upgrades:'Search upgrades', lbl_jitter:'Jitter max (s)',
+        lbl_upgrades:'Search upgrades', hint_upgrades:'Change is saved immediately.', lbl_jitter:'Jitter max (s)',
         lbl_interval_adv:'Interval & jitter', lbl_system:'System', lbl_timezone:'Timezone', hint_timezone:'Current timezone. All IANA timezones available — type to search.',
         lbl_manage_instances:'Manage instances', btn_add_instance:'+ Add instance',
         opt_episode:'Episode (default)', opt_season:'Season', opt_series:'Full series',
@@ -1146,9 +1159,10 @@ function showPage(name) {
   document.querySelectorAll('.nav-item[data-page]').forEach(el => {
     el.className = 'nav-item' + (el.dataset.page === name ? ' active' : '');
   });
-  if (name === 'log') { document.getElementById('logBadge').textContent='0'; document.getElementById('logBadge').className='nav-badge'; }
-  if (name === 'history') loadHistory();
+  if (name === 'log') { document.getElementById('logBadge').textContent='0'; document.getElementById('logBadge').className='nav-badge'; fetchState(); }
+  if (name === 'history') { loadHistory(); fetchState(); }
   if (name === 'stats') loadStats();
+  if (name === 'settings') fetchState();
   if (name === 'settings') {
     // Render whichever tab is currently active
     const activeTab = document.querySelector('.tab-btn.active');
@@ -1340,8 +1354,16 @@ function updateUI() {
     if (_tResEl && c.upgrade_target_resolution !== undefined) _tResEl.value = c.upgrade_target_resolution || '';
     const modeEl = el('cfg-sonarr-mode');
     if (modeEl && document.activeElement !== modeEl) modeEl.value = c.sonarr_search_mode || 'season';
-    const tzEl = el('cfg-timezone');
-    if (tzEl && document.activeElement !== tzEl) tzEl.value = c.timezone || 'UTC';
+    // Timezone: sync hidden value, visible search input, and display
+    const _tz = c.timezone || 'UTC';
+    const tzHidden  = document.getElementById('cfg-timezone');
+    const tzSearch  = document.getElementById('cfg-timezone-search');
+    const tzDisplay = document.getElementById('tz-current-display');
+    if (tzHidden && document.activeElement !== tzSearch) {
+      tzHidden.value = _tz;
+      if (tzSearch) tzSearch.value = _tz;
+      if (tzDisplay) tzDisplay.textContent = _tz;
+    }
     toggleStates2.upgrades = c.search_upgrades !== false;
     const togUp = el('tog-upgrades'), labUp = el('lab-upgrades');
     if (togUp) togUp.className = 'toggle' + (toggleStates2.upgrades ? ' on' : '');
@@ -1403,7 +1425,11 @@ function renderInstanceCards(instances, instStats) {
               <div style="width:30px;height:30px;border-radius:7px;background:${iconBg};display:flex;align-items:center;justify-content:center;font-size:15px">${isSonarr?'📺':'🎬'}</div>
               <div>
                 <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:700">${inst.name}</div>
-                <div style="font-size:10px;color:var(--muted)">${ver}</div>
+                <div style="font-size:10px;color:var(--muted)">${
+                  stats.status === 'offline' && stats.status_detail
+                  ? escHtml(stats.status_detail)
+                  : escHtml(ver)
+                }</div>
               </div>
             </div>
             <div class="${chipClass}">${chipLabel}</div>
@@ -1428,6 +1454,48 @@ function renderLog(entries, containerId) {
       <span class="log-action ${e.status}" title="${txt}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${txt}</span>
     </div>`;
   }).join('');
+}
+
+// ── Action Banner (non-blocking confirmations) ────────────────────────────
+let _pendingConfirm = null;
+let _bannerTimer = null;
+
+function _getBanner() { return document.getElementById('action-banner'); }
+
+function clearActionBanner() {
+  const b = _getBanner(); if (!b) return;
+  b.className = 'action-banner';
+  const copy = document.getElementById('action-banner-copy');
+  const acts = document.getElementById('action-banner-actions');
+  if (copy) copy.textContent = '';
+  if (acts) acts.innerHTML = '';
+  _pendingConfirm = null;
+  if (_bannerTimer) { clearTimeout(_bannerTimer); _bannerTimer = null; }
+}
+
+function showActionMessage(message, tone = 'info', timeout = 5000) {
+  const b = _getBanner(); if (!b) { console.log(message); return; }
+  clearActionBanner();
+  b.className = `action-banner visible ${tone}`;
+  document.getElementById('action-banner-copy').textContent = message;
+  document.getElementById('action-banner-actions').innerHTML =
+    '<button class="btn" style="font-size:11px;border-color:var(--border2);color:var(--muted2)" onclick="clearActionBanner()">✕</button>';
+  if (timeout > 0) _bannerTimer = setTimeout(clearActionBanner, timeout);
+}
+
+function showActionConfirm(message, onConfirm) {
+  const b = _getBanner(); if (!b) { if (confirm(message)) onConfirm(); return; }
+  clearActionBanner();
+  _pendingConfirm = onConfirm;
+  b.className = 'action-banner visible warning';
+  document.getElementById('action-banner-copy').textContent = message;
+  document.getElementById('action-banner-actions').innerHTML =
+    '<button class="btn btn-stop" style="font-size:11px" onclick="_runConfirm()">Confirm</button>' +
+    '<button class="btn" style="font-size:11px;color:var(--muted2)" onclick="clearActionBanner()">Cancel</button>';
+}
+
+function _runConfirm() {
+  const fn = _pendingConfirm; clearActionBanner(); if (fn) fn();
 }
 
 function clearLog() {
@@ -1468,7 +1536,7 @@ async function saveConfig() {
 
     upgrade_target_resolution: el('cfg-target-res')?.value || '',
     search_upgrades:      toggleStates2.upgrades,
-    timezone:             el('cfg-timezone')?.value || 'UTC',
+    timezone:             (el('cfg-timezone')?.value && el('cfg-timezone').value !== 'UTC' ? el('cfg-timezone').value : el('cfg-timezone-search')?.value) || el('cfg-timezone')?.value || 'UTC',
     dry_run:              toggleStates.dry,
     theme:                currentTheme,
     language:             currentLang,
@@ -1538,11 +1606,11 @@ function renderHistory() {
     </div>` +
     filtered.map(h => `
     <div class="hist-row">
-      <span class="log-ts">${h.searched_at?.split('T')[1]?.slice(0,5)||'—'}</span>
+      <span class="log-ts">${escHtml(h.searched_at?.split('T')[1]?.slice(0,5)||'—')}</span>
       <span class="log-svc ${h.service}">${h.service}</span>
       <span style="font-size:10px;color:var(--muted2)">${h.item_type}</span>
       <span style="font-size:11px;color:var(--muted2);font-weight:600">${h.release_year||'—'}</span>
-      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${h.title}">${h.title||h.item_id}</span>
+      <span class="hist-title" title="${escHtml(String(h.title||h.item_id||'')).slice(0,120)}">${escHtml(String(h.title||h.item_id||''))}</span>
       <span class="${h.on_cooldown?'on-cooldown':'off-cooldown'}" style="font-size:10px">
         ${h.on_cooldown ? `🔒 ${isDE_h?'bis':'until'} ${h.expires_label}` : (isDE_h?'✓ Frei':'✓ Free')}
       </span>
@@ -1558,18 +1626,22 @@ async function confirmClear(target) {
   const msg = isDE_c
     ? `${label} löschen? Alle Items können sofort wieder gesucht werden.`
     : `Delete ${label}? All items can be searched again immediately.`;
-  if (!confirm(msg)) return;
-  const url = target==='all' ? '/api/history/clear' : `/api/history/clear/${target}`;
-  await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-  await loadHistory();
-  fetchState();
+  showActionConfirm(msg, async () => {
+    const url = target==='all' ? '/api/history/clear' : `/api/history/clear/${target}`;
+    await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    await loadHistory(); fetchState();
+    showActionMessage(isDE_c ? `${label} gelöscht.` : `Cleared ${label}.`, 'success');
+  });
 }
 
 async function resetSetup() {
-  const isDE_r = currentLang === 'de';
-  if (!confirm(isDE_r ? 'Setup wirklich zurücksetzen? Der Hunt wird gestoppt.' : 'Really reset setup? The hunt will be stopped.')) return;
-  await fetch('/api/setup/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-  window.location.href='/setup';
+  showActionConfirm(
+    currentLang === 'de' ? 'Setup zurücksetzen? Der Hunt wird gestoppt.' : 'Reset setup? The hunt will be stopped.',
+    async () => {
+      await fetch('/api/setup/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      window.location.href='/setup';
+    }
+  );
 }
 
 function renderSettingsInstances() {
@@ -1610,7 +1682,7 @@ function renderSettingsInstances() {
           <div style="width:28px;height:28px;border-radius:6px;background:${accentBg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ico}</div>
           <div style="flex:1;min-width:0">
             <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700">${inst.name}</div>
-            <div style="font-size:10px;color:var(--muted2)">${inst.type}${ver}</div>
+            <div style="font-size:10px;color:var(--muted2)">${inst.type}${ver ? " · "+escHtml(ver) : ""}</div>
           </div>
           <span class="status-chip ${st}" style="font-size:9px">${t(st)}</span>
           <div class="toggle ${en?'on':''}" onclick="toggleInst('${inst.id}',${!en})" title="${en ? t('on') : t('off')}" style="flex-shrink:0"></div>
@@ -1753,12 +1825,13 @@ async function deleteInst(id) {
   if (d.ok) { fetchState(); setTimeout(renderSettingsInstances, 300); }
 }
 
-function toggleCfg2(key) {
+function toggleCfg2(key, persist = false) {
   toggleStates2[key] = !toggleStates2[key];
   const tog = document.getElementById(`tog-${key}`);
   const lab = document.getElementById(`lab-${key}`);
   if (tog) tog.className = 'toggle' + (toggleStates2[key] ? ' on' : '');
   if (lab) lab.textContent = toggleStates2[key] ? t('on') : t('off');
+  if (persist) saveConfig();
 }
 
 /* ══ Stats ══ */
