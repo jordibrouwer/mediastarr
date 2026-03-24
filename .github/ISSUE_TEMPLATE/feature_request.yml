@@ -1,0 +1,60 @@
+name: Feature Request / Funktionsvorschlag
+description: Suggest a new feature / Schlage eine neue Funktion vor
+title: "[Feature]: "
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🇬🇧 English
+        Please fill out the form below.
+
+        ## 🇩🇪 Deutsch
+        Bitte fülle das folgende Formular aus.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description / Beschreibung
+      placeholder: |
+        EN: Describe your idea...
+        DE: Beschreibe deine Idee...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Ziel
+      placeholder: |
+        EN: What problem does this solve?
+        DE: Welches Problem wird damit gelöst?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Lösungsvorschlag
+      placeholder: |
+        EN: How could this be implemented?
+        DE: Wie könnte das umgesetzt werden?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives / Alternativen
+      placeholder: |
+        EN: Are there alternative approaches?
+        DE: Gibt es alternative Lösungsansätze?
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context / Weitere Informationen
+      placeholder: |
+        EN: Add any other context, screenshots, or links
+        DE: Weitere Infos, Screenshots oder Links hinzufügen
