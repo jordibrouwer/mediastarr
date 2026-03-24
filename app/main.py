@@ -238,7 +238,7 @@ def discord_send(event_type: str, title: str, description: str,
         return
 
     color = DISCORD_COLORS.get(event_type, DISCORD_COLORS["info"])
-    footer_parts = ["Mediastarr v6.4.0"]
+    footer_parts = ["Mediastarr v6.4.1"]
     if instance_name: footer_parts.append(instance_name)
     if footer_extra:  footer_parts.append(footer_extra)
     footer_text = "  ·  ".join(footer_parts)

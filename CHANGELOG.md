@@ -1,3 +1,5 @@
+# Changelog
+
 ## [v6.4.1] — 2026-03-24
 
 ### Added
@@ -24,8 +26,6 @@
 ### Security
 - All 50 audit checks pass (5 flagged were confirmed false-positives: f-string in `get_history` only interpolates whitelist-built `WHERE` clause, not user input; `api_key` in `api_state` is the strip filter not an exposure)
 - Import endpoint: validates type against `ALLOWED_TYPES` whitelist, runs `validate_name()` on all instance names, enforces 512 KB file cap, merges over DEFAULT_CONFIG (no raw overwrite)
-
-# Changelog
 
 ## [v6.4.0] — 2026-03-24
 

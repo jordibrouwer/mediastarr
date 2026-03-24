@@ -134,11 +134,11 @@ Settings → **Discord** tab:
 
 | Dashboard | Settings | Discord |
 |:---:|:---:|:---:|
-| ![Dashboard](static/screen_dashboard.png) | ![Settings](static/screen_settings.png) | ![Discord](static/screen_discord.png) |
+| ![Dashboard](static/screen_dashboard_en.png) | ![Settings](static/screen_settings_en.png) | ![Discord](static/screen_discord_en.png) |
 
 | History | DC Notifications | Console Logger |
 |:---:|:---:|:---:|
-| ![History](static/screen_history.png) | ![Notify](static/screen_notify_missing.png) | ![Console](static/screen_console.png) |
+| ![History](static/screen_history_en.png) | ![Notify](static/screen_notify_missing_en.png) | ![Console](static/screen_console_en.png) |
 
 ## 🗺️ Roadmap / Ideas
 
@@ -260,6 +260,16 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 - [ ] Pro-Instanz Tageslimits
 - [ ] Konfiguration exportieren/importieren
 - [ ] Read-only-API-Modus (kein Auth für `/api/state`)
+
+## 📸 Screenshots
+
+| Dashboard | Einstellungen | Discord |
+|:---:|:---:|:---:|
+| ![Dashboard](static/screen_dashboard_de.png) | ![Einstellungen](static/screen_settings_de.png) | ![Discord](static/screen_discord_de.png) |
+
+| Verlauf | DC Benachrichtigungen | Console Logger |
+|:---:|:---:|:---:|
+| ![Verlauf](static/screen_history_de.png) | ![Benachrichtigungen](static/screen_notify_missing_de.png) | ![Console](static/screen_console_de.png) |
 
 ---
 

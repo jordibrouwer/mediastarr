@@ -333,9 +333,9 @@ span[data-lang].show{display:inline}
 
 <!-- SCREENSHOTS FLIPCHART -->
 <div id="screenshots" style="padding:0 5vw 100px;max-width:1200px;margin:0 auto">
-  <div class="section-label reveal" style="text-align:center">v6.4.0</div>
+  <div class="section-label reveal" style="text-align:center">v6.4.1</div>
   <h2 class="section-title reveal" style="text-align:center"><span data-de="So sieht es aus." data-en="See it in action.">See it in action.</span></h2>
-  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.0-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.0 interface — not a marketing mockup.">Real screenshots of the v6.4.0 interface — not a marketing mockup.</span></p>
+  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.1-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.1 interface — not a marketing mockup.">Real screenshots of the v6.4.1 interface — not a marketing mockup.</span></p>
 
   <div class="reveal" style="position:relative">
     <!-- Tab nav -->
@@ -361,7 +361,7 @@ span[data-lang].show{display:inline}
       </div>
       <!-- Screenshot image -->
       <div style="position:relative;overflow:hidden;background:var(--bg);aspect-ratio:16/10">
-        <img id="fc-img" src="./static/screen_dashboard.png" alt="Mediastarr Dashboard"
+        <img id="fc-img" src="./static/screen_dashboard_de.png" alt="Mediastarr Dashboard"
           style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:opacity .35s ease">
         <!-- Caption overlay -->
         <div id="fc-cap" style="position:absolute;bottom:0;left:0;right:0;padding:14px 22px 16px;background:linear-gradient(transparent,rgba(8,9,13,.92));display:flex;align-items:flex-end;gap:14px">
@@ -734,56 +734,56 @@ function setLang(lang) {
 // ── Flipchart / Screenshot carousel ────────────────────────────────────────
 const FC_SLIDES = [
   {
-    img:   './static/screen_dashboard.png',
+    img:   {de:'./static/screen_dashboard_de.png', en:'./static/screen_dashboard_en.png'},
     url:   'mediastarr:7979',
     title: {en:'Dashboard',               de:'Dashboard'},
     sub:   {en:'Live status, instance cards, activity log and daily limit at a glance.',
             de:'Live-Status, Instanzkarten, Aktivitätslog und Tageslimit auf einen Blick.'},
   },
   {
-    img:   './static/screen_settings.png',
+    img:   {de:'./static/screen_settings_de.png', en:'./static/screen_settings_en.png'},
     url:   'mediastarr:7979/settings',
     title: {en:'Settings — General tab',  de:'Einstellungen — Allgemein'},
     sub:   {en:'Intervals, limits, global IMDb filter, timezone and dry-run mode.',
             de:'Intervalle, Limits, globaler IMDb-Filter, Zeitzone und Dry-Run-Modus.'},
   },
   {
-    img:   './static/screen_sonarr.png',
+    img:   {de:'./static/screen_sonarr_de.png', en:'./static/screen_sonarr_en.png'},
     url:   'mediastarr:7979/settings → Sonarr',
     title: {en:'Settings — Sonarr tab',   de:'Einstellungen — Sonarr-Tab'},
     sub:   {en:'Per-instance search mode, IMDb rating, target resolution and instance management.',
             de:'Suchmodus, IMDb-Bewertung, Zielauflösung und Instanzverwaltung — nur für Sonarr.'},
   },
   {
-    img:   './static/screen_history.png',
+    img:   {de:'./static/screen_history_de.png', en:'./static/screen_history_en.png'},
     url:   'mediastarr:7979/history',
     title: {en:'History (SQLite)',         de:'Verlauf (SQLite)'},
     sub:   {en:'Full date+time stamps, filter by service, cooldown status, and search count.',
             de:'Vollständige Datum+Uhrzeit, Filter nach Service, Cooldown-Status und Suchanzahl.'},
   },
   {
-    img:   './static/screen_discord.png',
+    img:   {de:'./static/screen_discord_de.png', en:'./static/screen_discord_en.png'},
     url:   'mediastarr:7979/settings → Discord',
     title: {en:'Discord Webhook Setup',     de:'Discord Webhook-Einrichtung'},
     sub:   {en:'Step-by-step webhook guide, 6 event types each with live message preview, show/hide URL field.',
             de:'Schritt-für-Schritt Webhook-Anleitung, 6 Event-Typen mit Live-Nachrichten-Preview, URL einblenden.'},
   },
   {
-    img:   './static/screen_notify_missing.png',
+    img:   {de:'./static/screen_notify_missing_de.png', en:'./static/screen_notify_missing_en.png'},
     url:   'Discord — #mediastarr-alerts',
     title: {en:'Discord — Missing & Upgrade',   de:'Discord — Fehlend & Upgrade'},
     sub:   {en:'Rich embeds with poster, fanart/backdrop, IMDb/TVDB/TMDB links, ratings, genres and runtime.',
             de:'Reiche Embeds mit Poster, Fanart/Backdrop, IMDb/TVDB/TMDB-Links, Bewertungen, Genres und Laufzeit.'},
   },
   {
-    img:   './static/screen_notify_system.png',
+    img:   {de:'./static/screen_notify_system_de.png', en:'./static/screen_notify_system_en.png'},
     url:   'Discord — #stats-and-system',
     title: {en:'Discord — Stats, Cooldown & Offline', de:'Discord — Statistiken, Cooldown & Offline'},
     sub:   {en:'Stats embed with visual progress bar, per-instance table, and cooldown/offline event notifications.',
             de:'Statistik-Embed mit visuellem Fortschrittsbalken, Instanz-Tabelle, Cooldown- und Offline-Benachrichtigungen.'},
   },
   {
-    img:   './static/screen_console.png',
+    img:   {de:'./static/screen_console_de.png', en:'./static/screen_console_en.png'},
     url:   'DevTools → Console',
     title: {en:'MSLog Console Logger',    de:'MSLog Console-Logger'},
     sub:   {en:'TRACE / DEBUG / INFO / WARN / ERROR levels with timestamps — set level anytime via MSLog.setLevel().',
@@ -803,7 +803,9 @@ function fcShow(idx, stopAuto) {
   const sub   = document.getElementById('fc-cap-sub');
   const url   = document.getElementById('fc-url');
 
-  if (img) { img.style.opacity = '0'; setTimeout(() => { img.src = slide.img; img.style.opacity = '1'; }, 180); }
+  // img can be a string (single) or {de:…, en:…} object
+  const imgSrc = typeof slide.img === 'object' ? (slide.img[lang] || slide.img.en) : slide.img;
+  if (img) { img.style.opacity = '0'; setTimeout(() => { img.src = imgSrc; img.style.opacity = '1'; }, 180); }
   if (title) title.textContent = slide.title[lang] || slide.title.en;
   if (sub)   sub.textContent   = slide.sub[lang]   || slide.sub.en;
   if (url)   url.textContent   = slide.url;
