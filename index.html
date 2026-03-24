@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mediastarr — Automated Media Search</title>
+<link rel="icon" type="image/png" sizes="512x512" href="./static/icon.png">
+<link rel="apple-touch-icon" href="./static/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -147,6 +149,11 @@ footer{border-top:1px solid var(--brd);padding:40px 5vw;display:flex;align-items
 
 @media(max-width:768px){
   .nav-links{display:none}
+  .nav-mobile-menu button{display:block !important}
+  .nav-links.mobile-open{display:flex;flex-direction:column;position:fixed;top:64px;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--brd);padding:16px 5vw;gap:12px;z-index:99;animation:fadeDown .2s ease}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  .nav-links.mobile-open li{display:flex}
+  .nav-links.mobile-open a{font-size:15px;padding:6px 0;color:var(--tx)}
   .stats-row{flex-wrap:wrap}
   .stat-item{min-width:50%;border-right:none;border-bottom:1px solid var(--brd)}
   .install-grid{grid-template-columns:1fr}
@@ -155,6 +162,14 @@ footer{border-top:1px solid var(--brd);padding:40px 5vw;display:flex;align-items
   .discord-card{flex-direction:column}
   .p-cards{grid-template-columns:1fr}
 }
+
+/* FLIPCHART / SCREENSHOTS */
+.fc-tab{padding:7px 14px;border-radius:8px;border:1px solid var(--brd);background:var(--surf);color:var(--mu2);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.fc-tab:hover{border-color:var(--mu2);color:var(--tx)}
+.fc-tab.active{border-color:var(--acc);background:rgba(255,107,43,.1);color:var(--acc)}
+.fc-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brd);transition:all .3s;cursor:pointer}
+.fc-dot.active{background:var(--acc);width:24px;border-radius:4px}
+.fc-dot:hover{background:var(--mu2)}
 
 /* Hidden class for lang switching */
 [data-lang]{display:none}
@@ -183,6 +198,7 @@ span[data-lang].show{display:inline}
   <ul class="nav-links">
     <li><a href="#why" data-de="Warum" data-en="Why">Why</a></li>
     <li><a href="#features" data-de="Features" data-en="Features">Features</a></li>
+    <li><a href="#screenshots" data-de="Screenshots" data-en="Screenshots">Screenshots</a></li>
     <li><a href="#install" data-de="Installation" data-en="Install">Install</a></li>
     <li><a href="#discord">Discord</a></li>
     <li>
@@ -314,6 +330,59 @@ span[data-lang].show{display:inline}
   </div>
 </section>
 
+<!-- SCREENSHOTS FLIPCHART -->
+<div id="screenshots" style="padding:0 5vw 100px;max-width:1200px;margin:0 auto">
+  <div class="section-label reveal" style="text-align:center">v6.4.0</div>
+  <h2 class="section-title reveal" style="text-align:center"><span data-de="So sieht es aus." data-en="See it in action.">See it in action.</span></h2>
+  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.0-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.0 interface — not a marketing mockup.">Real screenshots of the v6.4.0 interface — not a marketing mockup.</span></p>
+
+  <div class="reveal" style="position:relative">
+    <!-- Tab nav -->
+    <div id="fc-tabs" style="display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+      <button class="fc-tab active" onclick="fcShow(0)">⬡ <span data-de="Dashboard" data-en="Dashboard">Dashboard</span></button>
+      <button class="fc-tab" onclick="fcShow(1)">⚙ <span data-de="Einstellungen" data-en="Settings">Settings</span></button>
+      <button class="fc-tab" onclick="fcShow(2)">📺 <span data-de="Sonarr-Tab" data-en="Sonarr tab">Sonarr tab</span></button>
+      <button class="fc-tab" onclick="fcShow(3)">📋 <span data-de="Verlauf" data-en="History">History</span></button>
+      <button class="fc-tab" onclick="fcShow(4)">💬 <span data-de="Discord" data-en="Discord">Discord</span></button>
+      <button class="fc-tab" onclick="fcShow(5)">📨 <span data-de="DC Nachrichten" data-en="DC Messages">DC Messages</span></button>
+      <button class="fc-tab" onclick="fcShow(6)">📊 <span data-de="DC System" data-en="DC System">DC System</span></button>
+      <button class="fc-tab" onclick="fcShow(7)">🖥 <span data-de="Console Logger" data-en="Console Logger">Console Logger</span></button>
+    </div>
+
+    <!-- Flipchart frame -->
+    <div style="border-radius:14px;overflow:hidden;border:1px solid var(--brd);box-shadow:0 40px 100px rgba(0,0,0,.7);background:var(--bg2);position:relative">
+      <!-- Browser chrome -->
+      <div style="height:40px;background:var(--surf);border-bottom:1px solid var(--brd);display:flex;align-items:center;padding:0 16px;gap:8px">
+        <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block"></span>
+        <span style="width:10px;height:10px;border-radius:50%;background:#febc2e;display:inline-block"></span>
+        <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block"></span>
+        <div id="fc-url" style="margin:0 auto;font-size:11px;color:var(--mu);background:var(--bg2);border:1px solid var(--brd);border-radius:6px;padding:3px 14px">mediastarr:7979</div>
+      </div>
+      <!-- Screenshot image -->
+      <div style="position:relative;overflow:hidden;background:var(--bg);aspect-ratio:16/10">
+        <img id="fc-img" src="./static/screen_dashboard.png" alt="Mediastarr Dashboard"
+          style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:opacity .35s ease">
+        <!-- Caption overlay -->
+        <div id="fc-cap" style="position:absolute;bottom:0;left:0;right:0;padding:14px 22px 16px;background:linear-gradient(transparent,rgba(8,9,13,.92));display:flex;align-items:flex-end;gap:14px">
+          <div>
+            <div id="fc-cap-title" style="font-family:var(--disp);font-size:15px;font-weight:700;color:#fff;margin-bottom:2px">Dashboard</div>
+            <div id="fc-cap-sub" style="font-size:11px;color:var(--mu2)"><span data-de="Live-Status, Instanzkarten, Aktivitätslog und Tageslimit auf einen Blick." data-en="Live status, instance cards, activity log and daily limit at a glance.">Live status, instance cards, activity log and daily limit at a glance.</span></div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button onclick="fcPrev()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--brd);background:var(--surf);color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">‹</button>
+            <button onclick="fcNext()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--brd);background:var(--surf);color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dots -->
+    <div id="fc-dots" style="display:flex;justify-content:center;gap:8px;margin-top:16px">
+      <span class="fc-dot active"></span><span class="fc-dot"></span><span class="fc-dot"></span><span class="fc-dot"></span><span class="fc-dot"></span><span class="fc-dot"></span><span class="fc-dot"></span><span class="fc-dot"></span>
+    </div>
+  </div>
+</div>
+
 <!-- INSTALL -->
 <section id="install" class="install-section" style="padding:100px 5vw;max-width:100%">
   <div style="max-width:1200px;margin:0 auto">
@@ -440,7 +509,7 @@ span[data-lang].show{display:inline}
 
   <!-- Comparison table -->
   <div class="reveal" style="background:var(--bg2);border:1px solid var(--brd);border-radius:14px;overflow:hidden;margin-bottom:20px">
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead>
         <tr style="border-bottom:1px solid var(--brd)">
           <th style="text-align:left;padding:14px 24px;color:var(--mu2);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.8px;width:44%" id="th-feature">Feature / Property</th>
@@ -657,7 +726,135 @@ function setLang(lang) {
 
   // html lang attr
   document.documentElement.lang = lang;
+  // Refresh flipchart captions in new language
+  if (typeof fcShow === 'function') fcShow(_fcIdx);
 }
+
+// ── Flipchart / Screenshot carousel ────────────────────────────────────────
+const FC_SLIDES = [
+  {
+    img:   './static/screen_dashboard.png',
+    url:   'mediastarr:7979',
+    title: {en:'Dashboard',               de:'Dashboard'},
+    sub:   {en:'Live status, instance cards, activity log and daily limit at a glance.',
+            de:'Live-Status, Instanzkarten, Aktivitätslog und Tageslimit auf einen Blick.'},
+  },
+  {
+    img:   './static/screen_settings.png',
+    url:   'mediastarr:7979/settings',
+    title: {en:'Settings — General tab',  de:'Einstellungen — Allgemein'},
+    sub:   {en:'Intervals, limits, global IMDb filter, timezone and dry-run mode.',
+            de:'Intervalle, Limits, globaler IMDb-Filter, Zeitzone und Dry-Run-Modus.'},
+  },
+  {
+    img:   './static/screen_sonarr.png',
+    url:   'mediastarr:7979/settings → Sonarr',
+    title: {en:'Settings — Sonarr tab',   de:'Einstellungen — Sonarr-Tab'},
+    sub:   {en:'Per-instance search mode, IMDb rating, target resolution and instance management.',
+            de:'Suchmodus, IMDb-Bewertung, Zielauflösung und Instanzverwaltung — nur für Sonarr.'},
+  },
+  {
+    img:   './static/screen_history.png',
+    url:   'mediastarr:7979/history',
+    title: {en:'History (SQLite)',         de:'Verlauf (SQLite)'},
+    sub:   {en:'Full date+time stamps, filter by service, cooldown status, and search count.',
+            de:'Vollständige Datum+Uhrzeit, Filter nach Service, Cooldown-Status und Suchanzahl.'},
+  },
+  {
+    img:   './static/screen_discord.png',
+    url:   'mediastarr:7979/settings → Discord',
+    title: {en:'Discord Webhook Setup',     de:'Discord Webhook-Einrichtung'},
+    sub:   {en:'Step-by-step webhook guide, 6 event types each with live message preview, show/hide URL field.',
+            de:'Schritt-für-Schritt Webhook-Anleitung, 6 Event-Typen mit Live-Nachrichten-Preview, URL einblenden.'},
+  },
+  {
+    img:   './static/screen_notify_missing.png',
+    url:   'Discord — #mediastarr-alerts',
+    title: {en:'Discord — Missing & Upgrade',   de:'Discord — Fehlend & Upgrade'},
+    sub:   {en:'Rich embeds with poster, fanart/backdrop, IMDb/TVDB/TMDB links, ratings, genres and runtime.',
+            de:'Reiche Embeds mit Poster, Fanart/Backdrop, IMDb/TVDB/TMDB-Links, Bewertungen, Genres und Laufzeit.'},
+  },
+  {
+    img:   './static/screen_notify_system.png',
+    url:   'Discord — #stats-and-system',
+    title: {en:'Discord — Stats, Cooldown & Offline', de:'Discord — Statistiken, Cooldown & Offline'},
+    sub:   {en:'Stats embed with visual progress bar, per-instance table, and cooldown/offline event notifications.',
+            de:'Statistik-Embed mit visuellem Fortschrittsbalken, Instanz-Tabelle, Cooldown- und Offline-Benachrichtigungen.'},
+  },
+  {
+    img:   './static/screen_console.png',
+    url:   'DevTools → Console',
+    title: {en:'MSLog Console Logger',    de:'MSLog Console-Logger'},
+    sub:   {en:'TRACE / DEBUG / INFO / WARN / ERROR levels with timestamps — set level anytime via MSLog.setLevel().',
+            de:'TRACE / DEBUG / INFO / WARN / ERROR mit Zeitstempel — Level jederzeit via MSLog.setLevel() ändern.'},
+  },
+];
+
+let _fcIdx = 0;
+let _fcTimer = null;
+
+function fcShow(idx, stopAuto) {
+  _fcIdx = (idx + FC_SLIDES.length) % FC_SLIDES.length;
+  const slide = FC_SLIDES[_fcIdx];
+  const lang  = currentLangHP || 'en';
+  const img   = document.getElementById('fc-img');
+  const title = document.getElementById('fc-cap-title');
+  const sub   = document.getElementById('fc-cap-sub');
+  const url   = document.getElementById('fc-url');
+
+  if (img) { img.style.opacity = '0'; setTimeout(() => { img.src = slide.img; img.style.opacity = '1'; }, 180); }
+  if (title) title.textContent = slide.title[lang] || slide.title.en;
+  if (sub)   sub.textContent   = slide.sub[lang]   || slide.sub.en;
+  if (url)   url.textContent   = slide.url;
+
+  document.querySelectorAll('.fc-tab').forEach((t, i) => t.className = 'fc-tab' + (i === _fcIdx ? ' active' : ''));
+  document.querySelectorAll('.fc-dot').forEach((d, i) => d.className = 'fc-dot' + (i === _fcIdx ? ' active' : ''));
+
+  if (stopAuto) { clearInterval(_fcTimer); _fcTimer = null; }
+}
+
+function fcNext() { fcShow(_fcIdx + 1, true); }
+function fcPrev() { fcShow(_fcIdx - 1, true); }
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') fcNext();
+  if (e.key === 'ArrowLeft')  fcPrev();
+});
+
+// Auto-advance every 5 s
+_fcTimer = setInterval(() => fcShow(_fcIdx + 1), 5000);
+
+// Pause on hover
+document.addEventListener('DOMContentLoaded', () => {
+  const fc = document.getElementById('fc-img')?.closest('[style]');
+  if (fc) {
+    fc.addEventListener('mouseenter', () => { clearInterval(_fcTimer); _fcTimer = null; });
+    fc.addEventListener('mouseleave', () => { _fcTimer = setInterval(() => fcShow(_fcIdx + 1), 5000); });
+  }
+  // Wire up dot clicks
+  document.querySelectorAll('.fc-dot').forEach((d, i) => d.addEventListener('click', () => fcShow(i, true)));
+  // Initial render in correct lang
+  fcShow(0);
+});
+
+// Mobile nav toggle
+function toggleMobileNav() {
+  const nav = document.querySelector('.nav-links');
+  const btn = document.getElementById('nav-hamburger');
+  if (!nav) return;
+  const open = nav.classList.toggle('mobile-open');
+  if (btn) btn.textContent = open ? '✕' : '☰';
+}
+// Close mobile nav on outside click
+document.addEventListener('click', (e) => {
+  const nav = document.querySelector('.nav-links');
+  const btn = document.getElementById('nav-hamburger');
+  if (nav?.classList.contains('mobile-open') && !nav.contains(e.target) && e.target !== btn) {
+    nav.classList.remove('mobile-open');
+    if (btn) btn.textContent = '☰';
+  }
+});
 
 // Init on load
 document.addEventListener('DOMContentLoaded', () => setLang(currentLangHP));

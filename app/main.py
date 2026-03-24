@@ -75,21 +75,26 @@ MIN_INTERVAL_MIN    = 15    # minutes
 
 # ─── Discord Webhook ─────────────────────────────────────────────────────────
 DISCORD_COLORS = {
-    "missing":  0x3de68b,
-    "upgrade":  0xf5c842,
-    "cooldown": 0x4d9cff,
-    "limit":    0xff4d4d,
-    "offline":  0x888888,
-    "stats":    0xff6b2b,
+    "missing":  0x3de68b,   # green
+    "upgrade":  0xf5c842,   # yellow
+    "cooldown": 0x4d9cff,   # blue
+    "limit":    0xff4d4d,   # red
+    "offline":  0x888888,   # grey
+    "stats":    0xff6b2b,   # orange / brand
     "info":     0xff6b2b,
 }
 
+# Service icon URLs for author field
+_ICON_SONARR   = "https://raw.githubusercontent.com/Sonarr/Sonarr/develop/Logo/128.png"
+_ICON_RADARR   = "https://raw.githubusercontent.com/Radarr/Radarr/develop/Logo/128.png"
+_ICON_MEDIASTARR = "https://raw.githubusercontent.com/kroeberd/mediastarr/main/static/icon.png"
+
 # Rate-limit guard: tracks last successful send time per event_type
 _dc_last_sent: dict[str, float] = {}
-_dc_lock = threading.Lock()
+_dc_lock    = threading.Lock()
+_cfg_lock   = threading.Lock()   # guards CONFIG reads/writes and save_config
 
 def _dc_cooldown_ok(event_type: str, cooldown_sec: int) -> bool:
-    """Return True if we're allowed to send (cooldown elapsed or never sent)."""
     with _dc_lock:
         last = _dc_last_sent.get(event_type, 0.0)
         if time.time() - last >= cooldown_sec:
@@ -97,18 +102,126 @@ def _dc_cooldown_ok(event_type: str, cooldown_sec: int) -> bool:
             return True
         return False
 
+# ── Image / link helpers ──────────────────────────────────────────────────────
+def _sonarr_poster(series: dict) -> str:
+    """Return best poster URL from Sonarr series object (remoteUrl preferred)."""
+    for img in (series.get("images") or []):
+        if img.get("coverType") in ("poster", "Poster"):
+            url = img.get("remoteUrl") or img.get("url") or ""
+            if url.startswith("http"): return url
+    return ""
+
+def _sonarr_fanart(series: dict) -> str:
+    """Return fanart/banner URL from Sonarr (for large embed image)."""
+    for cover_type in ("fanart", "banner", "Fanart", "Banner"):
+        for img in (series.get("images") or []):
+            if img.get("coverType") == cover_type:
+                url = img.get("remoteUrl") or img.get("url") or ""
+                if url.startswith("http"): return url
+    return ""
+
+def _radarr_poster(movie: dict) -> str:
+    """Return best poster URL from Radarr movie object."""
+    rp = movie.get("remotePoster","")
+    if rp and rp.startswith("http"): return rp
+    for img in (movie.get("images") or []):
+        if img.get("coverType") in ("poster","Poster"):
+            url = img.get("remoteUrl") or img.get("url") or ""
+            if url.startswith("http"): return url
+    return ""
+
+def _radarr_fanart(movie: dict) -> str:
+    """Return fanart URL from Radarr (for large embed image)."""
+    rf = movie.get("remoteFanart","")
+    if rf and rf.startswith("http"): return rf
+    for img in (movie.get("images") or []):
+        if img.get("coverType") in ("fanart","Fanart","backdrop","Backdrop"):
+            url = img.get("remoteUrl") or img.get("url") or ""
+            if url.startswith("http"): return url
+    return ""
+
+def _imdb_url(imdb_id: str) -> str:
+    if imdb_id and str(imdb_id).startswith("tt"):
+        return f"https://www.imdb.com/title/{imdb_id}/"
+    return ""
+
+def _tmdb_url(tmdb_id, media="movie") -> str:
+    if tmdb_id:
+        return f"https://www.themoviedb.org/{media}/{tmdb_id}"
+    return ""
+
+def _tvdb_url(series: dict) -> str:
+    slug = series.get("titleSlug","")
+    if slug: return f"https://thetvdb.com/series/{slug}"
+    tvdb_id = series.get("tvdbId")
+    if tvdb_id: return f"https://thetvdb.com/?tab=series&id={tvdb_id}"
+    return ""
+
+def _rating_str(item: dict, item_type: str) -> str:
+    """Return formatted multi-source rating string from Sonarr/Radarr data."""
+    parts = []
+    if item_type in ("movie","movie_upgrade"):
+        ratings = item.get("ratings") or {}
+        # Radarr v3+: nested per-source dicts
+        for src, label, icon in [("imdb","IMDb","⭐"), ("tmdb","TMDB","🎬"), ("rottenTomatoes","RT","🍅")]:
+            entry = ratings.get(src)
+            if isinstance(entry, dict):
+                val   = entry.get("value")
+                votes = entry.get("votes",0)
+                if val:
+                    vs = f" ({votes:,})" if votes and votes > 0 else ""
+                    parts.append(f"{icon} **{val:.1f}** {label}{vs}")
+        # Radarr v2: flat {value, votes}
+        if not parts:
+            flat = ratings.get("value")
+            if flat: parts.append(f"⭐ **{flat:.1f}**")
+    else:
+        ratings = (item.get("series") or item).get("ratings") or {}
+        val = ratings.get("value")
+        if val: parts.append(f"⭐ **{val:.1f}**")
+    return "\n".join(parts) if parts else ""
+
+def _genres_str(item: dict) -> str:
+    genres = (item.get("genres") or (item.get("series") or {}).get("genres") or [])
+    return ", ".join(str(g) for g in genres[:4]) if genres else ""
+
+def _year_str(item: dict) -> str:
+    y = item.get("year") or (item.get("series") or {}).get("year")
+    return str(y) if y else ""
+
+def _runtime_str(item: dict) -> str:
+    rt = item.get("runtime") or (item.get("series") or {}).get("runtime")
+    if rt:
+        h, m = divmod(int(rt), 60)
+        return f"{h}h {m}min" if h else f"{m}min"
+    return ""
+
+def _status_str(item: dict) -> str:
+    st = item.get("status") or (item.get("series") or {}).get("status") or ""
+    icons = {"continuing":"🟢","ended":"🔴","upcoming":"🔵","announced":"🟡",
+             "released":"🟢","inCinemas":"🎭","deleted":"⚫"}
+    return f"{icons.get(st,'⚪')} {st.capitalize()}" if st else ""
+
+def _link_buttons(links: list[tuple[str,str]]) -> str:
+    """Build a Markdown line of [Label](url) link buttons."""
+    parts = [f"[{label}]({url})" for label, url in links if url]
+    return "  •  ".join(parts) if parts else ""
+
 def discord_send(event_type: str, title: str, description: str,
                  instance_name: str = "", fields: list | None = None,
-                 force: bool = False):
-    """Fire-and-forget Discord embed. Runs in a daemon thread.
-    Silently drops if webhook unconfigured, disabled, or rate-limited.
-    Set force=True to bypass per-type cooldown (used for test & stats)."""
+                 force: bool = False,
+                 thumbnail_url: str = "",
+                 image_url: str = "",
+                 embed_url: str = "",
+                 author_name: str = "",
+                 author_icon: str = "",
+                 footer_extra: str = ""):
+    """Fire-and-forget rich Discord embed. Daemon thread."""
     dc = CONFIG.get("discord", {})
     if not dc.get("enabled"): return
     url = safe_str(dc.get("webhook_url", ""), 512).strip()
     if not url or not url.startswith(("http://", "https://")): return
 
-    # Per-event toggle
     toggle_map = {
         "missing":  "notify_missing",
         "upgrade":  "notify_upgrade",
@@ -119,21 +232,39 @@ def discord_send(event_type: str, title: str, description: str,
     toggle_key = toggle_map.get(event_type)
     if toggle_key and not dc.get(toggle_key, True): return
 
-    # Rate-limit cooldown (default 5 s, configurable)
     cooldown_sec = clamp_int(dc.get("rate_limit_cooldown", 5), 1, 300, 5)
     if not force and not _dc_cooldown_ok(event_type, cooldown_sec):
         logger.debug(f"Discord rate-limit: skipping {event_type}")
         return
 
     color = DISCORD_COLORS.get(event_type, DISCORD_COLORS["info"])
-    footer_text = f"Mediastarr v6 · {instance_name}" if instance_name else "Mediastarr v6"
-    embed = {
-        "title":       safe_str(title, 256),
-        "description": safe_str(description, 2048),
-        "color":       color,
-        "footer":      {"text": footer_text},
-        "timestamp":   datetime.utcnow().isoformat() + "Z",
+    footer_parts = ["Mediastarr v6.4.0"]
+    if instance_name: footer_parts.append(instance_name)
+    if footer_extra:  footer_parts.append(footer_extra)
+    footer_text = "  ·  ".join(footer_parts)
+
+    embed: dict = {
+        "title":     safe_str(title, 256),
+        "color":     color,
+        "footer":    {"text": footer_text,
+                      "icon_url": _ICON_MEDIASTARR},
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
+    if description:
+        embed["description"] = safe_str(description, 2048)
+    if embed_url and embed_url.startswith("http"):
+        embed["url"] = embed_url
+    if thumbnail_url and thumbnail_url.startswith("http"):
+        embed["thumbnail"] = {"url": thumbnail_url}
+    if image_url and image_url.startswith("http"):
+        embed["image"] = {"url": image_url}
+    # Author line: service name + icon
+    _author_icon = author_icon or _ICON_MEDIASTARR
+    if author_name:
+        embed["author"] = {
+            "name":     safe_str(author_name, 256),
+            "icon_url": _author_icon,
+        }
     if fields:
         embed["fields"] = [
             {"name":   safe_str(f.get("name",""),  256),
@@ -144,8 +275,12 @@ def discord_send(event_type: str, title: str, description: str,
 
     def _send():
         try:
-            r = requests.post(url, json={"embeds": [embed]},
-                              timeout=CONFIG.get("request_timeout", 30))
+            payload = {
+                "embeds":   [embed],
+                "username": "Mediastarr",
+                "avatar_url": _ICON_MEDIASTARR,
+            }
+            r = requests.post(url, json=payload, timeout=CONFIG.get("request_timeout", 30))
             if r.status_code == 429:
                 retry_after = r.json().get("retry_after", 5)
                 logger.warning(f"Discord 429: retry_after={retry_after}s")
@@ -158,51 +293,61 @@ def discord_send(event_type: str, title: str, description: str,
 
 
 def discord_send_stats():
-    """Send a statistics summary embed to Discord."""
+    """Send a rich statistics summary embed to Discord."""
     dc = CONFIG.get("discord", {})
     if not dc.get("enabled") or not dc.get("notify_stats", False): return
-    lang  = CONFIG.get("language", "de")
-    today = db.count_today()
-    limit = CONFIG.get("daily_limit", 0)
-    total = db.total_count()
+    lang   = CONFIG.get("language", "de")
+    today  = db.count_today()
+    limit  = CONFIG.get("daily_limit", 0)
+    total  = db.total_count()
     cycles = STATE.get("cycle_count", 0)
+    ts     = now_local().strftime("%d.%m.%Y %H:%M" if lang == "de" else "%Y-%m-%d %H:%M")
+    is_de  = lang == "de"
 
-    if lang == "de":
-        title = "📊 Mediastarr Statistiken"
-        desc  = f"Tagesbericht — {now_local().strftime('%d.%m.%Y %H:%M')}"
-        f_today  = "Heute"
-        f_total  = "Gesamt"
-        f_cycles = "Zyklen"
-        f_insts  = "Aktive Instanzen"
-        f_limit  = f"{today} / {limit if limit else '∞'}"
+    # Progress bar for daily limit (10 chars)
+    if limit > 0:
+        pct   = min(today / limit, 1.0)
+        filled = round(pct * 10)
+        bar    = "█" * filled + "░" * (10 - filled)
+        limit_val = f"`{bar}` {today}/{limit} ({int(pct*100)}%)"
     else:
-        title = "📊 Mediastarr Statistics"
-        desc  = f"Daily report — {now_local().strftime('%Y-%m-%d %H:%M')}"
-        f_today  = "Today"
-        f_total  = "Total"
-        f_cycles = "Cycles"
-        f_insts  = "Active instances"
-        f_limit  = f"{today} / {limit if limit else '∞'}"
+        limit_val = f"**{today}** {'(unbegrenzt)' if is_de else '(unlimited)'}"
 
-    if lang == "de":
-        enabled_parts = ["Fehlend" if dc.get("notify_missing") else "", "Upgrade" if dc.get("notify_upgrade") else "", "Cooldown" if dc.get("notify_cooldown") else ""]
-    else:
-        enabled_parts = ["Missing" if dc.get("notify_missing") else "", "Upgrade" if dc.get("notify_upgrade") else "", "Cooldown" if dc.get("notify_cooldown") else ""]
-    enabled_text = " ".join([p for p in enabled_parts if p]) or "—"
-    active = len([i for i in CONFIG["instances"] if i.get("enabled")])
+    title = "📊 Mediastarr Statistiken" if is_de else "📊 Mediastarr Statistics"
+    desc  = f"{'Tagesbericht' if is_de else 'Daily report'} — {ts}"
+
     fields = [
-        {"name": f_today,  "value": f_limit, "inline": True},
-        {"name": f_total,  "value": str(total), "inline": True},
-        {"name": f_cycles, "value": str(cycles), "inline": True},
-        {"name": f_insts,  "value": str(active), "inline": True},
+        {"name": "📅 " + ("Heute" if is_de else "Today"),
+         "value": limit_val, "inline": False},
+        {"name": "🔢 " + ("Gesamt" if is_de else "Total"),
+         "value": f"**{total:,}** {'Suchen' if is_de else 'searches'}", "inline": True},
+        {"name": "🔄 " + ("Zyklen" if is_de else "Cycles"),
+         "value": f"**{cycles:,}**", "inline": True},
+        {"name": "⏱ " + ("Intervall" if is_de else "Interval"),
+         "value": f"{CONFIG.get('hunt_missing_delay',1800)//60} min", "inline": True},
     ]
-    # Per-instance status
-    for inst in CONFIG["instances"][:6]:
-        st = STATE["inst_stats"].get(inst["id"], {}).get("status", "?")
-        icon = "🟢" if st == "online" else "🔴" if st == "offline" else "⚫"
-        fields.append({"name": inst["name"], "value": f"{icon} {st}", "inline": True})
 
-    discord_send("stats", title, desc, "System", fields=fields, force=True)
+    # Per-instance status block
+    inst_lines = []
+    for inst in CONFIG["instances"][:8]:
+        st    = STATE["inst_stats"].get(inst["id"], {}).get("status", "?")
+        mis   = STATE["inst_stats"].get(inst["id"], {}).get("missing_searched", 0)
+        upg   = STATE["inst_stats"].get(inst["id"], {}).get("upgrades_found", 0)
+        icon  = "🟢" if st == "online" else "🔴" if st == "offline" else "⚫"
+        t_ico = "📺" if inst.get("type") == "sonarr" else "🎬"
+        inst_lines.append(
+            f"{t_ico} **{inst['name']}** {icon}\n"
+            f"  {'Gesucht' if is_de else 'Searched'}: {mis}  •  Upgrades: {upg}"
+        )
+    if inst_lines:
+        fields.append({
+            "name":   "📡 " + ("Instanzen" if is_de else "Instances"),
+            "value":  "\n".join(inst_lines),
+            "inline": False
+        })
+
+    discord_send("stats", title, desc, "System", fields=fields, force=True,
+                 author_name="Mediastarr", author_icon=_ICON_MEDIASTARR)
 
 
 # Stats report background thread
@@ -217,7 +362,7 @@ def _stats_loop():
             continue
         interval_min = clamp_int(dc.get("stats_interval_min", 60), 1, 10080, 60)
         last = dc.get("stats_last_sent_at", 0.0)
-        if time.time() - float(last) >= interval_min * 60:
+        if time.time() - float(last or 0) >= interval_min * 60:
             discord_send_stats()
             # Notify if update available
             if is_update_available():
@@ -273,7 +418,7 @@ def msg(key: str, **kwargs) -> str:
     lang = CONFIG.get("language","en")
     tmpl = MSGS.get(lang, MSGS["en"]).get(key, key)
     try: return tmpl.format(**kwargs)
-    except: return tmpl
+    except Exception: return tmpl
 
 def setup_url_for_logs() -> str:
     """Return externally reachable setup URL for startup logs."""
@@ -358,11 +503,11 @@ def _year(val):
     try:
         y = int(str(val)[:4])
         return y if 1900 < y < 2100 else None
-    except: return None
+    except Exception: return None
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.3.8"
+_CURRENT_VERSION = "v6.4.0"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -453,13 +598,14 @@ def load_config() -> dict:
     return cfg
 
 def save_config(cfg: dict):
-    tmp = CFG_FILE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
-    tmp.replace(CFG_FILE)
-    try:
-        import os as _os; _os.chmod(CFG_FILE, 0o600)
-    except OSError:
-        pass
+    with _cfg_lock:
+        tmp = CFG_FILE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+        tmp.replace(CFG_FILE)
+        try:
+            import os as _os; _os.chmod(CFG_FILE, 0o600)
+        except Exception:
+            pass
 
 def _bootstrap_host() -> str:
     """Return best-effort host/IP for local arr fallback URLs."""
@@ -517,7 +663,7 @@ def validate_url(url: str):
     if not url or not isinstance(url,str): return False,"URL fehlt"
     if len(url) > URL_MAX_LEN: return False,"URL zu lang"
     try: p = urlparse(url)
-    except: return False,"URL ungültig"
+    except Exception: return False,"URL ungültig"
     if p.scheme not in ALLOWED_SCHEMES: return False,f"Schema '{p.scheme}' nicht erlaubt"
     if not p.hostname: return False,"Kein Hostname"
     return True,""
@@ -568,7 +714,7 @@ def validate_name(name: str):
 
 def clamp_int(val, lo, hi, default):
     try: return max(lo, min(hi, int(val)))
-    except: return default
+    except Exception: return default
 
 def safe_str(val, max_len=256):
     return val[:max_len] if isinstance(val,str) else ""
@@ -700,29 +846,140 @@ def should_search(iid:str, item_type:str, item_id:int):
         return False, "cooldown"
     return True, ""
 
-def do_search(client:ArrClient, iid:str, item_type:str, item_id:int,
-              title:str, command:dict, changed=None, year=None):
+def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
+              title: str, command: dict, changed=None, year=None,
+              item_data: dict | None = None):
+    """Execute search command, record to DB, and fire rich Discord notification."""
     result = "dry_run" if CONFIG["dry_run"] else "triggered"
     if not CONFIG["dry_run"]: client.post("command", command)
     db.upsert_search(iid, item_type, item_id, title, result, changed, year)
 
-    # Discord notification
-    inst = next((i for i in CONFIG["instances"] if i["id"] == iid), {})
+    # ── Rich Discord notification ─────────────────────────────────────────────
+    inst      = next((i for i in CONFIG["instances"] if i["id"] == iid), {})
     inst_name = inst.get("name", iid)
+    inst_type = inst.get("type", "sonarr")
     is_upgrade = "upgrade" in item_type
-    event = "upgrade" if is_upgrade else "missing"
-    label_de = "Upgrade gesucht" if is_upgrade else "Fehlend gesucht"
-    label_en = "Upgrade searched" if is_upgrade else "Missing searched"
-    label = label_de if CONFIG.get("language","de") == "de" else label_en
-    icon  = "⬆️" if is_upgrade else "🔍"
-    if result == "dry_run":
-        desc = f"**[Dry Run]** {icon} {title}"
+    is_movie   = item_type in ("movie", "movie_upgrade")
+    lang       = CONFIG.get("language", "de")
+    event      = "upgrade" if is_upgrade else "missing"
+    item       = item_data or {}
+
+    # Labels
+    type_labels = {
+        "episode":         ("📺", "Episode"),
+        "episode_upgrade": ("📺⬆", "Episode Upgrade"),
+        "movie":           ("🎬", "Film" if lang=="de" else "Movie"),
+        "movie_upgrade":   ("🎬⬆", "Film-Upgrade" if lang=="de" else "Movie Upgrade"),
+    }
+    type_icon, type_label = type_labels.get(item_type, ("❓", item_type))
+
+    if is_upgrade:
+        ev_title = f"⬆️ {'Upgrade gesucht' if lang=='de' else 'Upgrade searched'}"
     else:
-        desc = f"{icon} {title}"
-    discord_send(event, label, desc, inst_name, fields=[
-        {"name": "Instanz", "value": inst_name, "inline": True},
-        {"name": "Typ",     "value": item_type,  "inline": True},
-    ])
+        ev_title = f"🔍 {'Fehlend gesucht' if lang=='de' else 'Missing searched'}"
+    if result == "dry_run":
+        ev_title = f"🧪 [Dry Run] {ev_title}"
+
+    # Poster + fanart
+    if is_movie:
+        poster  = _radarr_poster(item)
+        fanart  = _radarr_fanart(item)
+        series_obj = {}
+    else:
+        series_obj = item.get("series") or {}
+        poster  = _sonarr_poster(series_obj)
+        fanart  = _sonarr_fanart(series_obj)
+
+    # External links — order: IMDb first (most recognisable)
+    links: list[tuple[str, str]] = []
+    if is_movie:
+        imdb_id = item.get("imdbId","")
+        tmdb_id = item.get("tmdbId","")
+        if imdb_id: links.append(("⭐ IMDb",  _imdb_url(imdb_id)))
+        if tmdb_id: links.append(("🎬 TMDB",  _tmdb_url(tmdb_id, "movie")))
+    else:
+        imdb_id = series_obj.get("imdbId","")
+        tvdb_id = series_obj.get("tvdbId","")
+        tmdb_id = series_obj.get("tmdbId","")
+        if imdb_id: links.append(("⭐ IMDb", _imdb_url(imdb_id)))
+        if tvdb_id or series_obj.get("titleSlug"):
+            links.append(("📺 TVDB", _tvdb_url(series_obj)))
+        if tmdb_id: links.append(("🎬 TMDB", _tmdb_url(tmdb_id, "tv")))
+
+    embed_url = links[0][1] if links else ""
+
+    # Description: link row + italicised overview
+    link_line  = _link_buttons(links)
+    overview   = (item.get("overview") or series_obj.get("overview") or "").strip()
+    ov_short   = (overview[:180] + "…") if len(overview) > 180 else overview
+
+    desc_parts: list[str] = []
+    if link_line:  desc_parts.append(link_line)
+    if ov_short:   desc_parts.append(f"*{ov_short}*")
+    description = "\n\n".join(desc_parts)
+
+    # ── Rich fields ──────────────────────────────────────────────────────────
+    is_de = lang == "de"
+    fields: list[dict] = []
+
+    # Row 1: type / year / runtime
+    fields.append({"name": "Typ" if is_de else "Type",
+                   "value": f"{type_icon} {type_label}", "inline": True})
+    yr = _year_str(item if is_movie else series_obj)
+    if yr: fields.append({"name": "Jahr" if is_de else "Year",
+                           "value": yr, "inline": True})
+    rt = _runtime_str(item if is_movie else series_obj)
+    if rt: fields.append({"name": "Laufzeit" if is_de else "Runtime",
+                           "value": rt, "inline": True})
+
+    # Row 2: rating (can be multi-line)
+    rating = _rating_str(item if is_movie else (series_obj or item), item_type)
+    if rating: fields.append({"name": "Bewertung" if is_de else "Rating",
+                               "value": rating, "inline": True})
+
+    # Genres
+    genres = _genres_str(item if is_movie else series_obj)
+    if genres: fields.append({"name": "Genre",
+                               "value": genres, "inline": True})
+
+    # Network / Studio
+    network = (item.get("studio","") if is_movie
+               else series_obj.get("network",""))
+    if network:
+        fields.append({"name": "Studio" if is_movie else "Network",
+                       "value": network, "inline": True})
+
+    # Status
+    st = _status_str(item if is_movie else series_obj)
+    if st: fields.append({"name": "Status", "value": st, "inline": True})
+
+    # Current quality (upgrades only)
+    if is_upgrade:
+        if is_movie:
+            cur_q = item.get("movieFile",{}).get("quality",{}).get("quality",{}).get("name","")
+        else:
+            cur_q = item.get("episodeFile",{}).get("quality",{}).get("quality",{}).get("name","")
+        if cur_q:
+            fields.append({"name": "Aktuelle Qualität" if is_de else "Current quality",
+                           "value": cur_q, "inline": True})
+
+    # Instance (always last)
+    fields.append({"name": "Instanz" if is_de else "Instance",
+                   "value": f"`{inst_name}`", "inline": True})
+
+    # Service author icon
+    svc_icon = _ICON_SONARR if inst_type == "sonarr" else _ICON_RADARR
+
+    discord_send(
+        event, ev_title, description,
+        instance_name = inst_name,
+        fields        = fields or None,
+        thumbnail_url = poster,
+        image_url     = fanart,
+        embed_url     = embed_url,
+        author_name   = f"{inst_name}  •  {'Sonarr' if inst_type=='sonarr' else 'Radarr'}",
+        author_icon   = svc_icon,
+    )
     return result
 
 def _ep_title(ep: dict, lang: str) -> str:
@@ -823,11 +1080,14 @@ def hunt_sonarr_instance(inst: dict):
                 stats[f"skipped_{reason}"] += 1
                 if reason == "daily_limit":
                     log_act(name, msg("daily_limit",today=db.count_today(),limit=CONFIG["daily_limit"]), "", "warning")
-                    lang = CONFIG.get("language","en")
-                    label = "Tageslimit erreicht" if lang=="de" else "Daily limit reached"
-                    desc  = (f"Heute: {db.count_today()}/{CONFIG['daily_limit']} Searches"
-                             if lang=="de" else
-                             f"Today: {db.count_today()}/{CONFIG['daily_limit']} searches")
+                    lang   = CONFIG.get("language","en")
+                    is_de  = lang == "de"
+                    cnt    = db.count_today()
+                    lim    = CONFIG["daily_limit"]
+                    bar    = "█" * 10 + "░" * 0  # full bar = limit reached
+                    label  = "🚫 Tageslimit erreicht" if is_de else "🚫 Daily limit reached"
+                    desc   = (f"`{bar}` **{cnt}/{lim}** {'Suchen heute' if is_de else 'searches today'}\n"
+                              f"*{'Reset Mitternacht UTC. Morgen geht es weiter.' if is_de else 'Resets at midnight UTC. Resumes tomorrow.'}*")
                     discord_send("limit", label, desc, name)
                     return
                 continue
@@ -841,7 +1101,8 @@ def hunt_sonarr_instance(inst: dict):
             else:
                 command = {"name":"EpisodeSearch","episodeIds":[ep["id"]]}
             do_search(client, iid, "episode", ep["id"], title, command,
-                      ep.get("series",{}).get("lastInfoSync"), year)
+                      ep.get("series",{}).get("lastInfoSync"), year,
+                      item_data=ep)
             stats["missing_searched"] += 1; searched += 1
             log_act(name, msg("missing"), title, "success")
             time.sleep(1.5)
@@ -874,7 +1135,8 @@ def hunt_sonarr_instance(inst: dict):
                 continue
             year = _year(ep.get("series",{}).get("year"))
             do_search(client, iid, "episode_upgrade", ep["id"], title,
-                      {"name":"EpisodeSearch","episodeIds":[ep["id"]]}, year=year)
+                      {"name":"EpisodeSearch","episodeIds":[ep["id"]]}, year=year,
+                      item_data=ep)
             stats["upgrades_searched"] += 1; searched += 1
             log_act(name, msg("upgrade"), title, "warning")
             time.sleep(1.5)
@@ -915,7 +1177,8 @@ def hunt_radarr_instance(inst: dict):
                 continue
             do_search(client, iid, "movie", movie["id"], title,
                       {"name":"MoviesSearch","movieIds":[movie["id"]]},
-                      movie.get("lastInfoSync"), _year(movie.get("year")))
+                      movie.get("lastInfoSync"), _year(movie.get("year")),
+                      item_data=movie)
             stats["missing_searched"] += 1; searched += 1
             log_act(name, msg("missing"), title, "success")
             time.sleep(1.5)
@@ -954,7 +1217,7 @@ def hunt_radarr_instance(inst: dict):
                 continue
             do_search(client, iid, "movie_upgrade", movie["id"], title,
                       {"name":"MoviesSearch","movieIds":[movie["id"]]},
-                      year=_year(movie.get("year")))
+                      year=_year(movie.get("year")), item_data=movie)
             stats["upgrades_searched"] += 1; searched += 1
             log_act(name, msg("upgrade"), title, "warning")
             time.sleep(1.5)
@@ -976,10 +1239,22 @@ def ping_all():
         # Notify only on transition online→offline
         if not ok and prev_status == "online":
             lang  = CONFIG.get("language","de")
-            label = "Instanz offline" if lang=="de" else "Instance offline"
-            desc  = (f"**{inst['name']}** ist nicht erreichbar" if lang=="de"
-                     else f"**{inst['name']}** is unreachable")
-            discord_send("offline", label, desc, inst["name"])
+            label = "📡 Instanz offline" if lang=="de" else "📡 Instance offline"
+            is_de = lang == "de"
+            svc_ico = _ICON_SONARR if inst.get("type") == "sonarr" else _ICON_RADARR
+            t_ico   = "📺" if inst.get("type") == "sonarr" else "🎬"
+            desc = (f"{t_ico} **{inst['name']}** ist nicht erreichbar.\n"
+                    f"*{'Nächster Ping erfolgt automatisch.' if is_de else 'Next ping will happen automatically.'}*")
+            fields = [
+                {"name": "🔌 " + ("Fehler" if is_de else "Error"),
+                 "value": f"`{detail or 'Connection failed'}`", "inline": False},
+                {"name": "🌐 URL",
+                 "value": f"`{inst.get('url','?')}`", "inline": True},
+                {"name": "🔧 Typ" if is_de else "🔧 Type",
+                 "value": inst.get("type","?").capitalize(), "inline": True},
+            ]
+            discord_send("offline", label, desc, inst["name"], fields=fields,
+                         author_name=inst["name"], author_icon=svc_ico)
 
 # ─── Cycle & Loop ─────────────────────────────────────────────────────────────
 def run_cycle():
@@ -1002,12 +1277,22 @@ def run_cycle():
         removed = db.purge_expired(CONFIG.get("cooldown_days",7))
         if removed:
             log_act("System", msg("db_pruned", n=removed), "", "info")
-            # Notify Discord: items back off cooldown
-            lang = CONFIG.get("language","de")
-            label = "Cooldown abgelaufen" if lang=="de" else "Cooldown expired"
-            desc  = (f"{removed} Item(s) wieder verfügbar" if lang=="de"
-                     else f"{removed} item(s) available again")
-            discord_send("cooldown", label, desc, "System")
+            lang  = CONFIG.get("language","de")
+            is_de = lang == "de"
+            label = "⏳ Cooldown abgelaufen" if is_de else "⏳ Cooldown expired"
+            desc  = (f"**{removed}** {'Item(s) sind wieder für die Suche freigegeben.' if is_de else 'item(s) are available for searching again.'}\n"
+                     f"*{'Werden beim nächsten Zyklus automatisch berücksichtigt.' if is_de else 'Will be picked up automatically in the next cycle.'}*")
+            next_run = STATE.get("next_run","?")
+            cooldown = CONFIG.get("cooldown_days",7)
+            fields = [
+                {"name": "✅ " + ("Freigegeben" if is_de else "Released"),
+                 "value": f"**{removed}**", "inline": True},
+                {"name": "⏱ " + ("Nächster Lauf" if is_de else "Next run"),
+                 "value": next_run or "?", "inline": True},
+                {"name": "📅 Cooldown",
+                 "value": f"{cooldown} {'Tage' if is_de else 'days'}", "inline": True},
+            ]
+            discord_send("cooldown", label, desc, "System", fields=fields)
         for inst in CONFIG["instances"]:
             if STOP_EVENT.is_set(): break
             if not inst.get("enabled") or not inst.get("api_key"): continue
@@ -1046,6 +1331,43 @@ def hunt_loop():
 # ─── Auth / CSRF ──────────────────────────────────────────────────────────────
 _PASSWORD = os.environ.get("MEDIASTARR_PASSWORD", "").strip()
 
+# ── Brute-force login protection ──────────────────────────────────────────────
+# Keyed by IP: (attempt_count, first_attempt_ts)
+_LOGIN_ATTEMPTS: dict = {}
+_MAX_LOGIN_ATTEMPTS = 10        # attempts before lockout
+_LOCKOUT_SECONDS    = 300       # 5 min lockout window
+_ATTEMPT_WINDOW     = 300       # sliding window to count attempts
+
+def _get_client_ip() -> str:
+    """Return real client IP, respecting X-Forwarded-For from trusted proxies."""
+    xff = request.headers.get("X-Forwarded-For", "")
+    return xff.split(",")[0].strip() if xff else (request.remote_addr or "unknown")
+
+def _check_brute_force() -> bool:
+    """Return True if IP is currently locked out."""
+    ip  = _get_client_ip()
+    now = time.time()
+    rec = _LOGIN_ATTEMPTS.get(ip)
+    if rec is None:
+        return False
+    count, first_ts = rec
+    if now - first_ts > _LOCKOUT_SECONDS:
+        _LOGIN_ATTEMPTS.pop(ip, None)
+        return False
+    return count >= _MAX_LOGIN_ATTEMPTS
+
+def _record_failed_login():
+    ip  = _get_client_ip()
+    now = time.time()
+    rec = _LOGIN_ATTEMPTS.get(ip)
+    if rec is None or now - rec[1] > _ATTEMPT_WINDOW:
+        _LOGIN_ATTEMPTS[ip] = (1, now)
+    else:
+        _LOGIN_ATTEMPTS[ip] = (rec[0] + 1, rec[1])
+
+def _clear_login_attempts():
+    _LOGIN_ATTEMPTS.pop(_get_client_ip(), None)
+
 def _csrf_token() -> str:
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_hex(32)
@@ -1076,12 +1398,18 @@ def _login_required(f):
     return decorated
 
 def _api_auth_required(f):
-    """For API routes: return 401 JSON if not authenticated."""
+    """For API routes: return 401 JSON if not authenticated. Also validates CSRF on mutating methods."""
     from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
         if _PASSWORD and not session.get("authenticated"):
             return jsonify({"ok": False, "error": "Unauthorized"}), 401
+        # CSRF guard for state-mutating API methods
+        if request.method in ("POST", "PATCH", "DELETE") and _PASSWORD:
+            token = (request.headers.get("X-CSRF-Token") or
+                     request.form.get("csrf_token") or "")
+            if not secrets.compare_digest(token, _csrf_token()):
+                return jsonify({"ok": False, "error": "CSRF validation failed"}), 403
         return f(*args, **kwargs)
     return decorated
 
@@ -1090,17 +1418,24 @@ def login_page():
     next_path = request.args.get("next", "/")
     error = None
     if request.method == "POST":
-        # CSRF for login form itself
-        token = request.form.get("csrf_token", "")
-        if not secrets.compare_digest(token, _csrf_token()):
-            error = "Invalid request. Please try again."
-        elif _PASSWORD and secrets.compare_digest(
-                request.form.get("password", ""), _PASSWORD):
-            session["authenticated"] = True
-            session.permanent = True
-            return redirect(next_path or "/")
+        # Check lockout first
+        if _check_brute_force():
+            error = "Too many failed attempts. Please wait 5 minutes."
         else:
-            error = "Incorrect password."
+            # CSRF for login form itself
+            token = request.form.get("csrf_token", "")
+            if not secrets.compare_digest(token, _csrf_token()):
+                error = "Invalid request. Please try again."
+            elif _PASSWORD and secrets.compare_digest(
+                    request.form.get("password", ""), _PASSWORD):
+                _clear_login_attempts()
+                session["authenticated"] = True
+                session.permanent = True
+                return redirect(next_path or "/")
+            else:
+                _record_failed_login()
+                time.sleep(0.3)   # constant-time delay, deters timing attacks
+                error = "Incorrect password."
     return render_template("login.html",
                            csrf_token=_csrf_token(),
                            next_path=next_path,
@@ -1137,7 +1472,7 @@ def api_setup_ping():
     try:
         ok, ver, detail = ArrClient(itype, url, key).ping()
         return jsonify({"ok":ok,"version":ver,"msg":detail})
-    except: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
+    except Exception: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
 
 @app.route("/api/setup/complete", methods=["POST"])
 @_api_auth_required
@@ -1266,7 +1601,7 @@ def api_instances_ping(inst_id:str):
         stats["version"] = ver
         stats["status_detail"] = "" if ok else detail
         return jsonify({"ok":ok,"version":ver,"msg":detail})
-    except: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
+    except Exception: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
 
 # ── Main API ──────────────────────────────────────────────────────────────────
 @app.route("/api/state")

@@ -1,5 +1,74 @@
 # Changelog
 
+## [v6.4.0] — 2026-03-24
+
+### Added
+- **MSLog console logger** — structured browser console output with TRACE / DEBUG / INFO / WARN / ERROR levels, colour-coded and timestamped; level adjustable at runtime via `MSLog.setLevel('DEBUG')` in DevTools
+- **Settings split into 4 tabs**: General, 📺 Sonarr, 🎬 Radarr, Discord — each type now has its own instance list, add-form, and type-specific filter settings
+- `addInstByType(type)` — replaces the old shared `addInstFromSettings()`, works per service type
+- **Brute-force login protection** — IP-based attempt counter; 10 failed logins trigger a 5-minute lockout; constant-time 0.3 s delay on every wrong password
+- **CSRF validation in `_api_auth_required`** — all POST / PATCH / DELETE API calls now validated server-side (was only on form login before)
+- **Discord tab — complete redesign**:
+  - Collapsible step-by-step webhook setup guide (4 steps, DE/EN)
+  - 6 event cards with live Discord message preview (colour bar + field rows)
+  - Show/hide toggle (👁) for webhook URL field
+  - Cleaner header strip with configured-badge and master toggle
+  - Save button styled in Discord brand blue
+- **Homepage flipchart / screenshot carousel** — 6 real UI screenshots (Dashboard, Settings, Sonarr tab, History, Discord, Console Logger) with tab nav, prev/next, dot indicator, keyboard navigation, 5 s auto-advance; pauses on hover; captions translate with DE/EN switcher
+- Screenshots nav link added to homepage header
+- `screen_discord.png` added (1280×800 px)
+- **Discord notification embeds — full redesign**:
+  - `avatar_url` + `username` set on every webhook payload (Mediastarr logo as bot avatar)
+  - Author line now shows service name (Sonarr/Radarr) with the app's own icon
+  - Poster (thumbnail) + fanart/backdrop (large `image` field) from Sonarr/Radarr APIs — pulls TMDB CDN URL directly
+  - External links rendered as inline clickable buttons: **⭐ IMDb · 📺 TVDB · 🎬 TMDB** (whichever are available)
+  - Richer fields: Type, Year, Runtime, multi-source Ratings (IMDb+TMDB+RT with vote count), Genres (up to 4), Network/Studio, Status (🟢/🔴), Current quality (upgrades)
+  - `_year_str()`, `_runtime_str()`, `_status_str()` helpers added
+  - `_sonarr_fanart()` + `_radarr_fanart()` helpers for backdrop image
+  - Stats embed: ASCII progress bar (`████░░`) for daily limit, per-instance table with search+upgrade counts
+  - Cooldown embed: formatted with ✅/⏱/📅 fields and context sentence
+  - Daily-limit embed: full progress bar (`██████████`) + reset time info
+  - Offline embed: backtick-formatted error + URL, service icon in author field
+  - `screen_notify_missing.png` + `screen_notify_system.png` added (1280×800 px)
+  - Both notification screenshots added to homepage flipchart (now 8 slides total)
+
+### Fixed
+- **History layout (Issue #12)** — root cause was CSS selector `#page-history .content` (child search) instead of `#page-history.content` (same element); page was rendered as 2-column grid instead of full-width
+- **History: full date + time** — timestamps now show `DD.MM.YY HH:MM` instead of just `HH:MM`; sticky header row with correct 7-column alignment
+- **Duplicate `setInterval`** — stats page refresh interval was registered twice; now exactly once
+- `deleteInst()` — uses `showActionConfirm()` non-blocking banner instead of `window.confirm()`
+- `toggleInst()` — re-renders the correct type tab (sonarr/radarr) instead of a single shared list
+- `fetchState()` — now re-renders the active type tab (sonarr/radarr) when either is open
+- Favicon (Issue #11) — confirmed present in dashboard template and homepage (was added in v6.3.8, issues closed)
+
+### Security
+- Login brute-force protection (IP-based, 10 attempts / 5 min lockout, constant-time delay)
+- CSRF token now validated on all mutating API endpoints (`_api_auth_required` decorator)
+- `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` headers added (v6.3.8 backport confirmed)
+
+### Fixed (mobile & refinements pass)
+- **Dashboard — tabs-row overflow** on narrow screens: `overflow-x: auto` + hide scrollbar so tabs don't clip on 320 px phones
+- **Dashboard — history header columns** on mobile: 480 px breakpoint hides Type/Year columns, adjusts hist-row grid to 5 columns
+- **Dashboard — 480 px breakpoint** added: tighter padding, smaller stat values, hist-row column collapse
+- **Dashboard — settings card scroll** on mobile: `overflow-x: hidden` prevents layout bleed
+- **Dashboard — controls-bar gap** reduced on mobile, form-actions wrap properly
+- **Homepage — mobile hamburger nav**: `toggleMobileNav()` + animated drawer (`fadeDown`), ☰/✕ toggle button
+- **Homepage — fc-tabs horizontal scroll**: 8 tab buttons now scroll horizontally on phones instead of wrapping
+- **Homepage — comparison table overflow-x**: wrapped in `overflow-x:auto` container for mobile
+- **Homepage — fc-tab flex-shrink:0**: prevents tabs from being squashed in scroll container
+
+### Fixed (bug-hunt pass)
+- **Duplicate `upgrade_target_resolution` key** in JS `saveConfig()` — key was set twice, second value silently overwrote the first; first occurrence removed
+- **`save_config()` thread-safety** — file was written without a lock; concurrent API request + hunt thread could corrupt `config.json`; added `_cfg_lock = threading.Lock()` and wrapped all file I/O in `with _cfg_lock:`
+- **6 bare `except:` clauses** — caught `KeyboardInterrupt`/`SystemExit`; changed to `except Exception:` throughout
+- **`float(last)` crash risk** — stats loop could raise `TypeError` on `None` or corrupt config value; changed to `float(last or 0)`
+- **Screenshot posters missing** — notification screenshots had invisible poster placeholders; rebuilt with film-grain texture, title overlay, star rating and letterboxed fanart strips
+
+### Improved
+- Settings General tab: cleaner layout, toggles for Upgrades and Dry Run moved into the main form grid
+- Sonarr/Radarr instance cards: rendered in type-specific containers, no mixing
+- Homepage: screenshots section with full flipchart widget inserted between Features and Install
+
 ## [6.3.8] — 2026-03-22
 
 ### Added
