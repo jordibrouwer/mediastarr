@@ -1,81 +1,67 @@
-# Inspired by Quasarr's bug report: https://github.com/rix1337/Quasarr/blob/main/.github/ISSUE_TEMPLATE/bug_report.yml
-name: Bug report
-description: Create a bug report
+name: Bug Report / Fehlermeldung
+description: Report a bug / Melde einen Fehler
+title: "[Bug]: "
+labels: ["bug"]
+
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
-  - type: checkboxes
-    attributes:
-      label: Did you read the README?
-      description: Please read the <a href="https://github.com/kroeberd/mediastarr/blob/main/README.md">README</a> first.
-      options:
-        - label: I have read the README.
-          required: true
-  - type: checkboxes
-    attributes:
-      label: Is this an existing issue?
-      description: Check <a href="https://github.com/kroeberd/mediastarr/issues?q=is%3Aissue">all issues</a> to prevent duplicates.
-      options:
-        - label: I confirm this is not a duplicate.
-          required: true
-  - type: checkboxes
-    attributes:
-      label: Latest Version of Mediastarr?
-      description: If this is not the latest version, please upgrade first and then check again.
-      options:
-        - label: I use the latest Version
-          required: true
+        ## 🇬🇧 English / 🇩🇪 Deutsch
+        Please fill out the form below. / Bitte fülle das Formular aus.
+
   - type: textarea
+    id: description
     attributes:
-      label: Environment
-      description: Tell us about your setup
-      value: |
-        - Mediastarr version:
-        - Last working version:
-        - Type: [Docker/LXC/Manual]
-        - OS: [Docker/Windows/Linux/macOS]
-      render: markdown
+      label: Bug Description / Fehlerbeschreibung
+      placeholder: |
+        EN: What happened? What did you expect?
+        DE: Was ist passiert? Was hättest du erwartet?
     validations:
       required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce / Schritte zur Reproduktion
+      placeholder: |
+        1. Go to ...
+        2. Click on ...
+        3. See error
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Mediastarr Version
+      placeholder: "e.g. v6.4.1"
+    validations:
+      required: true
+
   - type: dropdown
-    id: browsers
+    id: install
     attributes:
-      label: What browsers are you seeing the problem on?
-      multiple: true
+      label: Installation
       options:
-        - Firefox
-        - Chrome
-        - Safari
-        - Microsoft Edge
-  - type: textarea
-    attributes:
-      label: Description
-      description: Describe all steps to reproduce the issue. Without these, noone can be able to help you!
+        - Docker (docker run)
+        - Docker Compose
+        - Unraid Community Apps
+        - Other
     validations:
       required: true
+
   - type: textarea
+    id: logs
     attributes:
-      label: Error from the console/ui ect.
-      description: |
-        Add ALL messages from the console/ui ect. that correlate with your issue.
-#        If you can't see a log message that correlates with your issue, set the LOG environment variable to "TRACE".
-      render: text
-    validations:
-      required: true
+      label: Logs / Fehlerausgabe
+      placeholder: |
+        EN: Paste relevant log output here (docker logs mediastarr)
+        DE: Relevante Log-Ausgabe hier einfügen (docker logs mediastarr)
+      render: shell
+
   - type: textarea
+    id: additional
     attributes:
-      label: config.json
-      description: |
-        To reproduce your issue we need to know about your setup.
-        IMPORTANT: Redact the API keys and the Discord webhook!
-      render: text
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Screenshots
-      description: Add screenshots that show your issue (ideally log and UI e.g. of Radarr/Sonarr)
-    validations:
-      required: false
+      label: Additional Context / Weitere Informationen
+      placeholder: Screenshots, config details, etc.

@@ -18,7 +18,7 @@ import os, re, json, time, logging, threading, requests, random, string, zoneinf
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
-from flask import Flask, render_template, jsonify, request, redirect, session, url_for
+from flask import Flask, render_template, jsonify, request, redirect, session, url_for, send_file
 from collections import deque
 import secrets
 try:
@@ -87,7 +87,7 @@ DISCORD_COLORS = {
 # Service icon URLs for author field
 _ICON_SONARR   = "https://raw.githubusercontent.com/Sonarr/Sonarr/develop/Logo/128.png"
 _ICON_RADARR   = "https://raw.githubusercontent.com/Radarr/Radarr/develop/Logo/128.png"
-_ICON_MEDIASTARR = "https://raw.githubusercontent.com/kroeberd/mediastarr/main/static/icon.png"
+_ICON_MEDIASTARR = "https://mediastarr.de/static/icon.png"
 
 # Rate-limit guard: tracks last successful send time per event_type
 _dc_last_sent: dict[str, float] = {}
@@ -507,7 +507,7 @@ def _year(val):
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.4.0"
+_CURRENT_VERSION = "v6.4.1"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -575,6 +575,8 @@ DEFAULT_CONFIG = {
         "stats_last_sent_at":  0.0,    # unix timestamp
         "rate_limit_cooldown": 5,      # seconds between same-type messages
     },
+    # Read-only public access to /api/state (no auth required, no sensitive data)
+    "public_api_state": False,
 }
 
 def load_config() -> dict:
@@ -809,9 +811,25 @@ def jittered_delay(base_sec: int) -> tuple[int, int]:
     return total, jitter
 
 # ─── Hunt helpers ─────────────────────────────────────────────────────────────
-def daily_limit_reached() -> bool:
-    limit = CONFIG.get("daily_limit", 0)
-    return limit > 0 and db.count_today() >= limit
+def daily_limit_reached(iid: str = "") -> bool:
+    """True if the global daily limit OR this instance's own limit is reached."""
+    # Global limit
+    global_limit = CONFIG.get("daily_limit", 0)
+    if global_limit > 0 and db.count_today() >= global_limit:
+        return True
+    # Per-instance limit
+    if iid:
+        inst = next((i for i in CONFIG["instances"] if i["id"] == iid), None)
+        inst_limit = clamp_int(int(inst.get("daily_limit", 0) or 0), 0, 9999, 0) if inst else 0
+        if inst_limit > 0 and db.count_today_for_instance(iid) >= inst_limit:
+            return True
+    return False
+
+def should_search(iid:str, item_type:str, item_id:int):
+    if daily_limit_reached(iid): return False, "daily_limit"
+    if db.is_on_cooldown(iid, item_type, item_id, CONFIG.get("cooldown_days",7)):
+        return False, "cooldown"
+    return True, ""
 
 def _parse_release_dt(raw):
     """Parse a release date from various Arr field formats."""
@@ -839,12 +857,6 @@ def _is_released(release_dt) -> bool:
     if release_dt is None: return True
     try: return release_dt.date() <= datetime.utcnow().date()
     except Exception: return True
-
-def should_search(iid:str, item_type:str, item_id:int):
-    if daily_limit_reached(): return False, "daily_limit"
-    if db.is_on_cooldown(iid, item_type, item_id, CONFIG.get("cooldown_days",7)):
-        return False, "cooldown"
-    return True, ""
 
 def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
               title: str, command: dict, changed=None, year=None,
@@ -1577,6 +1589,8 @@ def api_instances_update(inst_id:str):
         if not ok: return jsonify({"ok":False,"error":f"API Key: {e}"}),400
         inst["api_key"] = key
     if "enabled" in d: inst["enabled"] = bool(d["enabled"])
+    if "daily_limit" in d:
+        inst["daily_limit"] = clamp_int(int(d.get("daily_limit", 0) or 0), 0, 9999, 0)
     save_config(CONFIG); return jsonify({"ok":True})
 
 @app.route("/api/instances/<inst_id>", methods=["DELETE"])
@@ -1605,10 +1619,15 @@ def api_instances_ping(inst_id:str):
 
 # ── Main API ──────────────────────────────────────────────────────────────────
 @app.route("/api/state")
-@_api_auth_required
 def api_state():
+    # Allow unauthenticated read-only access when public_api_state is enabled
+    if _PASSWORD and not session.get("authenticated") and not CONFIG.get("public_api_state", False):
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
     today_n=db.count_today(); limit=CONFIG.get("daily_limit",0)
     instances_safe=[{k:v for k,v in i.items() if k!="api_key"} for i in CONFIG["instances"]]
+    # Add per-instance today count so UI can show instance limit progress
+    for inst_s in instances_safe:
+        inst_s["today_count"] = db.count_today_for_instance(inst_s["id"])
     return jsonify({
         "running":STATE["running"],"last_run":STATE["last_run"],
         "next_run":STATE["next_run"],"cycle_count":STATE["cycle_count"],
@@ -1648,6 +1667,7 @@ def api_state():
             },
             "discord_configured": bool(CONFIG.get("discord",{}).get("webhook_url","")),
             "discord_webhook_set": bool(CONFIG.get("discord",{}).get("webhook_url","")),
+            "public_api_state":    CONFIG.get("public_api_state", False),
         },
     })
 
@@ -1723,7 +1743,75 @@ def api_config():
             url = safe_str(dc_in["webhook_url"], 512).strip()
             if url == "" or url.startswith(("http://","https://")):
                 dc["webhook_url"] = url
+    if "public_api_state" in d:
+        CONFIG["public_api_state"] = bool(d["public_api_state"])
     save_config(CONFIG); return jsonify({"ok":True})
+
+# ── Config Export / Import ────────────────────────────────────────────────────
+@app.route("/api/config/export")
+@_api_auth_required
+def api_config_export():
+    """Download config.json as a timestamped backup file (API keys included — treat as secret)."""
+    import io
+    export = {k: v for k, v in CONFIG.items()}
+    ts     = now_local().strftime("%Y%m%d_%H%M%S")
+    data   = json.dumps(export, indent=2, ensure_ascii=False)
+    buf    = io.BytesIO(data.encode("utf-8"))
+    return send_file(                           # type: ignore[return-value]
+        buf,
+        mimetype        = "application/json",
+        as_attachment   = True,
+        download_name   = f"mediastarr_config_{ts}.json",
+    )
+
+@app.route("/api/config/import", methods=["POST"])
+@_api_auth_required
+def api_config_import():
+    """Upload a previously exported config.json to restore settings."""
+    file = request.files.get("file")
+    if not file or not file.filename:
+        return jsonify({"ok": False, "error": "No file provided"}), 400
+    if not file.filename.endswith(".json"):
+        return jsonify({"ok": False, "error": "File must be a .json backup"}), 400
+    try:
+        raw  = file.read(1_024 * 512)   # 512 KB hard cap
+        data = json.loads(raw)
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Invalid JSON: {e}"}), 400
+
+    if not isinstance(data, dict):
+        return jsonify({"ok": False, "error": "Root must be a JSON object"}), 400
+
+    # Validate instances list
+    for inst in data.get("instances", []):
+        if not isinstance(inst, dict):
+            return jsonify({"ok": False, "error": "Invalid instances list"}), 400
+        # Must have required keys and safe values
+        nm  = safe_str(inst.get("name",""),  40)
+        url = safe_str(inst.get("url",""),   URL_MAX_LEN)
+        key = safe_str(inst.get("api_key",""), 128)
+        itp = safe_str(inst.get("type",""),  10)
+        if itp not in ALLOWED_TYPES:
+            return jsonify({"ok": False, "error": f"Unknown instance type: {itp}"}), 400
+        ok_n, _ = validate_name(nm)
+        if not ok_n and nm:
+            return jsonify({"ok": False, "error": f"Invalid instance name: {nm}"}), 400
+
+    # Merge: start from DEFAULT_CONFIG, overlay imported values, preserve setup_complete
+    merged = DEFAULT_CONFIG.copy()
+    merged.update(data)
+    # Ensure IDs exist on all instances
+    for inst in merged.get("instances", []):
+        if "id" not in inst or not inst["id"]:
+            inst["id"] = make_id()
+    # Never let an import reset setup or clobber critical runtime keys
+    merged["setup_complete"] = CONFIG.get("setup_complete", merged.get("setup_complete", False))
+    # Write to disk and hot-reload into CONFIG
+    CONFIG.clear()
+    CONFIG.update(merged)
+    save_config(CONFIG)
+    logger.info("Config imported via /api/config/import")
+    return jsonify({"ok": True, "instances": len(merged.get("instances", []))})
 
 # ── History API ───────────────────────────────────────────────────────────────
 @app.route("/api/history")

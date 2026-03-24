@@ -48,6 +48,9 @@ Runs on a configurable schedule, keeps a SQLite history, sends rich Discord embe
 | 🕐 Timezone | IANA timezone picker, respects `TZ` env var |
 | 🔒 Security | CSRF protection, optional password, brute-force lockout, `config.json` set 0600 |
 | 🖥 MSLog | Browser console logger: TRACE/DEBUG/INFO/WARN/ERROR with timestamps |
+| 📅 Per-instance daily limit | Each instance can have its own search limit per day |
+| 💾 Config backup | Export / import full config as JSON (incl. API keys) |
+| 🔓 Public API mode | `/api/state` optionally accessible without login — for external tools |
 
 ---
 
@@ -139,7 +142,6 @@ Settings → **Discord** tab:
 
 ## 🗺️ Roadmap / Ideas
 
-- [ ] Push notifications via Ntfy / Gotify / Apprise
 - [ ] Webhook endpoint to trigger cycle from external automation
 - [ ] Per-instance daily limits
 - [ ] Export/import config
@@ -189,6 +191,9 @@ Läuft nach einem konfigurierbaren Zeitplan, führt eine SQLite-Historie, sendet
 | 🕐 Zeitzone | IANA-Zeitzonenwahl, respektiert `TZ`-Umgebungsvariable |
 | 🔒 Sicherheit | CSRF-Schutz, optionales Passwort, Brute-Force-Lockout, `config.json` 0600 |
 | 🖥 MSLog | Browser-Konsolen-Logger: TRACE/DEBUG/INFO/WARN/ERROR |
+| 📅 Pro-Instanz Tageslimit | Jede Instanz kann ihr eigenes Tageslimit haben |
+| 💾 Config-Backup | Export / Import der gesamten Konfiguration als JSON (inkl. API-Keys) |
+| 🔓 Öffentlicher API-Modus | `/api/state` optional ohne Login erreichbar — für externe Tools |
 
 ---
 
@@ -251,7 +256,6 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 
 ## 🗺️ Roadmap / Ideen
 
-- [ ] Push-Benachrichtigungen via Ntfy / Gotify / Apprise
 - [ ] Webhook-Endpunkt zum Auslösen eines Zyklus von externer Automatisierung
 - [ ] Pro-Instanz Tageslimits
 - [ ] Konfiguration exportieren/importieren

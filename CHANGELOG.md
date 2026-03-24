@@ -1,3 +1,30 @@
+## [v6.4.1] — 2026-03-24
+
+### Added
+- **Per-instance daily limit** — each Sonarr/Radarr instance can have its own `daily_limit` (0 = unlimited); shown as a live mini progress bar in the instance card; backend checks global limit first, then per-instance limit
+- **Config backup: Export / Import** — `GET /api/config/export` downloads a timestamped `mediastarr_config_YYYYMMDD_HHMMSS.json`; `POST /api/config/import` uploads and hot-reloads config with full validation (type whitelist, name validation, 512 KB cap); page auto-reloads after successful import
+- **Read-only public `/api/state`** — `public_api_state` toggle in General settings; when enabled, `/api/state` is accessible without login (API keys always stripped); saves immediately on toggle
+- **Bright new icon** — redesigned SVG radar: white-hot centre, orange glow rings, crosshair ticks, radial gradient background, sweep sector; renders crisply at all sizes
+- **`favicon.ico` (32×32)** — dedicated 32-pixel ICO for browser tabs; added to all templates (`index.html`, `login.html`, `setup.html`) and homepage
+- **Discord icon fixed** — footer icon URL changed from raw.githubusercontent (404 until pushed) to `https://mediastarr.de/static/icon.png` (always live)
+- **GitHub ISSUE_TEMPLATE** — `.github/ISSUE_TEMPLATE/config.yml`, `feature_request.yml`, `bug_report.yml` added; blank issues disabled
+
+### Fixed
+- **Duplicate `dcToggleUrl()` function** — second declaration was actually the body of `toggleDc()` with the wrong name; now correctly defined as `function toggleDc(key)`
+- **Missing `togglePublicApi()` function** — HTML toggle wired to function that was never defined → fixed
+- **Missing `importConfig()` function** — file input wired to function that was never defined → fixed
+- **Missing i18n keys** — `lbl_backup`, `hint_backup`, `lbl_public_api`, `hint_public_api`, `btn_export`, `btn_import` added to T dict (DE + EN)
+- **`public_api_state` not synced in `updateUI()`** — toggle state now correctly restored from server on every poll
+- **`saveInst()` missing `daily_limit`** — field read from `#ilimit-{id}` and sent in PATCH body
+- **Sidebar version** — updated to v6.4.1
+
+### Removed
+- Ntfy / Gotify / Apprise from roadmap (not planned for near future)
+
+### Security
+- All 50 audit checks pass (5 flagged were confirmed false-positives: f-string in `get_history` only interpolates whitelist-built `WHERE` clause, not user input; `api_key` in `api_state` is the strip filter not an exposure)
+- Import endpoint: validates type against `ALLOWED_TYPES` whitelist, runs `validate_name()` on all instance names, enforces 512 KB file cap, merges over DEFAULT_CONFIG (no raw overwrite)
+
 # Changelog
 
 ## [v6.4.0] — 2026-03-24
