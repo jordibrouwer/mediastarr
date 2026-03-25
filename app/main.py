@@ -238,7 +238,7 @@ def discord_send(event_type: str, title: str, description: str,
         return
 
     color = DISCORD_COLORS.get(event_type, DISCORD_COLORS["info"])
-    footer_parts = ["Mediastarr v6.4.1"]
+    footer_parts = ["Mediastarr v6.4.2"]
     if instance_name: footer_parts.append(instance_name)
     if footer_extra:  footer_parts.append(footer_extra)
     footer_text = "  ·  ".join(footer_parts)
@@ -507,7 +507,7 @@ def _year(val):
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.4.1"
+_CURRENT_VERSION = "v6.4.2"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -889,6 +889,9 @@ def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
         ev_title = f"⬆️ {'Upgrade gesucht' if lang=='de' else 'Upgrade searched'}"
     else:
         ev_title = f"🔍 {'Fehlend gesucht' if lang=='de' else 'Missing searched'}"
+    # Prepend the actual content title so Discord shows "🔍 Breaking Bad — Fehlend gesucht"
+    if title and title != "?":
+        ev_title = f"{title} — {ev_title}"
     if result == "dry_run":
         ev_title = f"🧪 [Dry Run] {ev_title}"
 

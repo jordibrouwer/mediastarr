@@ -1,5 +1,17 @@
 # Changelog
 
+## [v6.4.2] — 2026-03-25
+
+### Fixed
+- **Bug #19 — History title truncated** (`.hist-title` CSS): removed `max-width: 280px` — the `1fr` grid column now controls the width, titles are no longer clipped with `…`
+- **Bug #17 — Discord embed missing title**: `ev_title` was always `"🔍 Fehlend gesucht"` — the actual content title (`title` param) was never shown in the embed heading. Now prepended: `"Breaking Bad S01E03 — 🔍 Fehlend gesucht"`
+
+### Added
+- **Statistics — Sonarr / Radarr tabs**: two new filter tabs (📺 Sonarr, 🎬 Radarr) next to the existing "All" tab on the Statistics page; all KPI cards, instance bars, donut, type bars and timeline filter to only the selected service type
+- **Live Log Console** (`🖥 Console` in sidebar): new full-page live console fed directly from the server activity log; features level filter (INFO+ / WARN+ / ERROR), text search, auto-scroll toggle, red error badge on nav item, clear button; entries are colour-coded by level (INFO green / WARN yellow / ERROR red)
+- **Homepage version badge**: hero badge now shows the current hardcoded version (`v6.4.2`) and silently fetches the latest GitHub Release tag on load — always shows the real latest release
+
+
 ## [v6.4.1] — 2026-03-24
 
 ### Added
