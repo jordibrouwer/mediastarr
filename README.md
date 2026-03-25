@@ -142,13 +142,10 @@ Settings → **Discord** tab:
 
 ## 🗺️ Roadmap / Ideas
 
-- [x] Per-instance daily limits *(v6.4.1)*
-- [x] Export/import config *(v6.4.1)*
-- [x] Read-only API mode (no auth required for `/api/state`) *(v6.4.1)*
-- [x] Skip upcoming/unreleased content *(v6.4.3)*
 - [ ] Webhook endpoint to trigger cycle from external automation
-- [ ] Push via Gotify / Apprise (alternative to Discord)
-- [ ] Scheduled maintenance windows (pause during certain hours)
+- [ ] Per-instance daily limits
+- [ ] Export/import config
+- [ ] Read-only API mode (no auth required for `/api/state`)
 
 ---
 
@@ -259,13 +256,10 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 
 ## 🗺️ Roadmap / Ideen
 
-- [x] Pro-Instanz Tageslimits *(v6.4.1)*
-- [x] Konfiguration exportieren/importieren *(v6.4.1)*
-- [x] Read-only-API-Modus (kein Auth für `/api/state`) *(v6.4.1)*
-- [x] Upcoming/unveröffentlichte Inhalte überspringen *(v6.4.3)*
 - [ ] Webhook-Endpunkt zum Auslösen eines Zyklus von externer Automatisierung
-- [ ] Push via Gotify / Apprise (Alternative zu Discord)
-- [ ] Wartungsfenster (Pause zu bestimmten Uhrzeiten)
+- [ ] Pro-Instanz Tageslimits
+- [ ] Konfiguration exportieren/importieren
+- [ ] Read-only-API-Modus (kein Auth für `/api/state`)
 
 ## 📸 Screenshots
 
@@ -278,13 +272,6 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 | ![Verlauf](static/screen_history_de.png) | ![Benachrichtigungen](static/screen_notify_missing_de.png) | ![Console](static/screen_console_de.png) |
 
 ---
-
-## 🤝 Contributing & Community
-
-- **Contributing:** See [CONTRIBUTING.md](.github/CONTRIBUTING.md)
-- **Security:** Report vulnerabilities via [SECURITY.md](.github/SECURITY.md) — please **do not** use public issues
-- **Discord:** [discord.gg/8Vb9cj4ksv](https://discord.gg/8Vb9cj4ksv) for questions and support
-- **Issues:** [Bug reports](.github/ISSUE_TEMPLATE/bug_report.yml) and [feature requests](.github/ISSUE_TEMPLATE/feature_request.yml) via GitHub
 
 <div align="center">
 

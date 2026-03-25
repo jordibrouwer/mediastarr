@@ -1,49 +1,5 @@
 # Changelog
 
-## [v6.4.3] — 2026-03-25
-
-### Changed
-- **`skip_upcoming` hardwired to `True`** — upcoming/unreleased content is always filtered; the toggle has been removed from the UI and DEFAULT_CONFIG; both Sonarr (by `airDateUtc`) and Radarr (by `digitalRelease` / `physicalRelease` / `inCinemas`) filter unreleased items before every run; skipped count logged at INFO level
-
-### Added
-- **Configurable log rotation** — new settings in General tab:
-  - **Max file size (MB)**: 1–100 MB (default 5 MB)
-  - **Backup count**: 0–10 files (default 2, giving 3 files total: current + 2 backups)
-  - `_setup_file_logging()` accepts `max_mb` / `backups` from CONFIG; safe to call multiple times (reconfigures in-place without restart)
-  - `_reconfigure_file_logging()` applies updated CONFIG values to running handler after `/api/config` save
-  - `POST /api/log/rotate` — manually triggers `doRollover()` and returns file sizes of current + all backups
-  - `GET /api/log/status` — returns all log files with sizes, max_bytes, backups_count, log_dir path
-  - "🔄 Rotate now" and "📋 Status" buttons in General settings with inline result display
-  - New i18n keys: `lbl_log_rotation`, `hint_log_rotation`, `lbl_log_max_mb`, `hint_log_max_mb`, `lbl_log_backups`, `hint_log_backups`, `btn_log_rotate`, `btn_log_status` (DE + EN)
-- **Unit tests**: 15 assertions covering `_ep_is_released`, `_movie_is_released` (yesterday/tomorrow/ISO-Z/no-date edge cases) and `RotatingFileHandler` (initial setup, rollover, reconfigure, clamp-min, clamp-max) — all pass
-
-## [v6.4.3] — 2026-03-25
-
-### Fixed
-- **Bug #22 — Stats tabs ignore theme**: `<button>` elements inherited browser-default background/border; added `background:none;border:none;cursor:pointer` inline styles so `.tab-btn` CSS variables apply correctly in all themes
-- **Bug #21 — Console shows 0 entries**: `_feedConsole` was patching `updateUI` with a param that was never passed (function reads `appState` globally); fixed to call `_feedConsole(appState)` directly after `_origFetchState()` resolves; also fixed log entry field mapping (`ts`/`service`/`action`/`item` vs incorrect `ts`/`source`/`message`)
-- **Bug #24 — Settings page not full width**: added `#page-settings.content { grid-template-columns: 1fr; }` so the settings card fills the full content area instead of half the grid
-- **Bug #23 — Homepage hero version stuck on v6.3.8**: badge already fixed in v6.4.2 to `v6.4.2`; now shows `v6.4.3` as hardcoded fallback and fetches latest GitHub Release on load
-
-### Added
-- **Bug #20 — Config migration**: new `_migrate_config()` runs on every startup; non-destructively adds any keys from `DEFAULT_CONFIG` that are missing in the saved config (top-level and nested `discord.*`); adds instance defaults (`enabled`, `daily_limit`, `type`) without touching existing values; logs every added key at INFO level
-- **Feature #25 — Skip upcoming/unreleased content**: new `skip_upcoming` toggle (default **On**) in General settings; filters Sonarr episodes where `airDateUtc` is in the future and Radarr movies where all known release dates (`digitalRelease`, `physicalRelease`, `inCinemas`) are future-dated; skipped count logged at DEBUG level
-- **Persistent rotating log file**: `_setup_file_logging()` called at startup; writes to `/data/logs/mediastarr.log`; 5 MB max size with 2 backups (`mediastarr.log.1`, `.log.2`); `RotatingFileHandler` from stdlib — no new dependencies
-- **More logging**: DEBUG-level log for every upstream filter decision (IMDb threshold, skip_upcoming count, target resolution skip, upgrade quality skip)
-- **Roadmap updated**: Per-instance limits, config export/import, read-only API, skip-upcoming all marked done; new pending items added
-
-## [v6.4.2] — 2026-03-25
-
-### Fixed
-- **Bug #19 — History title truncated** (`.hist-title` CSS): removed `max-width: 280px` — the `1fr` grid column now controls the width, titles are no longer clipped with `…`
-- **Bug #17 — Discord embed missing title**: `ev_title` was always `"🔍 Fehlend gesucht"` — the actual content title (`title` param) was never shown in the embed heading. Now prepended: `"Breaking Bad S01E03 — 🔍 Fehlend gesucht"`
-
-### Added
-- **Statistics — Sonarr / Radarr tabs**: two new filter tabs (📺 Sonarr, 🎬 Radarr) next to the existing "All" tab on the Statistics page; all KPI cards, instance bars, donut, type bars and timeline filter to only the selected service type
-- **Live Log Console** (`🖥 Console` in sidebar): new full-page live console fed directly from the server activity log; features level filter (INFO+ / WARN+ / ERROR), text search, auto-scroll toggle, red error badge on nav item, clear button; entries are colour-coded by level (INFO green / WARN yellow / ERROR red)
-- **Homepage version badge**: hero badge now shows the current hardcoded version (`v6.4.2`) and silently fetches the latest GitHub Release tag on load — always shows the real latest release
-
-
 ## [v6.4.1] — 2026-03-24
 
 ### Added
