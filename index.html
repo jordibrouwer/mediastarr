@@ -352,9 +352,10 @@ span[data-lang].show{display:inline}
       <button class="fc-tab" onclick="fcShow(2)">📺 <span data-de="Sonarr-Tab" data-en="Sonarr tab">Sonarr tab</span></button>
       <button class="fc-tab" onclick="fcShow(3)">📋 <span data-de="Verlauf" data-en="History">History</span></button>
       <button class="fc-tab" onclick="fcShow(4)">💬 <span data-de="Discord" data-en="Discord">Discord</span></button>
-      <button class="fc-tab" onclick="fcShow(5)">📨 <span data-de="DC Nachrichten" data-en="DC Messages">DC Messages</span></button>
-      <button class="fc-tab" onclick="fcShow(6)">📊 <span data-de="DC System" data-en="DC System">DC System</span></button>
-      <button class="fc-tab" onclick="fcShow(7)">🖥 <span data-de="Console Logger" data-en="Console Logger">Console Logger</span></button>
+      <button class="fc-tab" onclick="fcShow(5)">📊 <span data-de="Statistiken" data-en="Statistics">Statistics</span></button>
+      <button class="fc-tab" onclick="fcShow(6)">📨 <span data-de="DC Nachrichten" data-en="DC Messages">DC Messages</span></button>
+      <button class="fc-tab" onclick="fcShow(7)">📊 <span data-de="DC System" data-en="DC System">DC System</span></button>
+      <button class="fc-tab" onclick="fcShow(8)">🖥 <span data-de="Console Logger" data-en="Console Logger">Console Logger</span></button>
     </div>
 
     <!-- Flipchart frame -->
@@ -794,6 +795,13 @@ const FC_SLIDES = [
     title: {en:'Discord Webhook Setup',     de:'Discord Webhook-Einrichtung'},
     sub:   {en:'Step-by-step webhook guide, 6 event types each with live message preview, show/hide URL field.',
             de:'Schritt-für-Schritt Webhook-Anleitung, 6 Event-Typen mit Live-Nachrichten-Preview, URL einblenden.'},
+  },
+  {
+    img:   {de:'./static/screen_stats_de.png', en:'./static/screen_stats_en.png'},
+    url:   'mediastarr:7979/stats',
+    title: {en:'Statistics — Sonarr / Radarr tabs', de:'Statistiken — Sonarr/Radarr-Tabs'},
+    sub:   {en:'Filter stats by All / Sonarr / Radarr. KPI cards, instance bars, year chart, donut, type breakdown and 24h timeline.',
+            de:'Statistiken nach Alle / Sonarr / Radarr filtern. KPI-Karten, Instanz-Balken, Jahres-Chart, Donut, Suchtypen und 24h-Timeline.'},
   },
   {
     img:   {de:'./static/screen_notify_missing_de.png', en:'./static/screen_notify_missing_en.png'},
