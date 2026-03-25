@@ -249,8 +249,9 @@
     .off-cooldown { color: var(--green); }
 
     /* ── Log / History full page (fix: no space — these ARE .content) ── */
-    #page-log.content { grid-template-columns: 1fr; }
-    #page-console.content { grid-template-columns: 1fr; }
+    #page-log.content      { grid-template-columns: 1fr; }
+    #page-console.content  { grid-template-columns: 1fr; }
+    #page-settings.content { grid-template-columns: 1fr; }
     .console-line { display:flex; gap:8px; padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
     .console-line:hover { background:rgba(255,255,255,0.02); }
     .console-ts   { color:var(--muted); font-size:10px; white-space:nowrap; min-width:56px; padding-top:1px; }
@@ -408,7 +409,7 @@
         </svg>
         <div>
           <div class="logo-name">Mediastarr</div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.4.2</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.4.3</span></div>
         </div>
       </div>
     </div>
@@ -454,7 +455,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.4.2</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.4.3</span></a></div>
     </div>
   </aside>
 
@@ -647,6 +648,34 @@
           </div>
           <div class="form-actions">
             <button class="btn btn-start" onclick="saveConfig()" data-i18n="btn_save">Speichern</button>
+          </div>
+
+          <!-- ── Log Rotation ── -->
+          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_log_rotation">Log-Rotation</div>
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:12px" data-i18n="hint_log_rotation">Logdatei unter /data/logs/mediastarr.log. Rotation erfolgt automatisch.</div>
+            <div class="form-grid" style="margin-bottom:10px">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_log_max_mb">Max. Dateigröße (MB)</label>
+                <input class="form-input" id="cfg-log-max-mb" type="number" min="1" max="100" value="5">
+                <div class="form-hint" data-i18n="hint_log_max_mb">1–100 MB. Standard: 5 MB.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_log_backups">Anzahl Backup-Dateien</label>
+                <input class="form-input" id="cfg-log-backups" type="number" min="0" max="10" value="2">
+                <div class="form-hint" data-i18n="hint_log_backups">0–10 Backups. Standard: 2 (= 3 Dateien gesamt).</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-start" onclick="saveLogConfig()" data-i18n="btn_save">Speichern</button>
+              <button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="testLogRotation()" data-i18n="btn_log_rotate">🔄 Jetzt rotieren</button>
+              <button class="btn" style="border-color:var(--muted2);color:var(--muted2)" onclick="loadLogStatus()" data-i18n="btn_log_status">📋 Status</button>
+              <span id="log-action-msg" style="font-size:11px;display:none"></span>
+            </div>
+            <!-- Log status panel -->
+            <div id="log-status-panel" style="display:none;margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;font-family:var(--mono)">
+              <div id="log-status-content" style="color:var(--muted2)">—</div>
+            </div>
           </div>
 
           <!-- ── Export / Import ── -->
@@ -1095,9 +1124,9 @@
 
     <!-- Stats filter tabs -->
     <div style="grid-column:1/-1;display:flex;gap:6px;margin-bottom:4px;border-bottom:1px solid var(--border);padding-bottom:10px">
-      <button id="stat-tab-all"    class="tab-btn active" onclick="setStatTab('all')"   style="font-size:11px;padding:5px 14px">📊 <span data-i18n="stat_tab_all">Alle</span></button>
-      <button id="stat-tab-sonarr" class="tab-btn"        onclick="setStatTab('sonarr')" style="font-size:11px;padding:5px 14px">📺 Sonarr</button>
-      <button id="stat-tab-radarr" class="tab-btn"        onclick="setStatTab('radarr')" style="font-size:11px;padding:5px 14px">🎬 Radarr</button>
+      <button id="stat-tab-all"    class="tab-btn active" onclick="setStatTab('all')"    style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">📊 <span data-i18n="stat_tab_all">Alle</span></button>
+      <button id="stat-tab-sonarr" class="tab-btn"        onclick="setStatTab('sonarr')" style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">📺 Sonarr</button>
+      <button id="stat-tab-radarr" class="tab-btn"        onclick="setStatTab('radarr')" style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">🎬 Radarr</button>
     </div>
     <div class="stats-grid" style="grid-column:1/-1">
       <div class="stat-card">
@@ -1273,6 +1302,16 @@ const T = {
         hint_public_api:'/api/state ohne Login erreichbar — kein API-Key enthalten. Für externe Tools.',
         btn_export:'⬇ Exportieren',
         btn_import:'⬆ Importieren',
+        lbl_skip_upcoming:'Upcoming überspringen',
+        hint_skip_upcoming:'Keine Suche für Inhalte die noch nicht veröffentlicht wurden.',
+        lbl_log_rotation:'Log-Rotation',
+        hint_log_rotation:'Logdatei unter /data/logs/mediastarr.log. Rotation erfolgt automatisch.',
+        lbl_log_max_mb:'Max. Dateigröße (MB)',
+        hint_log_max_mb:'1–100 MB. Standard: 5 MB.',
+        lbl_log_backups:'Anzahl Backup-Dateien',
+        hint_log_backups:'0–10 Backups. Standard: 2 (= 3 Dateien gesamt).',
+        btn_log_rotate:'🔄 Jetzt rotieren',
+        btn_log_status:'📋 Status',
   },
   en: { dashboard:'Dashboard', settings:'Settings', history:'History', log:'Activity Log',
         running:'Running', stopped:'Stopped', online:'Online', offline:'Offline', disabled:'Disabled',
@@ -1326,6 +1365,16 @@ const T = {
         hint_public_api:'/api/state accessible without login — no API keys in response. For external tools.',
         btn_export:'⬇ Export',
         btn_import:'⬆ Import',
+        lbl_skip_upcoming:'Skip upcoming',
+        hint_skip_upcoming:'Do not search for content that has not been released yet.',
+        lbl_log_rotation:'Log Rotation',
+        hint_log_rotation:'Log file at /data/logs/mediastarr.log. Rotation happens automatically.',
+        lbl_log_max_mb:'Max file size (MB)',
+        hint_log_max_mb:'1–100 MB. Default: 5 MB.',
+        lbl_log_backups:'Number of backup files',
+        hint_log_backups:'0–10 backups. Default: 2 (= 3 files total).',
+        btn_log_rotate:'🔄 Rotate now',
+        btn_log_status:'📋 Status',
   }
 };
 const t = k => T[currentLang]?.[k] || k;
@@ -1615,6 +1664,14 @@ function updateUI() {
       if (tog) tog.className = 'toggle' + (toggleStates[k]?' on':'');
       if (lab) lab.textContent = t(toggleStates[k]?'on':'off');
     });
+    // Sync skip_upcoming toggle
+    _skipUpcoming = c.skip_upcoming !== false;
+    const togSU = el('tog-skip-upcoming'), labSU = el('lab-skip-upcoming');
+    if (togSU) togSU.className = 'toggle' + (_skipUpcoming ? ' on' : '');
+    if (labSU) labSU.textContent = t(_skipUpcoming ? 'on' : 'off');
+    // Sync log rotation settings
+    if (c.log_max_mb  != null) { const e2=el('cfg-log-max-mb');  if(e2) e2.value = c.log_max_mb; }
+    if (c.log_backups != null) { const e2=el('cfg-log-backups'); if(e2) e2.value = c.log_backups; }
 
     // Overview
     if (el('ov-missing'))  el('ov-missing').textContent  = (c.hunt_missing_delay ?? 30) + ' min';
@@ -2774,7 +2831,86 @@ document.querySelector('.sidebar').addEventListener('click', function(e) {
 });
 
 // Init
-// ── Stats tabs ────────────────────────────────────────────────────────────────
+// ── Log rotation settings ─────────────────────────────────────────────────────
+async function saveLogConfig() {
+  const maxMb  = parseInt(document.getElementById('cfg-log-max-mb')?.value  || '5');
+  const backups= parseInt(document.getElementById('cfg-log-backups')?.value || '2');
+  const msg    = document.getElementById('log-action-msg');
+  if (msg) { msg.style.display='block'; msg.style.color='var(--muted2)'; msg.textContent = currentLang==='de' ? '⏳ Speichere…' : '⏳ Saving…'; }
+  try {
+    const r = await fetch('/api/config', {method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ log_max_mb: maxMb, log_backups: backups })});
+    const d = await r.json();
+    if (msg) {
+      msg.style.color = d.ok ? 'var(--green)' : 'var(--red)';
+      msg.textContent = d.ok
+        ? (currentLang==='de' ? `✓ Gespeichert (max ${maxMb} MB × ${backups+1} Dateien)` : `✓ Saved (max ${maxMb} MB × ${backups+1} files)`)
+        : `✗ ${d.error||'Fehler'}`;
+      setTimeout(() => { if(msg) msg.style.display='none'; }, 4000);
+    }
+    MSLog.info('saveLogConfig', {maxMb, backups});
+  } catch(e) {
+    if (msg) { msg.style.color='var(--red)'; msg.textContent='✗ '+e.message; }
+    MSLog.error('saveLogConfig failed', e);
+  }
+}
+
+async function testLogRotation() {
+  const msg = document.getElementById('log-action-msg');
+  if (msg) { msg.style.display='block'; msg.style.color='var(--muted2)'; msg.textContent=currentLang==='de'?'⏳ Rotiere…':'⏳ Rotating…'; }
+  try {
+    const r = await fetch('/api/log/rotate', {method:'POST'});
+    const d = await r.json();
+    if (msg) {
+      msg.style.color = d.ok ? 'var(--green)' : 'var(--red)';
+      if (d.ok) {
+        const backupList = d.backups.map(b=>`${b.file} (${b.size_kb} KB)`).join(', ') || '—';
+        msg.textContent = currentLang==='de'
+          ? `✓ Rotiert. Aktuell: ${d.current.size_kb} KB | Backups: ${backupList}`
+          : `✓ Rotated. Current: ${d.current.size_kb} KB | Backups: ${backupList}`;
+      } else { msg.textContent = `✗ ${d.error}`; }
+      setTimeout(() => { if(msg) msg.style.display='none'; }, 6000);
+    }
+    MSLog.info('testLogRotation result', d);
+    loadLogStatus();
+  } catch(e) {
+    if (msg) { msg.style.color='var(--red)'; msg.textContent='✗ '+e.message; }
+    MSLog.error('testLogRotation failed', e);
+  }
+}
+
+async function loadLogStatus() {
+  const panel   = document.getElementById('log-status-panel');
+  const content = document.getElementById('log-status-content');
+  if (panel) panel.style.display = 'block';
+  if (content) content.textContent = currentLang==='de' ? 'Lade…' : 'Loading…';
+  try {
+    const r = await fetch('/api/log/status');
+    const d = await r.json();
+    if (!content) return;
+    if (!d.ok) { content.textContent = `✗ ${d.error}`; return; }
+    const isDE = currentLang==='de';
+    const fileList = d.files.map(f=>`  ${f.file.padEnd(30,' ')}  ${String(f.size_kb).padStart(7,' ')} KB`).join('\n');
+    const maxMBDisp = (d.max_bytes / 1024 / 1024).toFixed(1);
+    content.innerHTML =
+      `<strong style="color:var(--text)">${isDE?'Log-Dateien':'Log files'} (${d.log_dir})</strong>\n` +
+      (fileList || `  ${isDE?'Noch keine Dateien':'No files yet'}`) + '\n\n' +
+      `<strong style="color:var(--text)">${isDE?'Konfiguration':'Config'}</strong>\n` +
+      `  ${isDE?'Max. Dateigröße':'Max file size'}: ${maxMBDisp} MB\n` +
+      `  ${isDE?'Backup-Dateien':'Backup files'}:   ${d.backups_count}  (${isDE?'Gesamt':'Total'}: ${d.backups_count+1} ${isDE?'Dateien':'files'})`;
+    MSLog.debug('loadLogStatus', d);
+  } catch(e) {
+    if (content) content.textContent = '✗ '+e.message;
+    MSLog.error('loadLogStatus failed', e);
+  }
+}
+
+// ── Skip upcoming toggle (now removed from UI — feature is hardwired) ─────────
+// Kept as stub so existing updateUI refs don't crash
+let _skipUpcoming = true;
+function toggleSkipUpcoming() { /* hardwired — no-op */ }
+
+// ── Public API state + Config Export/Import ───────────────────────────────────
 let _statTab = 'all';
 function setStatTab(tab) {
   _statTab = tab;
@@ -2829,16 +2965,17 @@ function _appendConsoleLogs(logs) {
     _consoleLogs.push(e);
     const line = document.createElement('div');
     line.className = 'console-line';
-    const ts  = e.ts    ? new Date(e.ts+'Z').toTimeString().slice(0,8) : '—';
+    // log_act shape: {ts, service, action, item, status}
+    const ts  = escHtml(e.ts || '—');
     const lvl = (e.status || 'info').toLowerCase();
-    const src = escHtml(e.source || 'System');
-    const msg = escHtml(e.message || e.action || '');
+    const src = escHtml(e.service || 'System');
+    const msg = escHtml([e.action, e.item].filter(Boolean).join(' — '));
     line.innerHTML = `<span class="console-ts">${ts}</span><span class="console-lvl ${lvl}">${lvl.toUpperCase()}</span><span class="console-src">${src}</span><span class="console-msg">${msg}</span>`;
     frag.appendChild(line);
     if (lvl === 'error') {
       _consoleError = true;
       const badge = document.getElementById('consoleBadge');
-      if (badge) badge.style.display = '';
+      if (badge) { badge.style.display = ''; badge.textContent = '!'; }
     }
   });
   out.appendChild(frag);
@@ -2879,9 +3016,7 @@ function clearConsole() {
   if (cnt) cnt.textContent = '0 entries';
 }
 
-// Feed activity_log into console on every state update
-const _origUpdateUI = typeof updateUI === 'function' ? updateUI : null;
-// Hook into existing updateUI — we patch the state rendering to also feed console
+// Feed activity_log into console on every poll
 let _lastConsoleSeq = 0;
 function _feedConsole(state) {
   const logs = state.activity_log || [];
@@ -2897,19 +3032,12 @@ function _feedConsole(state) {
   }
 }
 
-// ── Patch fetchState to also update console ───────────────────────────────────
+// ── Patch fetchState to feed console after every state poll ──────────────────
 const _origFetchState = fetchState;
 fetchState = async function() {
   await _origFetchState();
-  // fetchState updates STATE via updateUI — we tap into the last known state
-  if (window._lastState) _feedConsole(window._lastState);
-};
-
-// Store state reference in updateUI
-const _origUpdateUI2 = updateUI;
-updateUI = function(s) {
-  window._lastState = s;
-  _origUpdateUI2(s);
+  // appState is already updated by the time we get here
+  _feedConsole(appState);
 };
 
 // ── i18n additions ────────────────────────────────────────────────────────────
@@ -2944,7 +3072,7 @@ loadStats = async function() {
   if (_statTab !== 'all' && statsCache.hist) renderStats(statsCache.hist, statsCache.state);
 };
 
-MSLog.info('Mediastarr v6.4.2 — UI init');
+MSLog.info('Mediastarr v6.4.3 — UI init');
 fetchState();
 syncNewInstUrlHint();
 setInterval(fetchState, 4000);
