@@ -1,23 +1,22 @@
 # Changelog
-
 ## [v6.4.3] — 2026-03-25
 
 ### Changed
 - **`skip_upcoming` hardwired to `True`** — upcoming/unreleased content is always filtered; the toggle has been removed from the UI and DEFAULT_CONFIG; both Sonarr (by `airDateUtc`) and Radarr (by `digitalRelease` / `physicalRelease` / `inCinemas`) filter unreleased items before every run; skipped count logged at INFO level
 
 ### Fixed
-- **Bug #22** — Stats-Tabs ignorierten Theme: `<button>`-Elemente erbten Browser-Standardstile; `background:none;border:none` ergänzt
-- **Bug #21** — Console zeigte keine Einträge: `_feedConsole` wurde nach jedem `fetchState()` mit `appState` statt einem ungültigen Param aufgerufen; Feldnamen korrigiert (`action`/`item` statt `message`/`source`)
-- **Bug #24** — Einstellungsseite nicht volle Breite: `#page-settings.content { grid-template-columns: 1fr; }` ergänzt
-- **Bug #23** — Homepage-Version zeigte `v6.3.8`: Hardcoded-Fallback auf `v6.4.3`, GitHub-Release-API beim Laden abgefragt
-- **Import pathlib** fehlte — `_setup_file_logging` nutzte `pathlib.Path` in Typ-Annotation, Modul aber nicht importiert → Crash beim Start
+- **Bug #22** — Stats tabs ignored theme: `<button>` elements inherited browser default styles; `background:none;border:none` added
+- **Bug #21** — Console showed no entries: `_feedConsole` was called after every `fetchState()` with `appState` instead of an invalid parameter; field names corrected (`action`/`item` instead of `message`/`source`)
+- **Bug #24** — Settings page not full width: `#page-settings.content { grid-template-columns: 1fr; }` added
+- **Bug #23** — Homepage version showed `v6.3.8`: hardcoded fallback updated to `v6.4.3`, GitHub release API queried on load
+- **Import pathlib missing** — `_setup_file_logging` used `pathlib.Path` in type annotation, but module was not imported → crash on startup
 
 ### Added
-- **Bug #20 — Config-Migration**: `_migrate_config()` läuft bei jedem Start; ergänzt fehlende Keys aus `DEFAULT_CONFIG` (inkl. `discord.*` und Instanz-Defaults) ohne bestehende Werte zu löschen
-- **Feature #25 — Upcoming überspringen**: Sonarr-Episoden (`airDateUtc`) und Radarr-Filme (`digitalRelease` / `physicalRelease` / `inCinemas`) mit Zukunftsdatum werden immer automatisch übersprungen — kein Toggle, immer aktiv
-- **Konfigurierbares Log-Rotation**: Einstellungen in General-Tab — Max. Dateigröße (1–100 MB, Standard 5 MB), Backup-Anzahl (0–10, Standard 2); `POST /api/log/rotate` und `GET /api/log/status` API-Endpunkte; "🔄 Rotieren" und "📋 Status"-Buttons mit Inline-Ergebnis
-- **Persistente Log-Datei**: `/data/logs/mediastarr.log` mit `RotatingFileHandler` — keine neuen Abhängigkeiten
-- **Unit-Tests**: 14 Assertions für `_ep_is_released`, `_movie_is_released` und `RotatingFileHandler` — alle bestanden
+- **Bug #20 — Config migration**: `_migrate_config()` runs on every startup; adds missing keys from `DEFAULT_CONFIG` (including `discord.*` and instance defaults) without removing existing values
+- **Feature #25 — Skip upcoming**: Sonarr episodes (`airDateUtc`) and Radarr movies (`digitalRelease` / `physicalRelease` / `inCinemas`) with future dates are always automatically skipped — no toggle, always active
+- **Configurable log rotation**: settings in General tab — max file size (1–100 MB, default 5 MB), backup count (0–10, default 2); `POST /api/log/rotate` and `GET /api/log/status` API endpoints; "🔄 Rotate" and "📋 Status" buttons with inline result
+- **Persistent log file**: `/data/logs/mediastarr.log` with `RotatingFileHandler` — no new dependencies
+- **Unit tests**: 14 assertions for `_ep_is_released`, `_movie_is_released` and `RotatingFileHandler` — all passed
 - **Configurable log rotation** — new settings in General tab:
   - **Max file size (MB)**: 1–100 MB (default 5 MB)
   - **Backup count**: 0–10 files (default 2, giving 3 files total: current + 2 backups)
