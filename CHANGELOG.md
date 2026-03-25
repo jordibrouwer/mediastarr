@@ -2,6 +2,9 @@
 
 ## [v6.4.3] — 2026-03-25
 
+### Changed
+- **`skip_upcoming` hardwired to `True`** — upcoming/unreleased content is always filtered; the toggle has been removed from the UI and DEFAULT_CONFIG; both Sonarr (by `airDateUtc`) and Radarr (by `digitalRelease` / `physicalRelease` / `inCinemas`) filter unreleased items before every run; skipped count logged at INFO level
+
 ### Fixed
 - **Bug #22** — Stats-Tabs ignorierten Theme: `<button>`-Elemente erbten Browser-Standardstile; `background:none;border:none` ergänzt
 - **Bug #21** — Console zeigte keine Einträge: `_feedConsole` wurde nach jedem `fetchState()` mit `appState` statt einem ungültigen Param aufgerufen; Feldnamen korrigiert (`action`/`item` statt `message`/`source`)
@@ -15,6 +18,16 @@
 - **Konfigurierbares Log-Rotation**: Einstellungen in General-Tab — Max. Dateigröße (1–100 MB, Standard 5 MB), Backup-Anzahl (0–10, Standard 2); `POST /api/log/rotate` und `GET /api/log/status` API-Endpunkte; "🔄 Rotieren" und "📋 Status"-Buttons mit Inline-Ergebnis
 - **Persistente Log-Datei**: `/data/logs/mediastarr.log` mit `RotatingFileHandler` — keine neuen Abhängigkeiten
 - **Unit-Tests**: 14 Assertions für `_ep_is_released`, `_movie_is_released` und `RotatingFileHandler` — alle bestanden
+- **Configurable log rotation** — new settings in General tab:
+  - **Max file size (MB)**: 1–100 MB (default 5 MB)
+  - **Backup count**: 0–10 files (default 2, giving 3 files total: current + 2 backups)
+  - `_setup_file_logging()` accepts `max_mb` / `backups` from CONFIG; safe to call multiple times (reconfigures in-place without restart)
+  - `_reconfigure_file_logging()` applies updated CONFIG values to running handler after `/api/config` save
+  - `POST /api/log/rotate` — manually triggers `doRollover()` and returns file sizes of current + all backups
+  - `GET /api/log/status` — returns all log files with sizes, max_bytes, backups_count, log_dir path
+  - "🔄 Rotate now" and "📋 Status" buttons in General settings with inline result display
+  - New i18n keys: `lbl_log_rotation`, `hint_log_rotation`, `lbl_log_max_mb`, `hint_log_max_mb`, `lbl_log_backups`, `hint_log_backups`, `btn_log_rotate`, `btn_log_status` (DE + EN)
+- **Unit tests**: 15 assertions covering `_ep_is_released`, `_movie_is_released` (yesterday/tomorrow/ISO-Z/no-date edge cases) and `RotatingFileHandler` (initial setup, rollover, reconfigure, clamp-min, clamp-max) — all pass
 
 ---
 
