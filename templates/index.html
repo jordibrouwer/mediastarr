@@ -250,8 +250,19 @@
 
     /* ── Log / History full page (fix: no space — these ARE .content) ── */
     #page-log.content { grid-template-columns: 1fr; }
+    #page-console.content { grid-template-columns: 1fr; }
+    .console-line { display:flex; gap:8px; padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+    .console-line:hover { background:rgba(255,255,255,0.02); }
+    .console-ts   { color:var(--muted); font-size:10px; white-space:nowrap; min-width:56px; padding-top:1px; }
+    .console-lvl  { font-size:10px; font-weight:700; white-space:nowrap; min-width:44px; }
+    .console-lvl.info    { color:var(--green); }
+    .console-lvl.warning { color:var(--yellow); }
+    .console-lvl.error   { color:var(--red); }
+    .console-lvl.debug   { color:var(--muted2); }
+    .console-src  { color:var(--blue); font-size:10px; white-space:nowrap; min-width:80px; }
+    .console-msg  { color:var(--text); font-size:11px; word-break:break-word; flex:1; }
     #page-history.content { grid-template-columns: 1fr !important; grid-template-rows: auto auto; }
-    .hist-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
+    .hist-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .hist-date  { font-size: 10px; color: var(--muted2); white-space: nowrap; }
     .hist-table { max-height: calc(100vh - 360px); min-height: 200px; overflow-y: auto; padding: 4px 18px 12px; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
 
@@ -397,7 +408,7 @@
         </svg>
         <div>
           <div class="logo-name">Mediastarr</div>
-          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.4.1</span></div>
+          <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">v6.4.2</span></div>
         </div>
       </div>
     </div>
@@ -408,6 +419,7 @@
       <div class="nav-item" onclick="navClick('history')" data-page="history"><span class="nav-icon">🗄</span><span class="nav-label">Verlauf</span></div>
       <div class="nav-item" onclick="navClick('log')" data-page="log"><span class="nav-icon">≡</span><span class="nav-label">Aktivitätslog</span><span class="nav-badge" id="logBadge">0</span></div>
       <div class="nav-item" onclick="navClick('stats')" data-page="stats"><span class="nav-icon">📊</span><span class="nav-label">Statistiken</span></div>
+      <div class="nav-item" onclick="navClick('console')" data-page="console"><span class="nav-icon">🖥</span><span class="nav-label" data-i18n="console_nav">Console</span><span class="nav-badge" id="consoleBadge" style="display:none;background:var(--red)">!</span></div>
       <a href="https://mediastarr.de/" target="_blank" style="text-decoration:none">
         <div class="nav-item" style="margin-top:4px;border-top:1px solid var(--border);padding-top:10px">
           <span class="nav-icon">🌐</span><span class="nav-label" style="font-size:11px">mediastarr.de</span>
@@ -442,7 +454,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en">🇬🇧 EN</div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.4.1</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">v6.4.2</span></a></div>
     </div>
   </aside>
 
@@ -1040,10 +1052,53 @@
         <div class="log-scroll" id="logScrollFull" style="max-height:600px"><div class="log-empty">Waiting for activity...</div></div>
       </div>
     </div>
-  <!-- ══ STATS PAGE ══ -->
+
+  <!-- ══ CONSOLE PAGE ══ -->
+  <div id="page-console" class="content content-page">
+    <div class="card" style="grid-column:1/-1;min-height:calc(100vh - 180px);display:flex;flex-direction:column">
+      <div class="card-header" style="flex-shrink:0">
+        <div class="card-title">🖥 <span data-i18n="console_title">Live Log Console</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="console-filter" onchange="filterConsole()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text)">
+            <option value="">All levels</option>
+            <option value="info">INFO+</option>
+            <option value="warning">WARN+</option>
+            <option value="error">ERROR</option>
+          </select>
+          <input id="console-search" type="text" placeholder="Filter…" oninput="filterConsole()"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text);width:150px">
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2);cursor:pointer">
+            <input type="checkbox" id="console-autoscroll" checked style="cursor:pointer">
+            <span data-i18n="console_autoscroll">Auto-scroll</span>
+          </label>
+          <button class="btn" style="font-size:10px;padding:3px 8px" onclick="clearConsole()" data-i18n="btn_clear">Leeren</button>
+        </div>
+      </div>
+      <div id="console-output" style="
+        flex:1;overflow-y:auto;padding:10px 14px;
+        background:var(--bg);font-family:var(--mono);font-size:11px;
+        line-height:1.7;scrollbar-width:thin;min-height:200px">
+        <div style="color:var(--muted2);text-align:center;padding:40px 0" id="console-empty">
+          <span data-i18n="console_waiting">Warte auf Aktivität…</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--border);background:var(--surface)">
+        <span id="console-count" style="font-size:10px;color:var(--muted2)">0 entries</span>
+        <span id="console-live-dot" style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green)">
+          <span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite"></span>
+          <span data-i18n="console_live">Live</span>
+        </span>
+      </div>
+    </div>
+  </div>
   <div id="page-stats" class="content content-page">
 
-    <!-- KPI Row -->
+    <!-- Stats filter tabs -->
+    <div style="grid-column:1/-1;display:flex;gap:6px;margin-bottom:4px;border-bottom:1px solid var(--border);padding-bottom:10px">
+      <button id="stat-tab-all"    class="tab-btn active" onclick="setStatTab('all')"   style="font-size:11px;padding:5px 14px">📊 <span data-i18n="stat_tab_all">Alle</span></button>
+      <button id="stat-tab-sonarr" class="tab-btn"        onclick="setStatTab('sonarr')" style="font-size:11px;padding:5px 14px">📺 Sonarr</button>
+      <button id="stat-tab-radarr" class="tab-btn"        onclick="setStatTab('radarr')" style="font-size:11px;padding:5px 14px">🎬 Radarr</button>
+    </div>
     <div class="stats-grid" style="grid-column:1/-1">
       <div class="stat-card">
         <div class="stat-card-label" id="st-lbl-total">Gesamt Searches</div>
@@ -2719,7 +2774,177 @@ document.querySelector('.sidebar').addEventListener('click', function(e) {
 });
 
 // Init
-MSLog.info('Mediastarr v6.4.1 — UI init');
+// ── Stats tabs ────────────────────────────────────────────────────────────────
+let _statTab = 'all';
+function setStatTab(tab) {
+  _statTab = tab;
+  ['all','sonarr','radarr'].forEach(t => {
+    const btn = document.getElementById(`stat-tab-${t}`);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (statsCache.hist) renderStats(statsCache.hist, statsCache.state);
+}
+
+// Patch renderStats to filter by tab
+const _origRenderStats = renderStats;
+renderStats = function(hist, state) {
+  if (_statTab === 'all') return _origRenderStats(hist, state);
+
+  const instEls  = (state.instances || []);
+  const filtered = instEls.filter(i => i.type === _statTab);
+  const filteredIds = new Set(filtered.map(i => i.id));
+
+  // Build filtered hist
+  const fByService = {};
+  Object.entries(hist.by_service || {}).forEach(([id, data]) => {
+    if (filteredIds.has(id)) fByService[id] = data;
+  });
+  const fHist = { ...hist, by_service: fByService,
+    total: Object.values(fByService).reduce((a,s)=>a+(s.total||0),0),
+  };
+  // Build filtered state — limit KPIs to tab instances
+  const fState = { ...state,
+    instances:   filtered,
+    inst_stats:  Object.fromEntries(Object.entries(state.inst_stats||{}).filter(([id])=>filteredIds.has(id))),
+    daily_count: filtered.reduce((a,i)=>a+(i.today_count||0), 0),
+    daily_limit: filtered.reduce((a,i)=>a+(i.daily_limit||0), 0),
+  };
+  return _origRenderStats(fHist, fState);
+};
+
+// ── Live Console ──────────────────────────────────────────────────────────────
+let _consoleLogs  = [];   // [{ts, level, source, msg}]
+let _consoleError = false;
+
+function _appendConsoleLogs(logs) {
+  if (!logs?.length) return;
+  const out      = document.getElementById('console-output');
+  const empty    = document.getElementById('console-empty');
+  const autoscroll = document.getElementById('console-autoscroll')?.checked;
+  if (!out) return;
+  if (empty) empty.style.display = 'none';
+
+  const frag = document.createDocumentFragment();
+  logs.forEach(e => {
+    _consoleLogs.push(e);
+    const line = document.createElement('div');
+    line.className = 'console-line';
+    const ts  = e.ts    ? new Date(e.ts+'Z').toTimeString().slice(0,8) : '—';
+    const lvl = (e.status || 'info').toLowerCase();
+    const src = escHtml(e.source || 'System');
+    const msg = escHtml(e.message || e.action || '');
+    line.innerHTML = `<span class="console-ts">${ts}</span><span class="console-lvl ${lvl}">${lvl.toUpperCase()}</span><span class="console-src">${src}</span><span class="console-msg">${msg}</span>`;
+    frag.appendChild(line);
+    if (lvl === 'error') {
+      _consoleError = true;
+      const badge = document.getElementById('consoleBadge');
+      if (badge) badge.style.display = '';
+    }
+  });
+  out.appendChild(frag);
+  if (autoscroll) out.scrollTop = out.scrollHeight;
+  filterConsole();
+  const cnt = document.getElementById('console-count');
+  if (cnt) cnt.textContent = `${_consoleLogs.length} entr${_consoleLogs.length===1?'y':'ies'}`;
+}
+
+function filterConsole() {
+  const lvlFilter = document.getElementById('console-filter')?.value || '';
+  const txtFilter = (document.getElementById('console-search')?.value || '').toLowerCase();
+  const lvlOrder  = {trace:0,debug:1,info:2,warning:3,error:4};
+  const minLvl    = lvlOrder[lvlFilter] ?? 0;
+  document.querySelectorAll('#console-output .console-line').forEach((line, i) => {
+    const log  = _consoleLogs[i];
+    if (!log) return;
+    const lvl  = (log.status || 'info').toLowerCase();
+    const passes = (lvlOrder[lvl]??0) >= minLvl &&
+                   (!txtFilter || (log.message||log.action||'').toLowerCase().includes(txtFilter) ||
+                    (log.source||'').toLowerCase().includes(txtFilter));
+    line.style.display = passes ? '' : 'none';
+  });
+}
+
+function clearConsole() {
+  _consoleLogs = [];
+  const out = document.getElementById('console-output');
+  if (out) {
+    out.querySelectorAll('.console-line').forEach(l=>l.remove());
+    const empty = document.getElementById('console-empty');
+    if (empty) empty.style.display = '';
+  }
+  _consoleError = false;
+  const badge = document.getElementById('consoleBadge');
+  if (badge) badge.style.display = 'none';
+  const cnt = document.getElementById('console-count');
+  if (cnt) cnt.textContent = '0 entries';
+}
+
+// Feed activity_log into console on every state update
+const _origUpdateUI = typeof updateUI === 'function' ? updateUI : null;
+// Hook into existing updateUI — we patch the state rendering to also feed console
+let _lastConsoleSeq = 0;
+function _feedConsole(state) {
+  const logs = state.activity_log || [];
+  // activity_log is a ring buffer of last 60 — find new ones by checking if count grew
+  if (logs.length > _lastConsoleSeq) {
+    const newLogs = logs.slice(_lastConsoleSeq);
+    _appendConsoleLogs(newLogs);
+    _lastConsoleSeq = logs.length;
+  } else if (logs.length < _lastConsoleSeq) {
+    // Log was cleared server-side
+    _lastConsoleSeq = 0;
+    _appendConsoleLogs(logs);
+  }
+}
+
+// ── Patch fetchState to also update console ───────────────────────────────────
+const _origFetchState = fetchState;
+fetchState = async function() {
+  await _origFetchState();
+  // fetchState updates STATE via updateUI — we tap into the last known state
+  if (window._lastState) _feedConsole(window._lastState);
+};
+
+// Store state reference in updateUI
+const _origUpdateUI2 = updateUI;
+updateUI = function(s) {
+  window._lastState = s;
+  _origUpdateUI2(s);
+};
+
+// ── i18n additions ────────────────────────────────────────────────────────────
+// Extend T dict with new keys
+['de','en'].forEach(lang => {
+  if (!T[lang]) return;
+  Object.assign(T[lang], {
+    console_nav:       lang==='de' ? 'Console'                         : 'Console',
+    console_title:     lang==='de' ? 'Live Log Console'                : 'Live Log Console',
+    console_autoscroll:lang==='de' ? 'Auto-Scroll'                     : 'Auto-scroll',
+    console_waiting:   lang==='de' ? 'Warte auf Aktivität…'            : 'Waiting for activity…',
+    console_live:      lang==='de' ? 'Live'                            : 'Live',
+    stat_tab_all:      lang==='de' ? 'Alle'                            : 'All',
+  });
+});
+
+// Update nav label on lang change
+const _origSetLang = setLang;
+setLang = function(lang) {
+  _origSetLang(lang);
+  const el = document.querySelector('[data-page="console"] .nav-label');
+  if (el) el.textContent = T[lang]?.console_nav || 'Console';
+  const statAll = document.querySelector('#stat-tab-all span');
+  if (statAll) statAll.textContent = T[lang]?.stat_tab_all || 'Alle';
+};
+
+// ── loadStats — pass tab context ──────────────────────────────────────────────
+const _origLoadStats = loadStats;
+loadStats = async function() {
+  await _origLoadStats();
+  // re-apply tab filter after load
+  if (_statTab !== 'all' && statsCache.hist) renderStats(statsCache.hist, statsCache.state);
+};
+
+MSLog.info('Mediastarr v6.4.2 — UI init');
 fetchState();
 syncNewInstUrlHint();
 setInterval(fetchState, 4000);

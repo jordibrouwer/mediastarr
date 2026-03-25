@@ -273,6 +273,13 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 
 ---
 
+## 🤝 Contributing & Community
+
+- **Contributing:** See [CONTRIBUTING.md](.github/CONTRIBUTING.md)
+- **Security:** Report vulnerabilities via [SECURITY.md](.github/SECURITY.md) — please **do not** use public issues
+- **Discord:** [discord.gg/8Vb9cj4ksv](https://discord.gg/8Vb9cj4ksv) for questions and support
+- **Issues:** [Bug reports](.github/ISSUE_TEMPLATE/bug_report.yml) and [feature requests](.github/ISSUE_TEMPLATE/feature_request.yml) via GitHub
+
 <div align="center">
 
 Made with ❤️ · [mediastarr.de](https://mediastarr.de) · [Discord](https://discord.gg/8Vb9cj4ksv) · [Buy Me a Coffee](https://buymeacoffee.com/kroeberd)
