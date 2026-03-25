@@ -221,9 +221,22 @@ def _rating_str(item: dict, item_type: str) -> str:
             flat = ratings.get("value")
             if flat: parts.append(f"⭐ **{flat:.1f}**")
     else:
+        # Sonarr: try nested per-source ratings first (v4+), fall back to flat value
         ratings = (item.get("series") or item).get("ratings") or {}
-        val = ratings.get("value")
-        if val: parts.append(f"⭐ **{val:.1f}**")
+        found_multi = False
+        for src, label, icon in [("imdb","IMDb","⭐"), ("tmdb","TMDB","🎬")]:
+            entry = ratings.get(src)
+            if isinstance(entry, dict):
+                val   = entry.get("value")
+                votes = entry.get("votes", 0)
+                if val:
+                    vs = f" ({votes:,})" if votes and votes > 0 else ""
+                    parts.append(f"{icon} **{val:.1f}** {label}{vs}")
+                    found_multi = True
+        # Fall back to flat Sonarr v3 format
+        if not found_multi:
+            val = ratings.get("value")
+            if val: parts.append(f"⭐ **{val:.1f}**")
     return "\n".join(parts) if parts else ""
 
 def _genres_str(item: dict) -> str:
@@ -283,7 +296,7 @@ def discord_send(event_type: str, title: str, description: str,
         return
 
     color = DISCORD_COLORS.get(event_type, DISCORD_COLORS["info"])
-    footer_parts = ["Mediastarr v6.4.3"]
+    footer_parts = ["Mediastarr v6.4.4"]
     if instance_name: footer_parts.append(instance_name)
     if footer_extra:  footer_parts.append(footer_extra)
     footer_text = "  ·  ".join(footer_parts)
@@ -552,7 +565,7 @@ def _year(val):
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.4.3"
+_CURRENT_VERSION = "v6.4.4"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -622,6 +635,9 @@ DEFAULT_CONFIG = {
     },
     # Read-only public access to /api/state (no auth required, no sensitive data)
     "public_api_state": False,
+    # Maintenance windows: list of {"start":"HH:MM","end":"HH:MM","label":"..."} in local time
+    # Searches are paused while local time is within any window.
+    "maintenance_windows": [],
     # Rotating log file settings
     "log_max_mb":    5,    # max size per log file in MB (1–100)
     "log_backups":   2,    # number of backup files to keep (0–10)
@@ -930,6 +946,36 @@ def _is_released(release_dt) -> bool:
     try: return release_dt.date() <= datetime.utcnow().date()
     except Exception: return True
 
+def _in_maintenance_window() -> bool:
+    """True if the current local time falls inside any configured maintenance window.
+
+    Windows are defined as {start: "HH:MM", end: "HH:MM"} in local time (CONFIG timezone).
+    Supports overnight windows (e.g. 22:00–06:00).
+    If any window is misconfigured it is silently skipped.
+    """
+    windows = CONFIG.get("maintenance_windows", [])
+    if not windows:
+        return False
+    now_local_t = now_local().time()   # datetime.time in configured tz
+    for w in windows:
+        try:
+            sh, sm = map(int, w["start"].split(":"))
+            eh, em = map(int, w["end"].split(":"))
+        except (KeyError, ValueError, TypeError):
+            continue
+        from datetime import time as dtime
+        start_t = dtime(sh, sm)
+        end_t   = dtime(eh, em)
+        if start_t <= end_t:
+            # Normal window: 08:00–10:00
+            if start_t <= now_local_t < end_t:
+                return True
+        else:
+            # Overnight window: 22:00–06:00
+            if now_local_t >= start_t or now_local_t < end_t:
+                return True
+    return False
+
 def _ep_is_released(ep: dict) -> bool:
     """True if this episode has already aired (airDateUtc in the past or missing)."""
     dt = _pick_release_dt(ep, "airDateUtc", "airDate")
@@ -1114,13 +1160,18 @@ def hunt_sonarr_instance(inst: dict):
 
     # Build series ID → title cache once per hunt so ep titles are always correct
     # even when Sonarr omits series.title in wanted/missing responses
-    series_cache: dict[int, str] = {}
+    # Full series objects keyed by series ID — used for rich Discord embeds
+    # (poster, fanart, multi-source ratings, TVDB/IMDb/TMDB links, genres, network)
+    series_cache: dict[int, str]   = {}
+    series_full:  dict[int, dict]  = {}
     try:
         all_series = client.get("series")
         for s in all_series:
             sid = s.get("id")
-            if sid and s.get("title"):
-                series_cache[int(sid)] = s["title"].strip()
+            if sid:
+                if s.get("title"):
+                    series_cache[int(sid)] = s["title"].strip()
+                series_full[int(sid)] = s   # keep full object for Discord
     except Exception as e:
         logger.debug(f"Series cache fetch failed for {name}: {e}")
 
@@ -1133,6 +1184,15 @@ def hunt_sonarr_instance(inst: dict):
         # Fall back to embedded fields
         series = ep.get("series") or {}
         return (series.get("title") or ep.get("seriesTitle") or "").strip()
+
+    def enrich_ep_with_series(ep: dict) -> dict:
+        """Inject full series object into the episode dict for rich Discord embeds."""
+        sid = ep.get("seriesId") or ep.get("series", {}).get("id")
+        if sid and int(sid) in series_full:
+            enriched = dict(ep)
+            enriched["series"] = series_full[int(sid)]
+            return enriched
+        return ep
 
     def ep_title(ep: dict) -> str:
         s_title = resolve_series_title(ep) or "?"
@@ -1206,7 +1266,7 @@ def hunt_sonarr_instance(inst: dict):
                 command = {"name":"EpisodeSearch","episodeIds":[ep["id"]]}
             do_search(client, iid, "episode", ep["id"], title, command,
                       ep.get("series",{}).get("lastInfoSync"), year,
-                      item_data=ep)
+                      item_data=enrich_ep_with_series(ep))
             stats["missing_searched"] += 1; searched += 1
             log_act(name, msg("missing"), title, "success")
             time.sleep(1.5)
@@ -1240,7 +1300,7 @@ def hunt_sonarr_instance(inst: dict):
             year = _year(ep.get("series",{}).get("year"))
             do_search(client, iid, "episode_upgrade", ep["id"], title,
                       {"name":"EpisodeSearch","episodeIds":[ep["id"]]}, year=year,
-                      item_data=ep)
+                      item_data=enrich_ep_with_series(ep))
             stats["upgrades_searched"] += 1; searched += 1
             log_act(name, msg("upgrade"), title, "warning")
             time.sleep(1.5)
@@ -1432,6 +1492,24 @@ def hunt_loop():
             if STOP_EVENT.is_set(): break
             time.sleep(1)
         if STOP_EVENT.is_set(): break
+        # ── Maintenance window check ──
+        if _in_maintenance_window():
+            windows = CONFIG.get("maintenance_windows", [])
+            active  = next((w for w in windows if _in_maintenance_window()), {})
+            label   = active.get("label", "")
+            lang    = CONFIG.get("language", "de")
+            is_de   = lang == "de"
+            window_str = f"{active.get('start','?')}–{active.get('end','?')}" if active else "?"
+            log_act("System",
+                    f"⏸ {'Wartungsfenster' if is_de else 'Maintenance window'}: {window_str}"
+                    + (f" ({label})" if label else ""),
+                    "", "warning")
+            # Re-check every 60s until window is over
+            while not STOP_EVENT.is_set() and _in_maintenance_window():
+                time.sleep(60)
+            if STOP_EVENT.is_set(): break
+            log_act("System", f"▶ {'Wartungsfenster beendet' if is_de else 'Maintenance window ended'}",
+                    "", "info")
         # ── Hunt ──
         try: run_cycle()
         except Exception as e: log_act("System", msg("error"), str(e)[:200], "error")
@@ -1766,9 +1844,11 @@ def api_state():
             },
             "discord_configured": bool(CONFIG.get("discord",{}).get("webhook_url","")),
             "discord_webhook_set": bool(CONFIG.get("discord",{}).get("webhook_url","")),
-            "public_api_state":    CONFIG.get("public_api_state", False),
-            "log_max_mb":          CONFIG.get("log_max_mb",  5),
-            "log_backups":         CONFIG.get("log_backups", 2),
+            "public_api_state":       CONFIG.get("public_api_state", False),
+            "log_max_mb":             CONFIG.get("log_max_mb",  5),
+            "log_backups":            CONFIG.get("log_backups", 2),
+            "maintenance_windows":    CONFIG.get("maintenance_windows", []),
+            "in_maintenance_window":  _in_maintenance_window(),
         },
     })
 
@@ -1846,6 +1926,21 @@ def api_config():
                 dc["webhook_url"] = url
     if "public_api_state" in d:
         CONFIG["public_api_state"] = bool(d["public_api_state"])
+    if "maintenance_windows" in d:
+        wins = d.get("maintenance_windows") or []
+        if isinstance(wins, list):
+            validated = []
+            for w in wins[:10]:  # max 10 windows
+                if not isinstance(w, dict): continue
+                start = safe_str(w.get("start",""), 5)
+                end   = safe_str(w.get("end",""),   5)
+                label = safe_str(w.get("label",""), 40)
+                # Validate HH:MM format
+                import re as _re
+                if not _re.match(r"^[0-2][0-9]:[0-5][0-9]$", start): continue
+                if not _re.match(r"^[0-2][0-9]:[0-5][0-9]$", end):   continue
+                validated.append({"start": start, "end": end, "label": label})
+            CONFIG["maintenance_windows"] = validated
     _changed_log = False
     if "log_max_mb" in d:
         CONFIG["log_max_mb"]  = max(1, min(100, int(d.get("log_max_mb", 5) or 5)))

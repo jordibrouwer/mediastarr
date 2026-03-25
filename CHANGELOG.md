@@ -1,32 +1,30 @@
 # Changelog
-## [v6.4.3] — 2026-03-25
 
-### Changed
-- **`skip_upcoming` hardwired to `True`** — upcoming/unreleased content is always filtered; the toggle has been removed from the UI and DEFAULT_CONFIG; both Sonarr (by `airDateUtc`) and Radarr (by `digitalRelease` / `physicalRelease` / `inCinemas`) filter unreleased items before every run; skipped count logged at INFO level
-
-### Fixed
-- **Bug #22** — Stats tabs ignored theme: `<button>` elements inherited browser default styles; `background:none;border:none` added
-- **Bug #21** — Console showed no entries: `_feedConsole` was called after every `fetchState()` with `appState` instead of an invalid parameter; field names corrected (`action`/`item` instead of `message`/`source`)
-- **Bug #24** — Settings page not full width: `#page-settings.content { grid-template-columns: 1fr; }` added
-- **Bug #23** — Homepage version showed `v6.3.8`: hardcoded fallback updated to `v6.4.3`, GitHub release API queried on load
-- **Import pathlib missing** — `_setup_file_logging` used `pathlib.Path` in type annotation, but module was not imported → crash on startup
+## [v6.4.4] — 2026-03-25
 
 ### Added
-- **Bug #20 — Config migration**: `_migrate_config()` runs on every startup; adds missing keys from `DEFAULT_CONFIG` (including `discord.*` and instance defaults) without removing existing values
-- **Feature #25 — Skip upcoming**: Sonarr episodes (`airDateUtc`) and Radarr movies (`digitalRelease` / `physicalRelease` / `inCinemas`) with future dates are always automatically skipped — no toggle, always active
-- **Configurable log rotation**: settings in General tab — max file size (1–100 MB, default 5 MB), backup count (0–10, default 2); `POST /api/log/rotate` and `GET /api/log/status` API endpoints; "🔄 Rotate" and "📋 Status" buttons with inline result
-- **Persistent log file**: `/data/logs/mediastarr.log` with `RotatingFileHandler` — no new dependencies
-- **Unit tests**: 14 assertions for `_ep_is_released`, `_movie_is_released` and `RotatingFileHandler` — all passed
-- **Configurable log rotation** — new settings in General tab:
-  - **Max file size (MB)**: 1–100 MB (default 5 MB)
-  - **Backup count**: 0–10 files (default 2, giving 3 files total: current + 2 backups)
-  - `_setup_file_logging()` accepts `max_mb` / `backups` from CONFIG; safe to call multiple times (reconfigures in-place without restart)
-  - `_reconfigure_file_logging()` applies updated CONFIG values to running handler after `/api/config` save
-  - `POST /api/log/rotate` — manually triggers `doRollover()` and returns file sizes of current + all backups
-  - `GET /api/log/status` — returns all log files with sizes, max_bytes, backups_count, log_dir path
-  - "🔄 Rotate now" and "📋 Status" buttons in General settings with inline result display
-  - New i18n keys: `lbl_log_rotation`, `hint_log_rotation`, `lbl_log_max_mb`, `hint_log_max_mb`, `lbl_log_backups`, `hint_log_backups`, `btn_log_rotate`, `btn_log_status` (DE + EN)
-- **Unit tests**: 15 assertions covering `_ep_is_released`, `_movie_is_released` (yesterday/tomorrow/ISO-Z/no-date edge cases) and `RotatingFileHandler` (initial setup, rollover, reconfigure, clamp-min, clamp-max) — all pass
+- **Scheduled maintenance windows**: new section in General settings; up to 10 time windows (HH:MM → HH:MM, local time); overnight windows supported (e.g. 22:00–06:00); search pauses automatically while inside a window with a 60s re-check loop; yellow `⏸ Wartungsfenster aktiv` banner in topbar while active; saves instantly via `/api/config`; exposed in `/api/state` as `maintenance_windows` + `in_maintenance_window`
+- **Series Discord webhooks fixed**:
+  - Full series object now fetched once per hunt cycle and stored in `series_full` cache (keyed by series ID); injected into every episode dict via `enrich_ep_with_series()` before calling `discord_send()`
+  - Poster + fanart now correctly populated from the full series object (was empty when Sonarr omitted images in `wanted/missing` response)
+  - Multi-source ratings for Sonarr: now tries nested `ratings.imdb.value` / `ratings.tmdb.value` (Sonarr v4+ format) before falling back to flat `ratings.value`
+  - TheTVDB / IMDb / TMDB links: already present in code — now correctly populated because `series_obj.imdbId`, `tvdbId`, `tmdbId` are available from the full series object
+
+## [v6.4.3] — 2026-03-25
+
+### Fixed
+- **Bug #22** — Stats-Tabs ignorierten Theme: `<button>`-Elemente erbten Browser-Standardstile; `background:none;border:none` ergänzt
+- **Bug #21** — Console zeigte keine Einträge: `_feedConsole` wurde nach jedem `fetchState()` mit `appState` statt einem ungültigen Param aufgerufen; Feldnamen korrigiert (`action`/`item` statt `message`/`source`)
+- **Bug #24** — Einstellungsseite nicht volle Breite: `#page-settings.content { grid-template-columns: 1fr; }` ergänzt
+- **Bug #23** — Homepage-Version zeigte `v6.3.8`: Hardcoded-Fallback auf `v6.4.3`, GitHub-Release-API beim Laden abgefragt
+- **Import pathlib** fehlte — `_setup_file_logging` nutzte `pathlib.Path` in Typ-Annotation, Modul aber nicht importiert → Crash beim Start
+
+### Added
+- **Bug #20 — Config-Migration**: `_migrate_config()` läuft bei jedem Start; ergänzt fehlende Keys aus `DEFAULT_CONFIG` (inkl. `discord.*` und Instanz-Defaults) ohne bestehende Werte zu löschen
+- **Feature #25 — Upcoming überspringen**: Sonarr-Episoden (`airDateUtc`) und Radarr-Filme (`digitalRelease` / `physicalRelease` / `inCinemas`) mit Zukunftsdatum werden immer automatisch übersprungen — kein Toggle, immer aktiv
+- **Konfigurierbares Log-Rotation**: Einstellungen in General-Tab — Max. Dateigröße (1–100 MB, Standard 5 MB), Backup-Anzahl (0–10, Standard 2); `POST /api/log/rotate` und `GET /api/log/status` API-Endpunkte; "🔄 Rotieren" und "📋 Status"-Buttons mit Inline-Ergebnis
+- **Persistente Log-Datei**: `/data/logs/mediastarr.log` mit `RotatingFileHandler` — keine neuen Abhängigkeiten
+- **Unit-Tests**: 14 Assertions für `_ep_is_released`, `_movie_is_released` und `RotatingFileHandler` — alle bestanden
 
 ---
 
