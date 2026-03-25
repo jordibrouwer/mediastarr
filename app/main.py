@@ -15,6 +15,7 @@ New in v6:
   - Instance management fully in main settings (no wizard redirect needed)
 """
 import os, re, json, time, logging, threading, requests, random, string, zoneinfo, socket, ipaddress
+import pathlib
 from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -33,6 +34,50 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"]   = os.environ.get("MEDIASTARR_SESSION_SECURE","").strip().lower() in {"1","true","yes","on"}
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
+
+# Module-level reference so we can reconfigure without restart
+_file_handler: "logging.handlers.RotatingFileHandler | None" = None
+
+def _setup_file_logging(data_dir: pathlib.Path,
+                         max_mb: int = 5,
+                         backups: int = 2) -> None:
+    """Add (or reconfigure) a rotating file handler on the root logger.
+    Safe to call multiple times — reconfigures the existing handler in place."""
+    from logging.handlers import RotatingFileHandler
+    global _file_handler
+    max_mb  = max(1, min(100, int(max_mb  or 5)))
+    backups = max(0, min(10,  int(backups or 2)))
+    log_dir  = data_dir / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "mediastarr.log"
+    root = logging.getLogger()
+    if _file_handler is None:
+        _file_handler = RotatingFileHandler(
+            str(log_file),
+            maxBytes    = max_mb * 1024 * 1024,
+            backupCount = backups,
+            encoding    = "utf-8",
+        )
+        _file_handler.setFormatter(
+            logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        root.addHandler(_file_handler)
+        logger.info(f"File logging started: {log_file} "
+                    f"(max {max_mb} MB × {backups+1} files)")
+    else:
+        # Reconfigure existing handler without restart
+        _file_handler.maxBytes    = max_mb * 1024 * 1024
+        _file_handler.backupCount = backups
+        logger.info(f"Log rotation reconfigured: max {max_mb} MB × {backups+1} files")
+
+def _reconfigure_file_logging() -> None:
+    """Apply current CONFIG log_max_mb / log_backups to the running handler."""
+    if _file_handler is None:
+        return
+    _setup_file_logging(
+        DATA_DIR,
+        max_mb  = CONFIG.get("log_max_mb",  5),
+        backups = CONFIG.get("log_backups", 2),
+    )
 
 # ─── Constants ───────────────────────────────────────────────────────────────
 ALLOWED_TYPES       = frozenset({"sonarr","radarr"})
@@ -238,7 +283,7 @@ def discord_send(event_type: str, title: str, description: str,
         return
 
     color = DISCORD_COLORS.get(event_type, DISCORD_COLORS["info"])
-    footer_parts = ["Mediastarr v6.4.2"]
+    footer_parts = ["Mediastarr v6.4.3"]
     if instance_name: footer_parts.append(instance_name)
     if footer_extra:  footer_parts.append(footer_extra)
     footer_text = "  ·  ".join(footer_parts)
@@ -507,7 +552,7 @@ def _year(val):
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.4.2"
+_CURRENT_VERSION = "v6.4.3"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -577,7 +622,33 @@ DEFAULT_CONFIG = {
     },
     # Read-only public access to /api/state (no auth required, no sensitive data)
     "public_api_state": False,
+    # Rotating log file settings
+    "log_max_mb":    5,    # max size per log file in MB (1–100)
+    "log_backups":   2,    # number of backup files to keep (0–10)
 }
+
+def _migrate_config(cfg: dict) -> dict:
+    """Non-destructively add any keys from DEFAULT_CONFIG that are missing in cfg.
+    Also repairs nested discord dict and per-instance defaults."""
+    # Top-level keys
+    for key, default_val in DEFAULT_CONFIG.items():
+        if key not in cfg:
+            cfg[key] = default_val
+            logger.info(f"Config migration: added missing key '{key}' = {default_val!r}")
+    # Discord sub-keys
+    dc_defaults = DEFAULT_CONFIG["discord"]
+    cfg_dc = cfg.setdefault("discord", {})
+    for key, default_val in dc_defaults.items():
+        if key not in cfg_dc:
+            cfg_dc[key] = default_val
+            logger.info(f"Config migration: added discord.{key} = {default_val!r}")
+    # Instance defaults — ensure required fields exist
+    for inst in cfg.get("instances", []):
+        if "id"          not in inst: inst["id"]          = make_id()
+        if "enabled"     not in inst: inst["enabled"]     = True
+        if "daily_limit" not in inst: inst["daily_limit"] = 0
+        if "type"        not in inst: inst["type"]        = "sonarr"
+    return cfg
 
 def load_config() -> dict:
     cfg = DEFAULT_CONFIG.copy()
@@ -585,9 +656,10 @@ def load_config() -> dict:
         try:
             raw = json.loads(CFG_FILE.read_text())
             cfg.update(raw)
-            for inst in cfg.get("instances",[]):
-                if "id" not in inst: inst["id"] = make_id()
+            cfg = _migrate_config(cfg)
         except Exception as e: logger.warning(f"Config load failed: {e}")
+    else:
+        cfg = _migrate_config(cfg)
     # Respect TZ environment variable if timezone is still default UTC
     tz_env = os.environ.get("TZ","").strip()
     if tz_env and cfg.get("timezone","UTC") == "UTC":
@@ -858,6 +930,16 @@ def _is_released(release_dt) -> bool:
     try: return release_dt.date() <= datetime.utcnow().date()
     except Exception: return True
 
+def _ep_is_released(ep: dict) -> bool:
+    """True if this episode has already aired (airDateUtc in the past or missing)."""
+    dt = _pick_release_dt(ep, "airDateUtc", "airDate")
+    return _is_released(dt)
+
+def _movie_is_released(movie: dict) -> bool:
+    """True if this movie has a known release date in the past (any release type)."""
+    dt = _pick_release_dt(movie, "digitalRelease", "physicalRelease", "inCinemas", "releaseDate")
+    return _is_released(dt)
+
 def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
               title: str, command: dict, changed=None, year=None,
               item_data: dict | None = None):
@@ -1068,6 +1150,13 @@ def hunt_sonarr_instance(inst: dict):
         data  = client.get("wanted/missing", params={"pageSize":500,"sortKey":"airDateUtc","sortDir":"desc"})
         recs  = data.get("records", [])
         random.shuffle(recs)
+        # Skip upcoming (not yet aired) episodes
+        # Always skip unaired episodes (hardwired)
+        before_up = len(recs)
+        recs = [ep for ep in recs if _ep_is_released(ep)]
+        skipped_up = before_up - len(recs)
+        if skipped_up:
+            logger.info(f"{name}: skipped {skipped_up} unaired episode(s) (upcoming filter)")
         # IMDb filter — series_cache has titles, build separate imdb map from same /series endpoint
         _sonarr_imdb_override = CONFIG.get("sonarr_imdb_min_rating")
         imdb_min_s = float(_sonarr_imdb_override if _sonarr_imdb_override is not None else CONFIG.get("imdb_min_rating", 0) or 0)
@@ -1176,6 +1265,13 @@ def hunt_radarr_instance(inst: dict):
             before = len(missing)
             missing = [m for m in missing if _imdb_rating(m) == 0.0 or _imdb_rating(m) >= imdb_min]
             logger.debug(f"{name}: IMDb filter ({imdb_min}+) kept {len(missing)}/{before} missing movies")
+        # Skip upcoming (not yet released) movies
+        # Always skip unreleased movies (hardwired)
+        before_up = len(missing)
+        missing = [m for m in missing if _movie_is_released(m)]
+        skipped_up = before_up - len(missing)
+        if skipped_up:
+            logger.info(f"{name}: skipped {skipped_up} unreleased movie(s) (upcoming filter)")
         stats["missing_found"] = len(missing)
         searched = 0
         for movie in missing:
@@ -1671,6 +1767,8 @@ def api_state():
             "discord_configured": bool(CONFIG.get("discord",{}).get("webhook_url","")),
             "discord_webhook_set": bool(CONFIG.get("discord",{}).get("webhook_url","")),
             "public_api_state":    CONFIG.get("public_api_state", False),
+            "log_max_mb":          CONFIG.get("log_max_mb",  5),
+            "log_backups":         CONFIG.get("log_backups", 2),
         },
     })
 
@@ -1748,6 +1846,14 @@ def api_config():
                 dc["webhook_url"] = url
     if "public_api_state" in d:
         CONFIG["public_api_state"] = bool(d["public_api_state"])
+    _changed_log = False
+    if "log_max_mb" in d:
+        CONFIG["log_max_mb"]  = max(1, min(100, int(d.get("log_max_mb", 5) or 5)))
+        _changed_log = True
+    if "log_backups" in d:
+        CONFIG["log_backups"] = max(0, min(10, int(d.get("log_backups", 2) or 2)))
+        _changed_log = True
+    if _changed_log: _reconfigure_file_logging()
     save_config(CONFIG); return jsonify({"ok":True})
 
 # ── Config Export / Import ────────────────────────────────────────────────────
@@ -1879,6 +1985,60 @@ def api_timezones():
     return jsonify({"ok": True, "timezones": flat, "current": current})
 
 # ── Discord test endpoint ─────────────────────────────────────────────────────
+@app.route("/api/log/rotate", methods=["POST"])
+@_api_auth_required
+def api_log_rotate():
+    """Manually trigger a log rotation and return current log file info."""
+    import os
+    try:
+        if _file_handler is None:
+            return jsonify({"ok": False, "error": "File logging not active"})
+        _file_handler.doRollover()
+        log_file = pathlib.Path(_file_handler.baseFilename)
+        size_kb  = round(log_file.stat().st_size / 1024, 1) if log_file.exists() else 0
+        backups  = []
+        for i in range(1, _file_handler.backupCount + 1):
+            bp = pathlib.Path(f"{_file_handler.baseFilename}.{i}")
+            if bp.exists():
+                backups.append({"file": bp.name, "size_kb": round(bp.stat().st_size/1024, 1)})
+        logger.info("Manual log rotation triggered via API")
+        return jsonify({
+            "ok": True,
+            "current": {"file": log_file.name, "size_kb": size_kb},
+            "backups": backups,
+            "max_mb":  CONFIG.get("log_max_mb", 5),
+            "backups_count": CONFIG.get("log_backups", 2),
+        })
+    except Exception as e:
+        logger.error(f"Log rotation failed: {e}")
+        return jsonify({"ok": False, "error": str(e)})
+
+@app.route("/api/log/status")
+@_api_auth_required
+def api_log_status():
+    """Return current log file sizes and rotation config."""
+    try:
+        if _file_handler is None:
+            return jsonify({"ok": False, "error": "File logging not active"})
+        log_file = pathlib.Path(_file_handler.baseFilename)
+        files = []
+        if log_file.exists():
+            files.append({"file": log_file.name, "size_kb": round(log_file.stat().st_size/1024, 1)})
+        for i in range(1, _file_handler.backupCount + 2):
+            bp = pathlib.Path(f"{_file_handler.baseFilename}.{i}")
+            if bp.exists():
+                files.append({"file": bp.name, "size_kb": round(bp.stat().st_size/1024, 1)})
+        return jsonify({
+            "ok": True,
+            "files": files,
+            "max_bytes":    _file_handler.maxBytes,
+            "max_mb":       CONFIG.get("log_max_mb", 5),
+            "backups_count":CONFIG.get("log_backups", 2),
+            "log_dir":      str(pathlib.Path(_file_handler.baseFilename).parent),
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
 @app.route("/api/discord/test", methods=["POST"])
 @_api_auth_required
 def api_discord_test():
@@ -1942,6 +2102,9 @@ _startup_lock = threading.Lock()
 def _do_startup():
     """Run once on first request — works with both gunicorn and python direct."""
     global _started
+    _setup_file_logging(DATA_DIR,
+        max_mb  = CONFIG.get("log_max_mb",  5),
+        backups = CONFIG.get("log_backups", 2))
     with _startup_lock:
         if _started:
             return

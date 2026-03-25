@@ -142,10 +142,13 @@ Settings → **Discord** tab:
 
 ## 🗺️ Roadmap / Ideas
 
+- [x] Per-instance daily limits *(v6.4.1)*
+- [x] Export/import config *(v6.4.1)*
+- [x] Read-only API mode (no auth required for `/api/state`) *(v6.4.1)*
+- [x] Skip upcoming/unreleased content *(v6.4.3)*
 - [ ] Webhook endpoint to trigger cycle from external automation
-- [ ] Per-instance daily limits
-- [ ] Export/import config
-- [ ] Read-only API mode (no auth required for `/api/state`)
+- [ ] Push via Gotify / Apprise (alternative to Discord)
+- [ ] Scheduled maintenance windows (pause during certain hours)
 
 ---
 
@@ -256,10 +259,13 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 
 ## 🗺️ Roadmap / Ideen
 
+- [x] Pro-Instanz Tageslimits *(v6.4.1)*
+- [x] Konfiguration exportieren/importieren *(v6.4.1)*
+- [x] Read-only-API-Modus (kein Auth für `/api/state`) *(v6.4.1)*
+- [x] Upcoming/unveröffentlichte Inhalte überspringen *(v6.4.3)*
 - [ ] Webhook-Endpunkt zum Auslösen eines Zyklus von externer Automatisierung
-- [ ] Pro-Instanz Tageslimits
-- [ ] Konfiguration exportieren/importieren
-- [ ] Read-only-API-Modus (kein Auth für `/api/state`)
+- [ ] Push via Gotify / Apprise (Alternative zu Discord)
+- [ ] Wartungsfenster (Pause zu bestimmten Uhrzeiten)
 
 ## 📸 Screenshots
 

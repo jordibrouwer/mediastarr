@@ -214,7 +214,7 @@ span[data-lang].show{display:inline}
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-badge"><span></span><span id="hp-version">v6.4.2</span> — Open Source</div>
+  <div class="hero-badge"><span></span><span id="hp-version">v6.4.3</span> — Open Source</div>
   <h1 class="hero-title">
     <span data-lang="en" class="show">Hunt what's<br><span style="color:var(--acc)">missing.</span></span>
     <span data-lang="de">Such was<br><span style="color:var(--acc)">fehlt.</span></span>
@@ -241,10 +241,11 @@ span[data-lang].show{display:inline}
     </a>
   </div>
 
-  <div class="stats-row" style="width:100%;max-width:700px;margin-top:80px">
+  <div class="stats-row" style="width:100%;max-width:900px;margin-top:80px">
     <div class="stat-item"><div class="stat-num">∞</div><div class="stat-label" data-de="Instanzen" data-en="Instances">Instances</div></div>
-    <div class="stat-item"><div class="stat-num">2</div><div class="stat-label" data-de="Sprachen" data-en="Languages">Languages</div></div>
     <div class="stat-item"><div class="stat-num">6</div><div class="stat-label" data-de="Discord Events" data-en="Discord events">Discord events</div></div>
+    <div class="stat-item"><div class="stat-num">4</div><div class="stat-label" data-de="Themes" data-en="Themes">Themes</div></div>
+    <div class="stat-item"><div class="stat-num">2</div><div class="stat-label" data-de="Sprachen" data-en="Languages">Languages</div></div>
     <div class="stat-item"><div class="stat-num">MIT</div><div class="stat-label">License</div></div>
   </div>
 </div>
@@ -258,12 +259,13 @@ span[data-lang].show{display:inline}
     </div>
     <div class="preview-body">
       <div class="preview-sidebar">
-        <div class="ps-logo">Media<span>starr</span><div class="ps-ver">Hunt Engine v6.3.8</div></div>
+        <div class="ps-logo">Media<span>starr</span><div class="ps-ver">Hunt Engine v6.4.3</div></div>
         <div class="ps-item on"><div class="ps-dot"></div>Dashboard</div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Einstellungen" data-en="Settings">Settings</span></div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Verlauf" data-en="History">History</span></div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Aktivitätslog" data-en="Activity Log">Activity Log</span></div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Statistiken" data-en="Statistics">Statistics</span></div>
+        <div class="ps-item"><div class="ps-dot"></div>Console</div>
       </div>
       <div class="preview-main">
         <div class="preview-topbar">
@@ -328,14 +330,19 @@ span[data-lang].show{display:inline}
     <div class="feat-card reveal"><div class="feat-icon">🧙</div><div class="feat-title"><span data-de="Erster-Start-Wizard" data-en="First-run wizard">First-run wizard</span></div><div class="feat-text"><span data-de="4-Schritte-Einrichtung im Browser — keine Config-Datei, keine Umgebungsvariablen. Instanzen testen, Discord einrichten, fertig." data-en="4-step setup wizard in the browser — no config file editing required. Add instances, test connections, done.">4-step setup wizard in the browser — no config file editing required.</span></div></div>
     <div class="feat-card reveal"><div class="feat-icon">🔐</div><div class="feat-title"><span data-de="Optionaler Passwortschutz" data-en="Optional password">Optional password</span></div><div class="feat-text"><span data-de="MEDIASTARR_PASSWORD setzen um Dashboard und API zu schützen. CSRF-Schutz automatisch aktiv. Gunicorn als Server." data-en="Set MEDIASTARR_PASSWORD to protect the dashboard and API. CSRF protection enabled automatically. Gunicorn server.">Set MEDIASTARR_PASSWORD to protect the dashboard and API. CSRF protection included.</span></div></div>
     <div class="feat-card reveal"><div class="feat-icon">🌐</div><div class="feat-title"><span data-de="Deutsch & Englisch" data-en="German & English">German & English</span></div><div class="feat-text"><span data-de="Vollständige Übersetzung von UI, Logs und Discord-Nachrichten. Sofort umschalten — kein Neustart." data-en="Full UI, log messages, and Discord notifications in both languages. Switch instantly — no restart required.">Full UI, log messages, and Discord notifications in both languages.</span></div></div>
+    <div class="feat-card reveal"><div class="feat-icon">🖥</div><div class="feat-title"><span data-de="Live Log Console" data-en="Live log console">Live log console</span></div><div class="feat-text"><span data-de="Echtzeit-Aktivitätslog direkt im Browser — Level-Filter, Textsuche, Auto-Scroll. Fehler werden im Nav markiert." data-en="Real-time activity log in the browser — level filter, text search, auto-scroll. Errors are flagged in the nav.">Real-time activity log in the browser — level filter, text search, auto-scroll.</span></div></div>
+    <div class="feat-card reveal"><div class="feat-icon">📊</div><div class="feat-title"><span data-de="Statistiken mit Tabs" data-en="Statistics with tabs">Statistics with tabs</span></div><div class="feat-text"><span data-de="Alle, Sonarr und Radarr — Statistiken gefiltert pro Service-Typ. Suchen, Jahresverteilung, Donut, Suchtypen und 24h-Timeline." data-en="All, Sonarr and Radarr — stats filtered per service type. Searches, year distribution, donut, search types and 24h timeline.">All, Sonarr and Radarr — stats filtered per service type.</span></div></div>
+    <div class="feat-card reveal"><div class="feat-icon">📅</div><div class="feat-title"><span data-de="Upcoming überspringen" data-en="Skip upcoming">Skip upcoming</span></div><div class="feat-text"><span data-de="Folgen und Filme die noch nicht erschienen sind werden automatisch ignoriert — keine unnötigen API-Anfragen." data-en="Episodes and movies that haven't aired or been released yet are automatically skipped — no wasted API calls.">Episodes and movies that haven't been released yet are automatically skipped.</span></div></div>
+    <div class="feat-card reveal"><div class="feat-icon">🗂</div><div class="feat-title"><span data-de="Log-Rotation" data-en="Log rotation">Log rotation</span></div><div class="feat-text"><span data-de="Persistente Log-Datei unter /data/logs/ mit konfigurierbarer Größe (1–100 MB) und Anzahl der Backups (0–10). Manuell rotierbar." data-en="Persistent log file at /data/logs/ with configurable size (1–100 MB) and backup count (0–10). Rotate manually anytime.">Persistent log file at /data/logs/ — configurable size and backup count.</span></div></div>
+    <div class="feat-card reveal"><div class="feat-icon">💾</div><div class="feat-title"><span data-de="Config Backup" data-en="Config backup">Config backup</span></div><div class="feat-text"><span data-de="Export und Import der gesamten Konfiguration als JSON — inkl. API-Keys. Perfekt für Migrationen und Backups." data-en="Export and import the full config as JSON — including API keys. Perfect for migrations and backups.">Export and import the full config as JSON — including API keys.</span></div></div>
   </div>
 </section>
 
 <!-- SCREENSHOTS FLIPCHART -->
 <div id="screenshots" style="padding:0 5vw 100px;max-width:1200px;margin:0 auto">
-  <div class="section-label reveal" style="text-align:center">v6.4.2</div>
+  <div class="section-label reveal" style="text-align:center">v6.4.3</div>
   <h2 class="section-title reveal" style="text-align:center"><span data-de="So sieht es aus." data-en="See it in action.">See it in action.</span></h2>
-  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.2-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.2 interface — not a marketing mockup.">Real screenshots of the v6.4.2 interface — not a marketing mockup.</span></p>
+  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.3-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.3 interface — not a marketing mockup.">Real screenshots of the v6.4.3 interface — not a marketing mockup.</span></p>
 
   <div class="reveal" style="position:relative">
     <!-- Tab nav -->
@@ -564,10 +571,30 @@ span[data-lang].show{display:inline}
           <td style="text-align:center;padding:13px 20px;color:var(--mu2);font-size:12px" id="r8-o">✓ via Apprise</td>
           <td style="text-align:center;padding:13px 20px;color:var(--green);font-size:12px" id="r8-m">✓ 6 events, native webhook</td>
         </tr>
-        <tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
           <td style="padding:13px 24px;color:var(--tx);font-weight:500" id="r9-f">Language</td>
           <td style="text-align:center;padding:13px 20px;color:var(--mu2);font-size:12px" id="r9-o">English only</td>
           <td style="text-align:center;padding:13px 20px;color:var(--green);font-size:12px" id="r9-m">✓ DE + EN, full UI & logs</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+          <td style="padding:13px 24px;color:var(--tx);font-weight:500"><span data-de="Brute-Force Schutz" data-en="Brute-force protection">Brute-force protection</span></td>
+          <td style="text-align:center;padding:13px 20px;color:#ff4d4d;font-size:12px">✗</td>
+          <td style="text-align:center;padding:13px 20px;color:var(--green);font-size:12px">✓ <span data-de="10 Versuche → 5 Min. IP-Sperre" data-en="10 attempts → 5 min IP lockout">10 attempts → 5 min IP lockout</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+          <td style="padding:13px 24px;color:var(--tx);font-weight:500"><span data-de="Upcoming überspringen" data-en="Skip upcoming releases">Skip upcoming releases</span></td>
+          <td style="text-align:center;padding:13px 20px;color:#ff4d4d;font-size:12px">✗</td>
+          <td style="text-align:center;padding:13px 20px;color:var(--green);font-size:12px">✓ <span data-de="Automatisch, immer aktiv" data-en="Automatic, always on">Automatic, always on</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+          <td style="padding:13px 24px;color:var(--tx);font-weight:500"><span data-de="Config Export / Import" data-en="Config export / import">Config export / import</span></td>
+          <td style="text-align:center;padding:13px 20px;color:#ff4d4d;font-size:12px">✗</td>
+          <td style="text-align:center;padding:13px 20px;color:var(--green);font-size:12px">✓ <span data-de="JSON Download + Upload" data-en="JSON download + upload">JSON download + upload</span></td>
+        </tr>
+        <tr>
+          <td style="padding:13px 24px;color:var(--tx);font-weight:500"><span data-de="Persistente Log-Rotation" data-en="Persistent log rotation">Persistent log rotation</span></td>
+          <td style="text-align:center;padding:13px 20px;color:#ff4d4d;font-size:12px">✗</td>
+          <td style="text-align:center;padding:13px 20px;color:var(--green);font-size:12px">✓ <span data-de="/data/logs/, 5 MB, konfigurierbar" data-en="/data/logs/, 5 MB, configurable">/data/logs/, 5 MB, configurable</span></td>
         </tr>
       </tbody>
     </table>
@@ -582,7 +609,7 @@ span[data-lang].show{display:inline}
 <!-- FOOTER -->
 <footer>
   <a href="#" class="footer-logo">Media<span>starr</span></a>
-  <div style="color:var(--mu);font-size:12px">© 2025 kroeberd · MIT License · <span data-de="Kein Zusammenhang mit Huntarr" data-en="Not affiliated with Huntarr">Not affiliated with Huntarr</span></div>
+  <div style="color:var(--mu);font-size:12px">© 2026 kroeberd · MIT License · <span data-de="Kein Zusammenhang mit Huntarr" data-en="Not affiliated with Huntarr">Not affiliated with Huntarr</span></div>
   <div class="footer-links">
     <a href="https://github.com/kroeberd/mediastarr" target="_blank">GitHub</a>
     <a href="https://hub.docker.com/r/kroeberd/mediastarr" target="_blank">Docker Hub</a>
