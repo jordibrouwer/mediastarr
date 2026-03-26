@@ -255,9 +255,7 @@
     #page-log.content      { grid-template-columns: 1fr; }
     #page-console.content  { grid-template-columns: 1fr; }
     #page-help.content     { grid-template-columns: 1fr; }
-    /* Help tab panes — independent CSS from settings tab-pane */
-    .help-pane { display: none; }
-    .help-pane.active { display: block; padding: 18px 22px; }
+    #page-stats.content    { grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; min-width: 0; }
     .help-section { margin-bottom: 28px; }
     .help-section h3 { font-family: var(--heading-font, var(--mono)); font-size: 14px; font-weight: 700; color: var(--accent); margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
     .help-section h4 { font-size: 12px; font-weight: 600; color: var(--text); margin: 14px 0 6px; }
@@ -1208,19 +1206,8 @@
           <button class="help-lang-btn" id="help-btn-de" onclick="setHelpLang('de')">🇩🇪 DE</button>
         </div>
       </div>
-      <!-- Help tab nav -->
-      <div class="tabs-row" style="overflow-x:auto;scrollbar-width:none;padding:0 18px;border-bottom:1px solid var(--border)">
-          <div class="tab-btn active" onclick="switchHelpTab('how')">⚙️ <span data-en="How it works" data-de="Funktionsweise">How it works</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('milestones')">🗺️ <span data-en="Milestones" data-de="Meilensteine">Milestones</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('security')">🔒 <span data-en="Security" data-de="Sicherheit">Security</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('api')">📡 <span data-en="API Reference" data-de="API-Referenz">API Reference</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('changelog')">📋 <span data-en="Changelog" data-de="Changelog">Changelog</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('huntarr')">🔓 <span data-en="Why not Huntarr?" data-de="Warum nicht Huntarr?">Why not Huntarr?</span></div>
-      </div>
-      <!-- Help tab panes -->
-
-          <div class="help-pane active" id="help-tab-how" style="padding:0">
-            <div class="help-section">
+      <div style="padding:18px 22px;overflow-y:auto">
+        <div class="help-section">
 <h3>⚙️ <span class="help-en">How Mediastarr works</span><span class="help-de">Wie Mediastarr funktioniert</span></h3>
           <div class="help-en">
             <p>Mediastarr runs a search cycle on a configurable schedule. Each cycle it fetches missing and cut-off content from all enabled Sonarr and Radarr instances, applies filters, selects items randomly for even coverage, and sends the search command to the arr API.</p>
@@ -1261,8 +1248,8 @@
             </ul>
             </div>
           </div>
-          <div class="help-pane" id="help-tab-milestones" style="padding:0">
-            <div class="help-section">
+
+        <div class="help-section">
 <h3>🗺️ <span class="help-en">Milestones &amp; Roadmap</span><span class="help-de">Meilensteine &amp; Roadmap</span></h3>
           <div class="help-en">
             <h4>Completed milestones</h4>
@@ -1318,11 +1305,7 @@
           </div>
         </div>
 
-        <!-- Why not other tools --
-            </div>
-          </div>
-          <div class="help-pane" id="help-tab-security" style="padding:0">
-            <div class="help-section">
+        <div class="help-section">
 <h3>🔒 <span class="help-en">Security &amp; Warnings</span><span class="help-de">Sicherheit &amp; Warnhinweise</span></h3>
           <div class="help-warn">
             <div class="help-warn-title">⚠ <span class="help-en">Never expose Mediastarr directly to the internet (WAN)</span><span class="help-de">Mediastarr niemals direkt ins Internet (WAN) exponieren</span></div>
@@ -1351,8 +1334,8 @@
           </ul>
             </div>
           </div>
-          <div class="help-pane" id="help-tab-api" style="padding:0">
-            <div class="help-section">
+
+        <div class="help-section">
 <h3>📡 <span data-en="API Reference" data-de="API-Referenz">API Reference</span></h3>
           <p style="margin-bottom:10px"><span class="help-en">All endpoints require authentication unless Public API mode is enabled for <code>GET /api/state</code>. Write requests require the <code>X-CSRF-Token</code> header (automatically added by the dashboard).</span><span class="help-de">Alle Endpunkte erfordern Auth. Schreibende Requests brauchen den <code>X-CSRF-Token</code>-Header.</span></p>
           <div class="help-api-row"><span class="help-method get">GET</span><code>/api/state</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">Full dashboard state — instances, stats, config, activity log, maintenance status</span><span class="help-de">Gesamtstatus — Instanzen, Stats, Config, Aktivitätslog</span></span></div>
@@ -1376,8 +1359,8 @@
           <div class="help-api-row"><span class="help-method get">GET</span><code>/api/timezones</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">All IANA timezones</span><span class="help-de">Alle IANA-Zeitzonen</span></span>
             </div>
           </div>
-          <div class="help-pane" id="help-tab-changelog" style="padding:0">
-            <div class="help-section">
+
+        <div class="help-section">
 <h3>📋 Changelog</h3>
           <div style="font-size:11px;color:var(--muted2);line-height:1.8">
 
@@ -1520,11 +1503,7 @@
           </div>
         </div>
 
-        <!-- Milestones / Roadmap --
-            </div>
-          </div>
-          <div class="help-pane" id="help-tab-huntarr" style="padding:0">
-            <div class="help-section">
+        <div class="help-section">
 <h3>🔓 <span class="help-en">Why not Huntarr or its forks?</span><span class="help-de">Warum nicht Huntarr oder seine Forks?</span></h3>
 
           <!-- ── ENGLISH ── -->
@@ -1589,10 +1568,13 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
             <p style="margin-top:10px">Die vollständigen Audit-Ergebnisse: <a href="https://github.com/rfsbraz/huntarr-security-review" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">github.com/rfsbraz/huntarr-security-review</a> (Feb. 2026).</p>
             </div>
           </div>
-        </div>
       </div>
     </div>
   </div>
+
+
+
+
 
   <div id="page-stats" class="content content-page">
 
@@ -1626,7 +1608,7 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
     </div>
 
     <!-- Searches per Instance -->
-    <div class="chart-card">
+    <div class="chart-card" style="grid-column:1/-1">
       <div class="chart-card-hd">
         <div class="chart-card-title" id="st-chart-inst">Searches pro Instanz</div>
         <div style="font-size:10px;color:var(--muted2)" id="st-inst-sub">Gesamt</div>
@@ -1637,7 +1619,7 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
     </div>
 
     <!-- Searches per Year -->
-    <div class="chart-card">
+    <div class="chart-card" style="grid-column:1/-1">
       <div class="chart-card-hd">
         <div class="chart-card-title" id="st-chart-year">Searches nach Erscheinungsjahr</div>
         <div style="font-size:10px;color:var(--muted2)">Top 10</div>
@@ -1648,7 +1630,7 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
     </div>
 
     <!-- Result breakdown donut -->
-    <div class="chart-card">
+    <div class="chart-card" style="grid-column:1/-1">
       <div class="chart-card-hd">
         <div class="chart-card-title" id="st-chart-donut">Ergebnisverteilung</div>
       </div>
@@ -1663,7 +1645,7 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
     </div>
 
     <!-- Type breakdown -->
-    <div class="chart-card">
+    <div class="chart-card" style="grid-column:1/-1">
       <div class="chart-card-hd">
         <div class="chart-card-title" id="st-chart-types">Suchtypen</div>
         <div style="font-size:10px;color:var(--muted2)" id="st-chart-types-sub">Missing vs. Upgrade</div>
@@ -3506,17 +3488,7 @@ async function saveMaintenanceWindows() {
   }
 }
 
-// ── Help page tab switching ────────────────────────────────────────────────────
-let _helpTab = 'how';
-function switchHelpTab(id) {
-  _helpTab = id;
-  const page = document.getElementById('page-help');
-  if (!page) return;
-  page.querySelectorAll('.tabs-row .tab-btn').forEach(b => b.classList.remove('active'));
-  const activeBtn = page.querySelector(`.tabs-row .tab-btn[onclick*="${id}"]`);
-  if (activeBtn) activeBtn.classList.add('active');
-  page.querySelectorAll('.help-pane').forEach(p => p.classList.toggle('active', p.id === `help-tab-${id}`));
-}
+// Help page: no tabs — single scrolling page
 
 // ── Help page language toggle ─────────────────────────────────────────────────
 let _helpLang = currentLang || 'en';
