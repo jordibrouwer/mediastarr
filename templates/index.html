@@ -1191,16 +1191,27 @@
   <div id="page-help" class="content content-page">
     <div class="card" style="grid-column:1/-1;padding:0">
       <div class="card-header" style="flex-wrap:wrap;gap:8px">
-        <div class="card-title">❓ <span data-i18n="help_title">Hilfe &amp; Dokumentation</span></div>
-        <div class="help-lang-toggle">
+        <div class="card-title">❓ <span data-i18n="help_title">Hilfe & Dokumentation</span></div>
+        <div style="display:flex;gap:6px">
           <button class="help-lang-btn active" id="help-btn-en" onclick="setHelpLang('en')">🇬🇧 EN</button>
           <button class="help-lang-btn" id="help-btn-de" onclick="setHelpLang('de')">🇩🇪 DE</button>
         </div>
       </div>
+      <!-- Help tab nav -->
+      <div class="tabs-row" style="overflow-x:auto;scrollbar-width:none;padding:0 18px;border-bottom:1px solid var(--border)">
+          <div class="tab-btn active" onclick="switchHelpTab('how')">⚙️ <span class="help-en">How it works</span><span class="help-de">Funktionsweise</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('milestones')">🗺️ <span class="help-en">Milestones</span><span class="help-de">Meilensteine</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('security')">🔒 <span class="help-en">Security</span><span class="help-de">Sicherheit</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('api')">📡 <span class="help-en">API Reference</span><span class="help-de">API-Referenz</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('changelog')">📋 <span class="help-en">Changelog</span><span class="help-de">Changelog</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('huntarr')">🔓 <span class="help-en">Why not Huntarr?</span><span class="help-de">Warum nicht Huntarr?</span></div>
+      </div>
+      <!-- Help tab panes -->
       <div style="padding:18px 22px">
 
-        <div class="help-section">
-          <h3>⚙️ <span class="help-en">How Mediastarr works</span><span class="help-de">Wie Mediastarr funktioniert</span></h3>
+          <div class="tab-pane active" id="help-tab-how" style="padding:0">
+            <div class="help-section">
+<h3>⚙️ <span class="help-en">How Mediastarr works</span><span class="help-de">Wie Mediastarr funktioniert</span></h3>
           <div class="help-en">
             <p>Mediastarr runs a search cycle on a configurable schedule. Each cycle it fetches missing and cut-off content from all enabled Sonarr and Radarr instances, applies filters, selects items randomly for even coverage, and sends the search command to the arr API.</p>
             <h4>Cycle flow</h4>
@@ -1238,11 +1249,71 @@
               <li><strong>Cooldown</strong> — kürzlich gesuchte Items werden übersprungen</li>
               <li><strong>Tageslimit</strong> — global und pro Instanz</li>
             </ul>
+            </div>
+          </div>
+          <div class="tab-pane" id="help-tab-milestones" style="padding:0">
+            <div class="help-section">
+<h3>🗺️ <span class="help-en">Milestones &amp; Roadmap</span><span class="help-de">Meilensteine &amp; Roadmap</span></h3>
+          <div class="help-en">
+            <h4>Completed milestones</h4>
+            <ul>
+              <li>✅ <strong>v1.0</strong> — First working Sonarr search automation</li>
+              <li>✅ <strong>v3.0</strong> — Radarr support, configurable intervals</li>
+              <li>✅ <strong>v4.0</strong> — Docker image, browser config</li>
+              <li>✅ <strong>v6.0</strong> — Full Flask rewrite with security-first architecture (CSRF, brute-force, SSRF, security headers)</li>
+              <li>✅ <strong>v6.1</strong> — Multi-instance (unlimited Sonarr + Radarr)</li>
+              <li>✅ <strong>v6.2</strong> — Discord webhook notifications (6 event types)</li>
+              <li>✅ <strong>v6.3</strong> — SQLite history, cooldown, IMDb filter, target resolution</li>
+              <li>✅ <strong>v6.4.0</strong> — Rich Discord embeds (poster, fanart, multi-source ratings)</li>
+              <li>✅ <strong>v6.4.1</strong> — Per-instance limits, config export/import, public API</li>
+              <li>✅ <strong>v6.4.2</strong> — Stats tabs, live console, homepage version badge</li>
+              <li>✅ <strong>v6.4.3</strong> — Upcoming filter, persistent logs, config migration</li>
+              <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, help page</li>
+              <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Help page restructured, Huntarr comparison text from README, homepage badge fix</li>
+              <li>✅ <strong>v6.4.6</strong> — Help page in tabs, per-instance upgrade toggle, console dual-output fix, improved logging, mobile lang selector</li>
+            </ul>
+            <h4>Planned</h4>
+            <ul>
+              <li>⬜ Webhook endpoint — trigger a search cycle from external automation (e.g. Sonarr/Radarr <em>On Download</em> webhook)</li>
+              <li>⬜ Tag-based filtering — only search/upgrade items with a specific Sonarr/Radarr tag per instance</li>
+              <li>⬜ Push notifications via Gotify / Apprise as an alternative to Discord</li>
+              <li>⬜ Scheduled maintenance window Discord notification (announce window start/end)</li>
+            </ul>
+          </div>
+          <div class="help-de">
+            <h4>Erreichte Meilensteine</h4>
+            <ul>
+              <li>✅ <strong>v1.0</strong> — Erste funktionierende Sonarr-Suchautomatisierung</li>
+              <li>✅ <strong>v3.0</strong> — Radarr-Unterstützung, konfigurierbare Intervalle</li>
+              <li>✅ <strong>v4.0</strong> — Docker-Image, Browser-Konfiguration</li>
+              <li>✅ <strong>v6.0</strong> — Flask-Neuschreib mit Security-First-Architektur (CSRF, Brute-Force, SSRF, Sicherheits-Header)</li>
+              <li>✅ <strong>v6.1</strong> — Multi-Instanz (unbegrenzt Sonarr + Radarr)</li>
+              <li>✅ <strong>v6.2</strong> — Discord-Webhook-Benachrichtigungen (6 Event-Typen)</li>
+              <li>✅ <strong>v6.3</strong> — SQLite-Historie, Cooldown, IMDb-Filter, Zielauflösung</li>
+              <li>✅ <strong>v6.4.0</strong> — Reiche Discord-Embeds (Poster, Fanart, Multi-Source-Ratings)</li>
+              <li>✅ <strong>v6.4.1</strong> — Pro-Instanz-Limits, Config-Export/Import, öffentlicher API-Modus</li>
+              <li>✅ <strong>v6.4.2</strong> — Statistik-Tabs, Live-Console, Homepage-Versions-Badge</li>
+              <li>✅ <strong>v6.4.3</strong> — Upcoming-Filter, persistente Logs, Config-Migration</li>
+              <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Hilfe-Seite</li>
+              <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Help-Seite umgebaut, Huntarr-Text aus README, Badge-Fix</li>
+              <li>✅ <strong>v6.4.6</strong> — Help-Seite in Tabs, Upgrades pro Instanz, Console-Fix, verbessertes Logging, Mobile Sprachauswahl</li>
+            </ul>
+            <h4>Geplant</h4>
+            <ul>
+              <li>⬜ Webhook-Endpunkt — Suchzyklus von externer Automatisierung auslösen</li>
+              <li>⬜ Tag-Filter — nur Items mit einem bestimmten Sonarr/Radarr-Tag pro Instanz</li>
+              <li>⬜ Push-Benachrichtigungen via Gotify / Apprise</li>
+              <li>⬜ Discord-Benachrichtigung bei Wartungsfenster-Beginn/-Ende</li>
+            </ul>
           </div>
         </div>
 
-        <div class="help-section">
-          <h3>🔒 <span class="help-en">Security &amp; Warnings</span><span class="help-de">Sicherheit &amp; Warnhinweise</span></h3>
+        <!-- Why not other tools --
+            </div>
+          </div>
+          <div class="tab-pane" id="help-tab-security" style="padding:0">
+            <div class="help-section">
+<h3>🔒 <span class="help-en">Security &amp; Warnings</span><span class="help-de">Sicherheit &amp; Warnhinweise</span></h3>
           <div class="help-warn">
             <div class="help-warn-title">⚠ <span class="help-en">Never expose Mediastarr directly to the internet (WAN)</span><span class="help-de">Mediastarr niemals direkt ins Internet (WAN) exponieren</span></div>
             <p class="help-en">Mediastarr is designed for use inside a trusted LAN or behind a VPN / reverse proxy with TLS. Exposing port 7979 directly to the public internet — even with a password set — is strongly discouraged. API keys are stored on disk and transmitted to arr apps over plain HTTP by default.</p>
@@ -1267,11 +1338,12 @@
             <li><strong>SSRF-Schutz</strong> — Instanz-URLs werden vor jedem Request auf private IP-Bereiche geprüft</li>
             <li><strong>Sicherheits-Header</strong> — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, CSP</li>
             <li><strong>Öffentlicher API-Modus</strong> — <code>/api/state</code> kann optional read-only öffentlich sein; API-Keys nie enthalten</li>
-          </ul></div>
-        </div>
-
-        <div class="help-section">
-          <h3>📡 <span class="help-en">API Reference</span><span class="help-de">API-Referenz</span></h3>
+          </ul>
+            </div>
+          </div>
+          <div class="tab-pane" id="help-tab-api" style="padding:0">
+            <div class="help-section">
+<h3>📡 <span class="help-en">API Reference</span><span class="help-de">API-Referenz</span></h3>
           <p style="margin-bottom:10px"><span class="help-en">All endpoints require authentication unless Public API mode is enabled for <code>GET /api/state</code>. Write requests require the <code>X-CSRF-Token</code> header (automatically added by the dashboard).</span><span class="help-de">Alle Endpunkte erfordern Auth. Schreibende Requests brauchen den <code>X-CSRF-Token</code>-Header.</span></p>
           <div class="help-api-row"><span class="help-method get">GET</span><code>/api/state</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">Full dashboard state — instances, stats, config, activity log, maintenance status</span><span class="help-de">Gesamtstatus — Instanzen, Stats, Config, Aktivitätslog</span></span></div>
           <div class="help-api-row"><span class="help-method post">POST</span><code>/api/control</code><span style="color:var(--muted2);font-size:10px"><code>{"action":"start"|"stop"|"run_now"}</code></span></div>
@@ -1291,11 +1363,12 @@
           <div class="help-api-row"><span class="help-method get">GET</span><code>/api/log/status</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">Log file sizes and rotation config</span><span class="help-de">Log-Dateigrößen und Rotation-Config</span></span></div>
           <div class="help-api-row"><span class="help-method post">POST</span><code>/api/discord/test</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">Send test Discord notification</span><span class="help-de">Test-Discord-Benachrichtigung</span></span></div>
           <div class="help-api-row"><span class="help-method post">POST</span><code>/api/discord/stats</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">Send statistics report to Discord immediately</span><span class="help-de">Statistikbericht sofort senden</span></span></div>
-          <div class="help-api-row"><span class="help-method get">GET</span><code>/api/timezones</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">All IANA timezones</span><span class="help-de">Alle IANA-Zeitzonen</span></span></div>
-        </div>
-
-        <div class="help-section">
-          <h3>📋 Changelog</h3>
+          <div class="help-api-row"><span class="help-method get">GET</span><code>/api/timezones</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">All IANA timezones</span><span class="help-de">Alle IANA-Zeitzonen</span></span>
+            </div>
+          </div>
+          <div class="tab-pane" id="help-tab-changelog" style="padding:0">
+            <div class="help-section">
+<h3>📋 Changelog</h3>
           <div style="font-size:11px;color:var(--muted2);line-height:1.8">
 
             <div style="margin-bottom:14px"><strong style="color:var(--accent)">v6.4.4</strong> <em style="color:var(--muted)">2026-03-25</em>
@@ -1437,62 +1510,12 @@
           </div>
         </div>
 
-        <!-- Milestones / Roadmap -->
-        <div class="help-section">
-          <h3>🗺️ <span class="help-en">Milestones &amp; Roadmap</span><span class="help-de">Meilensteine &amp; Roadmap</span></h3>
-          <div class="help-en">
-            <h4>Completed milestones</h4>
-            <ul>
-              <li>✅ <strong>v1.0</strong> — First working Sonarr search automation</li>
-              <li>✅ <strong>v3.0</strong> — Radarr support, configurable intervals</li>
-              <li>✅ <strong>v4.0</strong> — Docker image, browser config</li>
-              <li>✅ <strong>v6.0</strong> — Full Flask rewrite with security-first architecture (CSRF, brute-force, SSRF, security headers)</li>
-              <li>✅ <strong>v6.1</strong> — Multi-instance (unlimited Sonarr + Radarr)</li>
-              <li>✅ <strong>v6.2</strong> — Discord webhook notifications (6 event types)</li>
-              <li>✅ <strong>v6.3</strong> — SQLite history, cooldown, IMDb filter, target resolution</li>
-              <li>✅ <strong>v6.4.0</strong> — Rich Discord embeds (poster, fanart, multi-source ratings)</li>
-              <li>✅ <strong>v6.4.1</strong> — Per-instance limits, config export/import, public API</li>
-              <li>✅ <strong>v6.4.2</strong> — Stats tabs, live console, homepage version badge</li>
-              <li>✅ <strong>v6.4.3</strong> — Upcoming filter, persistent logs, config migration</li>
-              <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, help page</li>
-            </ul>
-            <h4>Planned</h4>
-            <ul>
-              <li>⬜ Webhook endpoint — trigger a search cycle from external automation (e.g. Sonarr/Radarr <em>On Download</em> webhook)</li>
-              <li>⬜ Tag-based filtering — only search/upgrade items with a specific Sonarr/Radarr tag per instance</li>
-              <li>⬜ Push notifications via Gotify / Apprise as an alternative to Discord</li>
-              <li>⬜ Scheduled maintenance window Discord notification (announce window start/end)</li>
-            </ul>
+        <!-- Milestones / Roadmap --
+            </div>
           </div>
-          <div class="help-de">
-            <h4>Erreichte Meilensteine</h4>
-            <ul>
-              <li>✅ <strong>v1.0</strong> — Erste funktionierende Sonarr-Suchautomatisierung</li>
-              <li>✅ <strong>v3.0</strong> — Radarr-Unterstützung, konfigurierbare Intervalle</li>
-              <li>✅ <strong>v4.0</strong> — Docker-Image, Browser-Konfiguration</li>
-              <li>✅ <strong>v6.0</strong> — Flask-Neuschreib mit Security-First-Architektur (CSRF, Brute-Force, SSRF, Sicherheits-Header)</li>
-              <li>✅ <strong>v6.1</strong> — Multi-Instanz (unbegrenzt Sonarr + Radarr)</li>
-              <li>✅ <strong>v6.2</strong> — Discord-Webhook-Benachrichtigungen (6 Event-Typen)</li>
-              <li>✅ <strong>v6.3</strong> — SQLite-Historie, Cooldown, IMDb-Filter, Zielauflösung</li>
-              <li>✅ <strong>v6.4.0</strong> — Reiche Discord-Embeds (Poster, Fanart, Multi-Source-Ratings)</li>
-              <li>✅ <strong>v6.4.1</strong> — Pro-Instanz-Limits, Config-Export/Import, öffentlicher API-Modus</li>
-              <li>✅ <strong>v6.4.2</strong> — Statistik-Tabs, Live-Console, Homepage-Versions-Badge</li>
-              <li>✅ <strong>v6.4.3</strong> — Upcoming-Filter, persistente Logs, Config-Migration</li>
-              <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Hilfe-Seite</li>
-            </ul>
-            <h4>Geplant</h4>
-            <ul>
-              <li>⬜ Webhook-Endpunkt — Suchzyklus von externer Automatisierung auslösen</li>
-              <li>⬜ Tag-Filter — nur Items mit einem bestimmten Sonarr/Radarr-Tag pro Instanz</li>
-              <li>⬜ Push-Benachrichtigungen via Gotify / Apprise</li>
-              <li>⬜ Discord-Benachrichtigung bei Wartungsfenster-Beginn/-Ende</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Why not other tools -->
-        <div class="help-section">
-          <h3>🔓 <span class="help-en">Why not Huntarr or its forks?</span><span class="help-de">Warum nicht Huntarr oder seine Forks?</span></h3>
+          <div class="tab-pane" id="help-tab-huntarr" style="padding:0">
+            <div class="help-section">
+<h3>🔓 <span class="help-en">Why not Huntarr or its forks?</span><span class="help-de">Warum nicht Huntarr oder seine Forks?</span></h3>
 
           <!-- ── ENGLISH ── -->
           <div class="help-en">
@@ -1554,9 +1577,8 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
               <li><strong>Aktiv gepflegt</strong> — Meldung via <a href="https://discord.gg/8Vb9cj4ksv" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">Discord</a> oder GitHub Private Advisory</li>
             </ul>
             <p style="margin-top:10px">Die vollständigen Audit-Ergebnisse: <a href="https://github.com/rfsbraz/huntarr-security-review" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">github.com/rfsbraz/huntarr-security-review</a> (Feb. 2026).</p>
+            </div>
           </div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -1748,7 +1770,7 @@ const T = {
         lbl_log_rotation:'Log-Rotation',
         tab_console:'🖥 Console',
         help_nav:'Hilfe',
-        help_title:'Hilfe &amp; Dokumentation',
+        help_title:'Hilfe & Dokumentation',
         lbl_maintenance:'Wartungsfenster',
         hint_maintenance:'Suche pausiert innerhalb dieser Zeitfenster (lokale Zeit). Nacht-Fenster unterstützt.',
         btn_add_window:'+ Fenster hinzufügen',
@@ -1818,7 +1840,7 @@ const T = {
         lbl_log_rotation:'Log Rotation',
         tab_console:'🖥 Console',
         help_nav:'Help',
-        help_title:'Help &amp; Docs',
+        help_title:'Help & Docs',
         lbl_maintenance:'Maintenance windows',
         hint_maintenance:'Search pauses during these time windows (local time). Overnight windows supported.',
         btn_add_window:'+ Add window',
@@ -2578,6 +2600,12 @@ function renderSettingsInstances(type) {
               })()}
             </div>
           </div>
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            <div class="toggle ${inst.search_upgrades?'on':''}" id="tog-upg-${inst.id}"
+              onclick="toggleInstUpgrades('${inst.id}')"></div>
+            <span style="font-size:11px;color:var(--muted2)">${isDE4 ? 'Upgrades suchen' : 'Search upgrades'}</span>
+            <span style="font-size:10px;color:var(--muted)" id="tog-upg-lab-${inst.id}">${inst.search_upgrades ? (isDE4?'An':'On') : (isDE4?'Aus':'Off')}</span>
+          </div>
         </div>
         <div style="display:flex;gap:7px;align-items:center">
           <button class="btn btn-now" style="font-size:11px" onclick="pingInstSave('${inst.id}')">🔌 Test</button>
@@ -2689,6 +2717,23 @@ async function saveInst(id) {
     if (d.ok) setTimeout(() => { msg.style.display='none'; }, 2500);
   }
   if (d.ok) { fetchState(); setTimeout(renderSettingsInstances, 400); }
+}
+
+async function toggleInstUpgrades(id) {
+  const inst = (appState.instances||[]).find(i=>i.id===id);
+  if (!inst) return;
+  const newVal = !inst.search_upgrades;
+  inst.search_upgrades = newVal;
+  const tog = document.getElementById(`tog-upg-${id}`);
+  const lab = document.getElementById(`tog-upg-lab-${id}`);
+  if (tog) tog.className = 'toggle' + (newVal?' on':'');
+  if (lab) lab.textContent = newVal ? (currentLang==='de'?'An':'On') : (currentLang==='de'?'Aus':'Off');
+  try {
+    await fetch(`/api/instances/${id}`, {method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({search_upgrades: newVal})});
+    MSLog.info('toggleInstUpgrades', id, newVal);
+  } catch(e) { MSLog.error('toggleInstUpgrades', e); }
 }
 
 async function toggleInst(id, enabled) {
@@ -3446,6 +3491,18 @@ async function saveMaintenanceWindows() {
   }
 }
 
+// ── Help page tab switching ────────────────────────────────────────────────────
+let _helpTab = 'how';
+function switchHelpTab(id) {
+  _helpTab = id;
+  const page = document.getElementById('page-help');
+  if (!page) return;
+  page.querySelectorAll('.tabs-row .tab-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = page.querySelector(`.tabs-row .tab-btn[onclick*="${id}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+  page.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `help-tab-${id}`));
+}
+
 // ── Help page language toggle ─────────────────────────────────────────────────
 let _helpLang = currentLang || 'en';
 function setHelpLang(lang) {
@@ -3456,6 +3513,9 @@ function setHelpLang(lang) {
   page.querySelectorAll('.help-de').forEach(el => el.style.display = lang==='de' ? '' : 'none');
   document.getElementById('help-btn-en')?.classList.toggle('active', lang==='en');
   document.getElementById('help-btn-de')?.classList.toggle('active', lang==='de');
+  // Sync i18n key for title
+  const titleEl = document.querySelector('#page-help .card-title span[data-i18n="help_title"]');
+  if (titleEl && T[lang]?.help_title) titleEl.textContent = T[lang].help_title;
 }
 
 // ── Stats tabs ────────────────────────────────────────────────────────────────
@@ -3500,68 +3560,87 @@ renderStats = function(hist, state) {
 let _consoleLogs  = [];   // [{ts, level, source, msg}]
 let _consoleError = false;
 
+function _makeConsoleLine(e) {
+  const line = document.createElement('div');
+  line.className = 'console-line';
+  const ts  = escHtml(e.ts || '—');
+  const lvl = (e.status || 'info').toLowerCase();
+  const svc = escHtml(e.service || 'System');
+  const msg = escHtml([e.action, e.item].filter(Boolean).join(' — '));
+  line.innerHTML = `<span class="console-ts">${ts}</span><span class="console-lvl ${lvl}">${lvl.toUpperCase()}</span><span class="console-src">${svc}</span><span class="console-msg">${msg}</span>`;
+  return {line, lvl};
+}
+
 function _appendConsoleLogs(logs) {
   if (!logs?.length) return;
-  const out      = document.getElementById('console-output');
-  const empty    = document.getElementById('console-empty');
-  const autoscroll = document.getElementById('console-autoscroll')?.checked;
-  if (!out) return;
-  if (empty) empty.style.display = 'none';
+  // Write to both: standalone page AND settings-tab console
+  const targets = [
+    {out: document.getElementById('console-output'),   empty: document.getElementById('console-empty'),   scroll: document.getElementById('console-autoscroll'),   cnt: document.getElementById('console-count')},
+    {out: document.getElementById('console-output-s'), empty: document.getElementById('console-empty-s'), scroll: document.getElementById('console-autoscroll-s'), cnt: document.getElementById('console-count-s')},
+  ];
 
-  const frag = document.createDocumentFragment();
+  const frag1 = document.createDocumentFragment();
+  const frag2 = document.createDocumentFragment();
+  let hasError = false;
+
   logs.forEach(e => {
     _consoleLogs.push(e);
-    const line = document.createElement('div');
-    line.className = 'console-line';
-    // log_act shape: {ts, service, action, item, status}
-    const ts  = escHtml(e.ts || '—');
-    const lvl = (e.status || 'info').toLowerCase();
-    const src = escHtml(e.service || 'System');
-    const msg = escHtml([e.action, e.item].filter(Boolean).join(' — '));
-    line.innerHTML = `<span class="console-ts">${ts}</span><span class="console-lvl ${lvl}">${lvl.toUpperCase()}</span><span class="console-src">${src}</span><span class="console-msg">${msg}</span>`;
-    frag.appendChild(line);
-    if (lvl === 'error') {
-      _consoleError = true;
-      const badge = document.getElementById('consoleBadge');
-      if (badge) { badge.style.display = ''; badge.textContent = '!'; }
-    }
+    const {line: l1, lvl} = _makeConsoleLine(e);
+    const {line: l2}      = _makeConsoleLine(e);
+    frag1.appendChild(l1);
+    frag2.appendChild(l2);
+    if (lvl === 'error') hasError = true;
   });
-  out.appendChild(frag);
-  if (autoscroll) out.scrollTop = out.scrollHeight;
+
+  targets.forEach((t, i) => {
+    if (!t.out) return;
+    if (t.empty) t.empty.style.display = 'none';
+    t.out.appendChild(i === 0 ? frag1 : frag2);
+    if (t.scroll?.checked) t.out.scrollTop = t.out.scrollHeight;
+    if (t.cnt) t.cnt.textContent = `${_consoleLogs.length} entr${_consoleLogs.length===1?'y':'ies'}`;
+  });
+
+  if (hasError) {
+    _consoleError = true;
+    const badge = document.getElementById('consoleBadge');
+    if (badge) { badge.style.display = ''; badge.textContent = '!'; }
+  }
   filterConsole();
-  const cnt = document.getElementById('console-count');
-  if (cnt) cnt.textContent = `${_consoleLogs.length} entr${_consoleLogs.length===1?'y':'ies'}`;
 }
 
 function filterConsole() {
-  const lvlFilter = document.getElementById('console-filter')?.value || '';
-  const txtFilter = (document.getElementById('console-search')?.value || '').toLowerCase();
-  const lvlOrder  = {trace:0,debug:1,info:2,warning:3,error:4};
-  const minLvl    = lvlOrder[lvlFilter] ?? 0;
-  document.querySelectorAll('#console-output .console-line').forEach((line, i) => {
-    const log  = _consoleLogs[i];
-    if (!log) return;
-    const lvl  = (log.status || 'info').toLowerCase();
-    const passes = (lvlOrder[lvl]??0) >= minLvl &&
-                   (!txtFilter || (log.message||log.action||'').toLowerCase().includes(txtFilter) ||
-                    (log.source||'').toLowerCase().includes(txtFilter));
-    line.style.display = passes ? '' : 'none';
+  // Apply filter to both standalone page and settings-tab console
+  [['console-output','console-filter','console-search'],
+   ['console-output-s','console-filter-s','console-search-s']].forEach(([outId,fltId,schId]) => {
+    const lvlFilter = document.getElementById(fltId)?.value || '';
+    const txtFilter = (document.getElementById(schId)?.value || '').toLowerCase();
+    const lvlOrder  = {trace:0,debug:1,info:2,warning:3,error:4};
+    const minLvl    = lvlOrder[lvlFilter] ?? 0;
+    document.querySelectorAll(`#${outId} .console-line`).forEach((line, i) => {
+      const log  = _consoleLogs[i];
+      if (!log) return;
+      const lvl  = (log.status || 'info').toLowerCase();
+      const passes = (lvlOrder[lvl]??0) >= minLvl &&
+                     (!txtFilter || (log.message||log.action||'').toLowerCase().includes(txtFilter) ||
+                      (log.source||log.service||'').toLowerCase().includes(txtFilter));
+      line.style.display = passes ? '' : 'none';
+    });
   });
 }
 
 function clearConsole() {
-  _consoleLogs = [];
-  const out = document.getElementById('console-output');
-  if (out) {
-    out.querySelectorAll('.console-line').forEach(l=>l.remove());
-    const empty = document.getElementById('console-empty');
+  _consoleLogs = []; _lastConsoleSeq = 0; _consoleError = false;
+  [['console-output','console-empty','console-count'],
+   ['console-output-s','console-empty-s','console-count-s']].forEach(([outId,emptyId,cntId]) => {
+    const out = document.getElementById(outId);
+    if (out) out.querySelectorAll('.console-line').forEach(l=>l.remove());
+    const empty = document.getElementById(emptyId);
     if (empty) empty.style.display = '';
-  }
-  _consoleError = false;
+    const cnt = document.getElementById(cntId);
+    if (cnt) cnt.textContent = '0 entries';
+  });
   const badge = document.getElementById('consoleBadge');
   if (badge) badge.style.display = 'none';
-  const cnt = document.getElementById('console-count');
-  if (cnt) cnt.textContent = '0 entries';
 }
 
 // Feed activity_log into console on every poll
