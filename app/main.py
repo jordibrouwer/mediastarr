@@ -962,7 +962,7 @@ def daily_limit_reached(iid: str = "") -> bool:
     return False
 
 def should_search(iid:str, item_type:str, item_id:int):
-    if daily_limit_reached(iid): return False, "daily_limit"
+    if daily_limit_reached(iid): return False, "daily"
     if db.is_on_cooldown(iid, item_type, item_id, CONFIG.get("cooldown_days",7)):
         return False, "cooldown"
     return True, ""
@@ -1290,7 +1290,7 @@ def hunt_sonarr_instance(inst: dict):
             ok, reason = should_search(iid, "episode", ep["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
-                if reason == "daily_limit":
+                if reason == "daily":
                     log_act(name, msg("daily_limit",today=db.count_today(),limit=CONFIG["daily_limit"]), "", "warning")
                     lang   = CONFIG.get("language","en")
                     is_de  = lang == "de"
@@ -1301,7 +1301,7 @@ def hunt_sonarr_instance(inst: dict):
                     desc   = (f"`{bar}` **{cnt}/{lim}** {'Suchen heute' if is_de else 'searches today'}\n"
                               f"*{'Reset Mitternacht UTC. Morgen geht es weiter.' if is_de else 'Resets at midnight UTC. Resumes tomorrow.'}*")
                     discord_send("limit", label, desc, name)
-                    return
+                    break  # stop THIS loop, allow upgrade loop to still run
                 continue
             year = _year(ep.get("series",{}).get("year") or ep.get("airDate","")[:4])
             # Build command based on search mode
@@ -1343,7 +1343,7 @@ def hunt_sonarr_instance(inst: dict):
             ok, reason = should_search(iid, "episode_upgrade", ep["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
-                if reason == "daily_limit": return
+                if reason == "daily": break  # stop upgrades loop, not whole function
                 continue
             year = _year(ep.get("series",{}).get("year"))
             do_search(client, iid, "episode_upgrade", ep["id"], title,
@@ -1390,9 +1390,9 @@ def hunt_radarr_instance(inst: dict):
             ok, reason = should_search(iid, "movie", movie["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
-                if reason == "daily_limit":
+                if reason == "daily":
                     log_act(name, msg("daily_limit",today=db.count_today(),limit=CONFIG["daily_limit"]), "", "warning")
-                    return
+                    break  # stop THIS loop, allow upgrade loop to still run
                 continue
             do_search(client, iid, "movie", movie["id"], title,
                       {"name":"MoviesSearch","movieIds":[movie["id"]]},
@@ -1432,7 +1432,7 @@ def hunt_radarr_instance(inst: dict):
             ok, reason = should_search(iid, "movie_upgrade", movie["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
-                if reason == "daily_limit": return
+                if reason == "daily": break  # stop upgrades loop, not whole function
                 continue
             do_search(client, iid, "movie_upgrade", movie["id"], title,
                       {"name":"MoviesSearch","movieIds":[movie["id"]]},

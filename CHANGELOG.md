@@ -1,5 +1,27 @@
 # Changelog
 
+## [v7.0.2] — 2026-03-26
+
+### Fixed
+- **Skip items no longer abort the hunt** — when the daily limit is reached mid-loop, the inner search loop now exits with `break` instead of `return`. Previously, hitting the daily limit during *missing* search would terminate the entire hunt function, preventing the *upgrades* loop from running at all. Now:
+  - Sonarr missing hits daily limit → missing loop stops, upgrade loop still runs
+  - Sonarr upgrades hit daily limit → upgrade loop stops cleanly
+  - Radarr missing hits daily limit → missing loop stops, upgrade loop still runs
+  - Radarr upgrades hit daily limit → upgrade loop stops cleanly
+- **Cooldown/quality skips** — unchanged; these already used `continue` and correctly do not count against `max_searches_per_run` or the daily DB counter
+
+## [v7.0.2] — 2026-03-26
+
+### Fixed
+- **Skip items don't consume search slots** — Root cause found and fixed: `should_search()` returned
+  reason `"daily_limit"` but the stats dict key is `"skipped_daily"`. This caused a `KeyError` on
+  every daily-limit hit, which was silently swallowed by the `except` block — making the `return`
+  (stop-instance) unreachable and stats tracking broken.
+  - `should_search` now returns reason `"daily"` to match the `skipped_daily` stats key
+  - `stats[f"skipped_{reason}"] += 1` now correctly increments `skipped_cooldown` or `skipped_daily`
+  - Cooldown skips have always used `continue` (correct — next item tried) — no change
+  - Daily-limit hits correctly stop the instance loop via `return` (limit is genuinely reached)
+
 ## [v7.0.1] — 2026-03-26
 
 ### Fixed
