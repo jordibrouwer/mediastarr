@@ -150,12 +150,10 @@ footer{border-top:1px solid var(--brd);padding:40px 5vw;display:flex;align-items
 
 @media(max-width:768px){
   .nav-links{display:none}
-  #mobile-lang-toggle{display:flex !important}
   .nav-mobile-menu button{display:block !important}
   .nav-links.mobile-open{display:flex;flex-direction:column;position:fixed;top:64px;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--brd);padding:16px 5vw;gap:12px;z-index:99;animation:fadeDown .2s ease}
   @keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
   .nav-links.mobile-open li{display:flex}
-  .nav-links.mobile-open li button.lang-btn{font-size:13px;padding:8px 16px;width:100%}
   .nav-links.mobile-open a{font-size:15px;padding:6px 0;color:var(--tx)}
   .stats-row{flex-wrap:wrap}
   .stat-item{min-width:50%;border-right:none;border-bottom:1px solid var(--brd)}
@@ -213,15 +211,10 @@ span[data-lang].show{display:inline}
     <li><a href="https://github.com/kroeberd/mediastarr" target="_blank" class="nav-cta">GitHub ↗</a></li>
   </ul>
 </nav>
-<!-- Mobile lang toggle — always visible, fixed bottom-right on mobile -->
-<div id="mobile-lang-toggle" style="display:none;position:fixed;bottom:20px;right:16px;z-index:200;gap:8px">
-  <button class="lang-btn" id="mob-btn-en" onclick="setLang('en')" style="padding:8px 12px">🇬🇧</button>
-  <button class="lang-btn" id="mob-btn-de" onclick="setLang('de')" style="padding:8px 12px">🇩🇪</button>
-</div>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-badge"><span></span><span id="hp-version">v6.4.6</span><span style="margin:0 4px;opacity:.4">·</span>Open Source</div>
+  <div class="hero-badge"><span></span><span id="hp-version">v6.4.5</span><span style="margin:0 4px;opacity:.4">·</span>Open Source</div>
   <h1 class="hero-title">
     <span data-lang="en" class="show">Hunt what's<br><span style="color:var(--acc)">missing.</span></span>
     <span data-lang="de">Such was<br><span style="color:var(--acc)">fehlt.</span></span>
@@ -266,7 +259,7 @@ span[data-lang].show{display:inline}
     </div>
     <div class="preview-body">
       <div class="preview-sidebar">
-        <div class="ps-logo">Media<span>starr</span><div class="ps-ver">Hunt Engine v6.4.6</div></div>
+        <div class="ps-logo">Media<span>starr</span><div class="ps-ver">Hunt Engine v6.4.5</div></div>
         <div class="ps-item on"><div class="ps-dot"></div>Dashboard</div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Einstellungen" data-en="Settings">Settings</span></div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Verlauf" data-en="History">History</span></div>
@@ -347,9 +340,9 @@ span[data-lang].show{display:inline}
 
 <!-- SCREENSHOTS FLIPCHART -->
 <div id="screenshots" style="padding:0 5vw 100px;max-width:1200px;margin:0 auto">
-  <div class="section-label reveal" style="text-align:center">v6.4.6</div>
+  <div class="section-label reveal" style="text-align:center">v6.4.5</div>
   <h2 class="section-title reveal" style="text-align:center"><span data-de="So sieht es aus." data-en="See it in action.">See it in action.</span></h2>
-  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.6-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.6 interface — not a marketing mockup.">Real screenshots of the v6.4.6 interface — not a marketing mockup.</span></p>
+  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.5-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.5 interface — not a marketing mockup.">Real screenshots of the v6.4.5 interface — not a marketing mockup.</span></p>
 
   <div class="reveal" style="position:relative">
     <!-- Tab nav -->
@@ -644,10 +637,6 @@ function setLang(lang) {
   // Nav buttons
   document.getElementById('btn-en').classList.toggle('active', lang === 'en');
   document.getElementById('btn-de').classList.toggle('active', lang === 'de');
-  const mobEn = document.getElementById('mob-btn-en');
-  const mobDe = document.getElementById('mob-btn-de');
-  if (mobEn) mobEn.classList.toggle('active', lang === 'en');
-  if (mobDe) mobDe.classList.toggle('active', lang === 'de');
   // ── Why / Comparison section ─────────────────────────────────────────────
   const _why = {
     'why-label':  {en:'Why Mediastarr', de:'Warum Mediastarr'},

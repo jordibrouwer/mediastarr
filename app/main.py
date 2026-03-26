@@ -449,7 +449,7 @@ MSGS = {
         "db_pruned":        "{n} abgelaufene Einträge bereinigt",
         "skipped_offline":  "Übersprungen – Offline oder deaktiviert",
         "auto_start":       "Hunt-Schleife gestartet",
-        "app_start":        f"Mediastarr {_CURRENT_VERSION} gestartet",
+        "app_start":        "Mediastarr v6.3.8 gestartet",
         "setup_required":   "Einrichtung erforderlich – {setup_url}",
         "missing":          "Fehlend",
         "upgrade":          "Upgrade",
@@ -463,9 +463,7 @@ MSGS = {
         "db_pruned":        "{n} expired entries pruned",
         "skipped_offline":  "Skipped – offline or disabled",
         "auto_start":       "Hunt loop started",
-        "trigger":          "Run now ausgelöst",
-        "app_start":        f"Mediastarr {_CURRENT_VERSION} started",
-        "trigger":          "Run now triggered",
+        "app_start":        "Mediastarr v6.3.8 started",
         "setup_required":   "Setup required – {setup_url}",
         "missing":          "Missing",
         "upgrade":          "Upgrade",
@@ -663,11 +661,10 @@ def _migrate_config(cfg: dict) -> dict:
             logger.info(f"Config migration: added discord.{key} = {default_val!r}")
     # Instance defaults — ensure required fields exist
     for inst in cfg.get("instances", []):
-        if "id"               not in inst: inst["id"]               = make_id()
-        if "enabled"          not in inst: inst["enabled"]          = True
-        if "daily_limit"      not in inst: inst["daily_limit"]      = 0
-        if "type"             not in inst: inst["type"]             = "sonarr"
-        if "search_upgrades"  not in inst: inst["search_upgrades"]  = False
+        if "id"          not in inst: inst["id"]          = make_id()
+        if "enabled"     not in inst: inst["enabled"]     = True
+        if "daily_limit" not in inst: inst["daily_limit"] = 0
+        if "type"        not in inst: inst["type"]        = "sonarr"
     return cfg
 
 def load_config() -> dict:
@@ -1160,7 +1157,7 @@ def hunt_sonarr_instance(inst: dict):
     stats  = STATE["inst_stats"][iid]
     mode   = CONFIG.get("sonarr_search_mode", "season")
     lang   = CONFIG.get("language", "en")
-    do_upgrades = inst.get("search_upgrades", False)  # per-instance, default off
+    do_upgrades = CONFIG.get("search_upgrades", True)
 
     # Build series ID → title cache once per hunt so ep titles are always correct
     # even when Sonarr omits series.title in wanted/missing responses
@@ -1316,7 +1313,7 @@ def hunt_radarr_instance(inst: dict):
     iid   = inst["id"]; name = inst["name"]
     client = ArrClient(name, inst["url"], inst["api_key"])
     stats  = STATE["inst_stats"][iid]
-    do_upgrades = inst.get("search_upgrades", False)  # per-instance, default off
+    do_upgrades = CONFIG.get("search_upgrades", True)
 
     # ── Missing ──
     try:
@@ -1772,7 +1769,6 @@ def api_instances_update(inst_id:str):
     if "enabled" in d: inst["enabled"] = bool(d["enabled"])
     if "daily_limit" in d:
         inst["daily_limit"] = clamp_int(int(d.get("daily_limit", 0) or 0), 0, 9999, 0)
-    log_act("System", "Config gespeichert" if CONFIG.get("language","en")=="de" else "Config saved", "", "info")
     save_config(CONFIG); return jsonify({"ok":True})
 
 @app.route("/api/instances/<inst_id>", methods=["DELETE"])
@@ -2171,7 +2167,7 @@ def api_discord_test():
     active = len([i for i in CONFIG["instances"] if i.get("enabled")])
     fields = [
         {"name": f_status,  "value": f_ok, "inline": True},
-        {"name": f_ver,     "value": _CURRENT_VERSION, "inline": True},
+        {"name": f_ver,     "value": "v6.3.8", "inline": True},
         {"name": f_inst,    "value": str(active), "inline": True},
         {"name": f_enabled, "value": enabled_text, "inline": False},
     ]

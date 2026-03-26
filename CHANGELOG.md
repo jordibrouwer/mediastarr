@@ -1,22 +1,5 @@
 # Changelog
 
-## [v6.4.6] — 2026-03-26
-
-### Fixed
-- **Bug #29** — Startup log showed `Mediastarr v6.3.8 started` instead of current version; now uses `_CURRENT_VERSION` dynamically in both DE and EN messages, and in the Discord stats embed version field
-- **Bug #21 / #28** — Console showed no entries (both standalone page and Settings-tab version): refactored `_appendConsoleLogs` to write to both `#console-output` and `#console-output-s` simultaneously via `_makeConsoleLine()` helper; `filterConsole()` and `clearConsole()` updated to cover both outputs
-- **Bug #27** — Help page German translation broken: `setHelpLang()` now correctly toggles `.help-en`/`.help-de` visibility; `&amp;` entity in `help_title` i18n key replaced with literal `&`
-- **Bug #23** — Homepage mobile view: language selector (`🇬🇧 / 🇩🇪`) not visible on small screens; added persistent `#mobile-lang-toggle` (fixed bottom-right, visible only on `max-width:768px`); `setLang()` now syncs both desktop and mobile buttons
-
-### Added
-- **Feature #32 — Upgrade toggle per instance**: each Sonarr/Radarr instance now has an independent `search_upgrades` toggle (default: **off**); toggle rendered in instance card in Settings → Sonarr/Radarr tabs; saved via `PATCH /api/instances/<id>`; `hunt_sonarr_instance()` and `hunt_radarr_instance()` read from `inst.search_upgrades` instead of global config; exposed in `/api/state` instances list; `_migrate_config()` adds `search_upgrades: false` to all existing instances
-- **Feature #26 — Improved logging**: `run_now` control action logs `"Run now triggered"` to activity log; `POST /api/config` saves log `"Config saved"` (DE: `"Config gespeichert"`) to activity log; i18n key `"trigger"` added to both DE and EN message tables
-- **Help page restructured into 6 tabs** (order: How it works · Milestones & Roadmap · Security & Warnings · API Reference · Changelog · Why not Huntarr?); `switchHelpTab(id)` function added; tab buttons use same `.tab-btn` / `.tab-pane` system as Settings tabs; language toggle preserved
-- **Milestones updated**: v6.4.5 and v6.4.6 added to completed milestones in both DE and EN
-
-### Changed
-- `search_upgrades` is now a **per-instance** setting (default `false`) instead of a global config toggle; global `search_upgrades` key removed from active use (migration preserves existing instances)
-
 ## [v6.4.5] — 2026-03-26
 
 ### Added
