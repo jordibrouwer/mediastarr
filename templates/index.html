@@ -1430,6 +1430,17 @@
 
           </div>
           <div class="help-de">
+            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.0</strong> <em style="color:var(--muted)">2026-03-26</em>
+              <ul>
+                <li>Strukturiertes Logging-System: zentrales <code>ms_log(level, service, action, item)</code> schreibt in Docker-Console, Logdatei UND das UI-Aktivitätslog gleichzeitig</li>
+                <li>4 Log-Level: <code>DEBUG</code> | <code>INFO</code> | <code>WARN</code> | <code>ERROR</code> — konfigurierbar in Einstellungen → Allgemein → Log-Level</li>
+                <li>Docker/Unraid-Console-Format: <code>[2026-03-26 14:32:10] [INFO] [Service] action: item</code></li>
+                <li>Backend-Helfer: <code>ms_debug()</code>, <code>ms_info()</code>, <code>ms_warn()</code>, <code>ms_error()</code></li>
+                <li>MSLog v2 (Browser): Timestamp-Format, <code>MSLog.log(level, ...)</code>, Level in <code>sessionStorage</code> gespeichert</li>
+                <li>Level wird bei jedem Poll vom Server synchronisiert — eine Einstellung steuert Docker-Console und Browser</li>
+              </ul>
+            </div>
+
 
             <h4>v6.4.6 — 2026-03-26</h4>
             <ul>
@@ -3379,7 +3390,7 @@ async function saveLogLevel() {
   // Persist to backend (affects Docker console + file)
   try {
     await fetch('/api/config', { method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
       body: JSON.stringify({ log_min_level: level }) });
     MSLog.info('LogLevel', `Level set to ${level} — backend + frontend synced`);
   } catch(e) { MSLog.error('saveLogLevel', e); }
@@ -3765,15 +3776,4 @@ window.fetch = (resource, options = {}) => {
 };
 </script>
 </body>
-</html            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.0</strong> <em style="color:var(--muted)">2026-03-26</em>
-              <ul>
-                <li>Strukturiertes Logging-System: zentrales <code>ms_log(level, service, action, item)</code> schreibt in Docker-Console, Logdatei UND das UI-Aktivitätslog gleichzeitig</li>
-                <li>4 Log-Level: <code>DEBUG</code> | <code>INFO</code> | <code>WARN</code> | <code>ERROR</code> — konfigurierbar in Einstellungen → Allgemein → Log-Level</li>
-                <li>Docker/Unraid-Console-Format: <code>[2026-03-26 14:32:10] [INFO] [Service] action: item</code></li>
-                <li>Backend-Helfer: <code>ms_debug()</code>, <code>ms_info()</code>, <code>ms_warn()</code>, <code>ms_error()</code></li>
-                <li>MSLog v2 (Browser): Timestamp-Format, <code>MSLog.log(level, ...)</code>, Level in <code>sessionStorage</code> gespeichert</li>
-                <li>Level wird bei jedem Poll vom Server synchronisiert — eine Einstellung steuert Docker-Console und Browser</li>
-              </ul>
-            </div>
-
->
+</html>
