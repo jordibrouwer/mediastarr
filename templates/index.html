@@ -213,6 +213,9 @@
     .tabs-row { display: flex; padding: 0 18px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
     .tabs-row::-webkit-scrollbar { display: none; }
     .tab-btn { padding: 11px 14px; font-size: 12px; color: var(--muted2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .stat-tab-btn { padding: 11px 14px; font-size: 12px; color: var(--muted2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background:none;border-top:none;border-left:none;border-right:none; }
+    .stat-tab-btn:hover { color: var(--text); }
+    .stat-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-pane { display: none; padding: 16px 18px; }
@@ -271,7 +274,11 @@
     .help-lang-toggle { display: flex; gap: 6px; margin-bottom: 18px; }
     .help-lang-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted2); font-size: 11px; cursor: pointer; }
     .help-lang-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,107,43,.08); }
-    /* help-de/help-en visibility controlled by setHelpLang() JS — no default CSS hide */
+    /* Help page language — controlled by class on #page-help */
+    #page-help.help-lang-en .help-de { display: none !important; }
+    #page-help.help-lang-de .help-en { display: none !important; }
+    #page-help.help-lang-en .help-lang-btn[onclick*="en"],
+    #page-help.help-lang-de .help-lang-btn[onclick*="de"] { border-color:var(--accent);color:var(--accent);background:rgba(255,107,43,.08); }
     #page-settings.content { grid-template-columns: 1fr; }
     .console-line { display:flex; gap:8px; padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
     .console-line:hover { background:rgba(255,255,255,0.02); }
@@ -1188,7 +1195,7 @@
   </div>
 
   <!-- ══ HELP PAGE ══ -->
-  <div id="page-help" class="content content-page">
+  <div id="page-help" class="content content-page help-lang-en">
     <div class="card" style="grid-column:1/-1;padding:0">
       <div class="card-header" style="flex-wrap:wrap;gap:8px">
         <div class="card-title">❓ <span data-i18n="help_title">Hilfe & Dokumentation</span></div>
@@ -1199,12 +1206,12 @@
       </div>
       <!-- Help tab nav -->
       <div class="tabs-row" style="overflow-x:auto;scrollbar-width:none;padding:0 18px;border-bottom:1px solid var(--border)">
-          <div class="tab-btn active" onclick="switchHelpTab('how')">⚙️ <span class="help-en">How it works</span><span class="help-de">Funktionsweise</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('milestones')">🗺️ <span class="help-en">Milestones</span><span class="help-de">Meilensteine</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('security')">🔒 <span class="help-en">Security</span><span class="help-de">Sicherheit</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('api')">📡 <span class="help-en">API Reference</span><span class="help-de">API-Referenz</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('changelog')">📋 <span class="help-en">Changelog</span><span class="help-de">Changelog</span></div>
-          <div class="tab-btn" onclick="switchHelpTab('huntarr')">🔓 <span class="help-en">Why not Huntarr?</span><span class="help-de">Warum nicht Huntarr?</span></div>
+          <div class="tab-btn active" onclick="switchHelpTab('how')">⚙️ <span data-en="How it works" data-de="Funktionsweise">How it works</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('milestones')">🗺️ <span data-en="Milestones" data-de="Meilensteine">Milestones</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('security')">🔒 <span data-en="Security" data-de="Sicherheit">Security</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('api')">📡 <span data-en="API Reference" data-de="API-Referenz">API Reference</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('changelog')">📋 <span data-en="Changelog" data-de="Changelog">Changelog</span></div>
+          <div class="tab-btn" onclick="switchHelpTab('huntarr')">🔓 <span data-en="Why not Huntarr?" data-de="Warum nicht Huntarr?">Why not Huntarr?</span></div>
       </div>
       <!-- Help tab panes -->
       <div style="padding:18px 22px">
@@ -1343,7 +1350,7 @@
           </div>
           <div class="tab-pane" id="help-tab-api" style="padding:0">
             <div class="help-section">
-<h3>📡 <span class="help-en">API Reference</span><span class="help-de">API-Referenz</span></h3>
+<h3>📡 <span data-en="API Reference" data-de="API-Referenz">API Reference</span></h3>
           <p style="margin-bottom:10px"><span class="help-en">All endpoints require authentication unless Public API mode is enabled for <code>GET /api/state</code>. Write requests require the <code>X-CSRF-Token</code> header (automatically added by the dashboard).</span><span class="help-de">Alle Endpunkte erfordern Auth. Schreibende Requests brauchen den <code>X-CSRF-Token</code>-Header.</span></p>
           <div class="help-api-row"><span class="help-method get">GET</span><code>/api/state</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">Full dashboard state — instances, stats, config, activity log, maintenance status</span><span class="help-de">Gesamtstatus — Instanzen, Stats, Config, Aktivitätslog</span></span></div>
           <div class="help-api-row"><span class="help-method post">POST</span><code>/api/control</code><span style="color:var(--muted2);font-size:10px"><code>{"action":"start"|"stop"|"run_now"}</code></span></div>
@@ -1587,9 +1594,9 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
 
     <!-- Stats filter tabs -->
     <div style="grid-column:1/-1;display:flex;gap:6px;margin-bottom:4px;border-bottom:1px solid var(--border);padding-bottom:10px">
-      <button id="stat-tab-all"    class="tab-btn active" onclick="setStatTab('all')"    style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">📊 <span data-i18n="stat_tab_all">Alle</span></button>
-      <button id="stat-tab-sonarr" class="tab-btn"        onclick="setStatTab('sonarr')" style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">📺 Sonarr</button>
-      <button id="stat-tab-radarr" class="tab-btn"        onclick="setStatTab('radarr')" style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">🎬 Radarr</button>
+      <button id="stat-tab-all"    class="stat-tab-btn active" onclick="setStatTab('all')"    style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">📊 <span data-i18n="stat_tab_all">Alle</span></button>
+      <button id="stat-tab-sonarr" class="stat-tab-btn" onclick="setStatTab('sonarr')" style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">📺 Sonarr</button>
+      <button id="stat-tab-radarr" class="stat-tab-btn" onclick="setStatTab('radarr')" style="font-size:11px;padding:5px 14px;background:none;border:none;cursor:pointer">🎬 Radarr</button>
     </div>
     <div class="stats-grid" style="grid-column:1/-1">
       <div class="stat-card">
@@ -3512,14 +3519,21 @@ let _helpLang = currentLang || 'en';
 function setHelpLang(lang) {
   _helpLang = lang;
   const page = document.getElementById('page-help');
-  if (!page) return;
-  page.querySelectorAll('.help-en').forEach(el => el.style.display = lang==='en' ? '' : 'none');
-  page.querySelectorAll('.help-de').forEach(el => el.style.display = lang==='de' ? '' : 'none');
+  // Always update the class even if page not visible — CSS handles display
+  const el = page || document.getElementById('page-help');
+  if (el) {
+    el.classList.remove('help-lang-en', 'help-lang-de');
+    el.classList.add(`help-lang-${lang}`);
+  }
   document.getElementById('help-btn-en')?.classList.toggle('active', lang==='en');
   document.getElementById('help-btn-de')?.classList.toggle('active', lang==='de');
-  // Sync i18n key for title
-  const titleEl = document.querySelector('#page-help .card-title span[data-i18n="help_title"]');
+  if (!page) return;
+  const titleEl = page.querySelector('.card-title span[data-i18n="help_title"]');
   if (titleEl && T[lang]?.help_title) titleEl.textContent = T[lang].help_title;
+  // Update help tab button labels (data-en/data-de spans)
+  page.querySelectorAll('.tabs-row .tab-btn span[data-en]').forEach(span => {
+    span.textContent = lang === 'de' ? (span.dataset.de || span.dataset.en) : span.dataset.en;
+  });
 }
 
 // ── Stats tabs ────────────────────────────────────────────────────────────────
@@ -3691,9 +3705,9 @@ setLang = function(lang) {
   _origSetLang(lang);
   const statAll = document.querySelector('#stat-tab-all span');
   if (statAll) statAll.textContent = T[lang]?.stat_tab_all || 'Alle';
-  // Sync help page language
+  // Sync help page language — always, even when not visible (CSS class approach)
   _helpLang = lang;
-  if (document.getElementById('page-help')?.classList.contains('page-visible')) setHelpLang(lang);
+  setHelpLang(lang);
 };
 
 // ── loadStats — pass tab context ──────────────────────────────────────────────
@@ -3705,8 +3719,9 @@ loadStats = async function() {
 };
 
 MSLog.info('Mediastarr {{ version }} — UI init');
-// Init help language so .help-de is not stuck hidden
-setTimeout(() => setHelpLang(currentLang || 'en'), 100);
+// Help lang synced via setLang() called at startup
+// Also set immediately so CSS class is correct from first render
+setHelpLang(currentLang || 'en');
 fetchState();
 syncNewInstUrlHint();
 setInterval(fetchState, 4000);
