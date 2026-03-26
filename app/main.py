@@ -296,7 +296,7 @@ def discord_send(event_type: str, title: str, description: str,
         return
 
     color = DISCORD_COLORS.get(event_type, DISCORD_COLORS["info"])
-    footer_parts = ["Mediastarr v6.4.4"]
+    footer_parts = ["Mediastarr " + _CURRENT_VERSION]
     if instance_name: footer_parts.append(instance_name)
     if footer_extra:  footer_parts.append(footer_extra)
     footer_text = "  ·  ".join(footer_parts)
@@ -565,7 +565,8 @@ def _year(val):
 
 
 # ─── Version check ────────────────────────────────────────────────────────
-_CURRENT_VERSION = "v6.4.4"
+_VERSION_FILE    = pathlib.Path(__file__).parent.parent / "VERSION"
+_CURRENT_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "v6.4.5"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -1640,7 +1641,7 @@ def logout():
 @_login_required
 def index():
     if not CONFIG.get("setup_complete"): return redirect("/setup")
-    return render_template("index.html", csrf_token=_csrf_token(), default_pw=(_PASSWORD == "change-me" and bool(_PASSWORD)))
+    return render_template("index.html", csrf_token=_csrf_token(), default_pw=(_PASSWORD == "change-me" and bool(_PASSWORD)), version=_CURRENT_VERSION)
 
 @app.route("/setup")
 def setup_page(): return render_template("setup.html", csrf_token=_csrf_token())

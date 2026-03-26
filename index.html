@@ -35,7 +35,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 5vw;height:64px;di
 /* HERO */
 .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 5vw 80px;position:relative}
 .hero::after{content:'';position:absolute;top:40%;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(255,107,43,.06) 0%,transparent 65%);pointer-events:none;z-index:-1}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border:1px solid rgba(255,107,43,.3);border-radius:100px;background:rgba(255,107,43,.07);color:var(--acc);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:32px;animation:fadeUp .6s ease both}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 16px;border:1px solid rgba(255,107,43,.3);border-radius:100px;background:rgba(255,107,43,.07);color:var(--acc);font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:32px;animation:fadeUp .6s ease both}
 .hero-badge span{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .hero-title{font-family:var(--disp);font-size:clamp(52px,8vw,96px);font-weight:800;line-height:1.02;letter-spacing:-2px;color:#fff;margin-bottom:24px;animation:fadeUp .7s .1s ease both}
@@ -214,7 +214,7 @@ span[data-lang].show{display:inline}
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-badge"><span></span><span id="hp-version">v6.4.4</span> — Open Source</div>
+  <div class="hero-badge"><span></span><span id="hp-version">v6.4.5</span><span style="margin:0 4px;opacity:.4">·</span>Open Source</div>
   <h1 class="hero-title">
     <span data-lang="en" class="show">Hunt what's<br><span style="color:var(--acc)">missing.</span></span>
     <span data-lang="de">Such was<br><span style="color:var(--acc)">fehlt.</span></span>
@@ -259,7 +259,7 @@ span[data-lang].show{display:inline}
     </div>
     <div class="preview-body">
       <div class="preview-sidebar">
-        <div class="ps-logo">Media<span>starr</span><div class="ps-ver">Hunt Engine v6.4.4</div></div>
+        <div class="ps-logo">Media<span>starr</span><div class="ps-ver">Hunt Engine v6.4.5</div></div>
         <div class="ps-item on"><div class="ps-dot"></div>Dashboard</div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Einstellungen" data-en="Settings">Settings</span></div>
         <div class="ps-item"><div class="ps-dot"></div><span data-de="Verlauf" data-en="History">History</span></div>
@@ -340,9 +340,9 @@ span[data-lang].show{display:inline}
 
 <!-- SCREENSHOTS FLIPCHART -->
 <div id="screenshots" style="padding:0 5vw 100px;max-width:1200px;margin:0 auto">
-  <div class="section-label reveal" style="text-align:center">v6.4.4</div>
+  <div class="section-label reveal" style="text-align:center">v6.4.5</div>
   <h2 class="section-title reveal" style="text-align:center"><span data-de="So sieht es aus." data-en="See it in action.">See it in action.</span></h2>
-  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.4-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.4 interface — not a marketing mockup.">Real screenshots of the v6.4.4 interface — not a marketing mockup.</span></p>
+  <p class="section-sub reveal" style="text-align:center;margin:0 auto 40px"><span data-de="Echte Screenshots der v6.4.5-Oberfläche — kein Marketing-Mockup." data-en="Real screenshots of the v6.4.5 interface — not a marketing mockup.">Real screenshots of the v6.4.5 interface — not a marketing mockup.</span></p>
 
   <div class="reveal" style="position:relative">
     <!-- Tab nav -->
@@ -498,10 +498,7 @@ span[data-lang].show{display:inline}
     <div>
       <div style="font-family:var(--disp);font-size:17px;font-weight:700;color:#ff4d4d;margin-bottom:8px" id="inc-title">What happened — February 2026</div>
       <div style="color:var(--mu2);font-size:13px;line-height:1.75" id="inc-body">
-        A public security audit of Huntarr v9.4.2 uncovered 21 vulnerabilities — 7 critical, 6 high.
-        The most severe: a single unauthenticated HTTP request to <code style="background:rgba(255,77,77,.1);padding:1px 6px;border-radius:4px;color:#ff4d4d">POST /api/settings/general</code> returned every API key for every connected *arr app in cleartext — Sonarr, Radarr, Prowlarr, Lidarr — with no login required.
-        Additional findings included full account takeover via unauthenticated 2FA enrollment and the ability to rewrite the entire configuration without any session.
-        Shortly after the report was posted to Reddit, the Huntarr GitHub repository, subreddit and Discord were taken offline. The project is no longer maintained.
+        In February 2026, a public security audit of Huntarr v9.4.2 uncovered <strong>21 vulnerabilities — 7 critical, 6 high</strong>. The most severe finding: a single unauthenticated HTTP request to <code style="background:rgba(255,77,77,.1);padding:1px 6px;border-radius:4px;color:#ff4d4d">POST /api/settings/general</code> returned every API key for every connected *arr application in cleartext — Sonarr, Radarr, Prowlarr, Lidarr — no login required. The project's GitHub repository, subreddit and Discord were taken offline shortly after.
       </div>
     </div>
   </div>
@@ -510,9 +507,8 @@ span[data-lang].show{display:inline}
   <div class="reveal" style="background:rgba(245,200,66,.04);border:1px solid rgba(245,200,66,.15);border-radius:14px;padding:22px 32px;margin-bottom:48px">
     <div style="font-family:var(--disp);font-size:15px;font-weight:700;color:#f5c842;margin-bottom:8px" id="fork-title">⚠ What about the forks?</div>
     <div style="color:var(--mu2);font-size:13px;line-height:1.75" id="fork-body">
-      Several community forks appeared after the shutdown. They fix specific findings from the audit — but they inherit the same codebase and the same development process.
-      As the original security researcher noted: <em style="color:var(--tx)">"Fixing 21 specific findings doesn\'t fix the process that created them. Without code review, without basic automated testing, without anyone who understands security fundamentals actually reviewing what ships — the next batch of features will introduce the next batch of vulnerabilities."</em>
-      Mediastarr was built independently, from scratch, before and after these events — with security practices embedded from day one.
+      Community forks have appeared, but they inherit the same codebase. As the security researcher noted: <em style="color:var(--tx)">"Fixing 21 specific findings doesn\'t fix the process that created them."</em>
+      Mediastarr was built independently from scratch — with security as a foundation, not an afterthought.
     </div>
   </div>
 
@@ -649,7 +645,7 @@ function setLang(lang) {
                    de:'Im Februar 2026 wurde das beliebteste *arr-Automatisierungstool über Nacht abgeschaltet, nachdem ein öffentliches Sicherheitsaudit kritische Schwachstellen aufdeckte. Mediastarr wurde mit Sicherheit als Fundament gebaut.'},
     'inc-title':  {en:'What happened — February 2026', de:'Was passierte — Februar 2026'},
     'inc-body':   {en:'A public security audit of Huntarr v9.4.2 uncovered 21 vulnerabilities — 7 critical, 6 high. The most severe: a single unauthenticated HTTP request to <code style="background:rgba(255,77,77,.1);padding:1px 6px;border-radius:4px;color:#ff4d4d">POST /api/settings/general</code> returned every API key for every connected *arr app in cleartext — Sonarr, Radarr, Prowlarr, Lidarr — no login required. Shortly after the Reddit report, the Huntarr GitHub repo, subreddit and Discord were taken offline.',
-                   de:'Ein Sicherheitsaudit von Huntarr v9.4.2 deckte 21 Schwachstellen auf — 7 kritisch, 6 hoch. Ein einzelner unauthentifizierter Request an <code style="background:rgba(255,77,77,.1);padding:1px 6px;border-radius:4px;color:#ff4d4d">POST /api/settings/general</code> gab jeden API-Key aller verbundenen *arr-Apps im Klartext zurück — ohne Login. Kurz nach dem Reddit-Bericht wurden GitHub-Repo, Subreddit und Discord gelöscht.'},
+                   de:'Im Februar 2026 deckte ein öffentliches Sicherheitsaudit von Huntarr v9.4.2 <strong>21 Schwachstellen — 7 kritisch, 6 hoch</strong> auf. Der gravierendste Fund: Ein einzelner unauthentifizierter HTTP-Request an <code style="background:rgba(255,77,77,.1);padding:1px 6px;border-radius:4px;color:#ff4d4d">POST /api/settings/general</code> gab alle API-Keys aller verbundenen *arr-Anwendungen im Klartext zurück — kein Login erforderlich. Das GitHub-Repo, der Subreddit und der Discord wurden kurz darauf abgeschaltet.'},
     'fork-title': {en:'⚠ What about the forks?', de:'⚠ Was ist mit den Forks?'},
     'fork-body':  {en:'Several community forks appeared after the shutdown. They patch specific findings from the audit — but they inherit the same codebase and the same development process. Mediastarr was built independently, from scratch, with security practices embedded from day one.',
                    de:'Nach der Abschaltung entstanden Community-Forks. Sie beheben einzelne Findings des Audits — erben aber dieselbe Codebasis. Mediastarr entstand unabhängig, von Grund auf neu, mit eingebetteten Sicherheitspraktiken von Anfang an.'},

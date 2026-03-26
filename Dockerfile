@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="Mediastarr"
 LABEL org.opencontainers.image.description="Automated missing-content and quality-upgrade search for Sonarr & Radarr"
-LABEL org.opencontainers.image.version="6.4.4"
+LABEL org.opencontainers.image.version="6.4.5"
 LABEL org.opencontainers.image.source="https://github.com/kroeberd/mediastarr"
 LABEL org.opencontainers.image.url="https://mediastarr.de/"
 LABEL org.opencontainers.image.licenses="MIT"
@@ -13,6 +13,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY VERSION    ./
 COPY app/       ./app/
 COPY templates/ ./templates/
 COPY static/    ./static/

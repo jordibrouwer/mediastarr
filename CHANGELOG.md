@@ -1,5 +1,29 @@
 # Changelog
 
+## [v6.4.5] — 2026-03-26
+
+### Added
+- **Central `VERSION` file** — single source of truth for the version string; all components read from it automatically:
+  - `app/main.py`: reads `VERSION` file at startup via `_VERSION_FILE.read_text().strip()`; fallback to hardcoded string if file missing
+  - `app/main.py`: Discord footer (`"Mediastarr " + _CURRENT_VERSION`) — always in sync with no manual change required
+  - `templates/index.html`: sidebar version spans and MSLog init receive `{{ version }}` from Flask `render_template()` call
+  - `Dockerfile`: `COPY VERSION ./` ensures the file is available inside the container
+  - `index.html` (homepage): version bumped in fallback, preview sidebar, screenshots label, section labels
+  - `mediastarr.xml` (Unraid template): version bumped
+- **Version bumped to v6.4.5** — covers: Help page (❓ Hilfe sidebar nav), Console in Settings tab, Huntarr/fork comparison with exact security incident wording + curl exploit example + researcher quote (DE + EN), Milestones/Roadmap (DE + EN), full Changelog since v1.0.0 in Help tab, homepage badge fix
+
+### Changed
+- **Help tab `🔓 Why not Huntarr?`** — rewritten with exact wording from README:
+  - Disclaimer: *"Independent project, built from scratch. Not affiliated with Huntarr."*
+  - Security incident: February 2026, 21 vulnerabilities (7 critical, 6 high)
+  - `curl` exploit example showing unauthenticated API key dump (EN + DE commented)
+  - Researcher quote: *"Fixing 21 specific findings doesn't fix the process that created them."*
+  - Link to full audit: [github.com/rfsbraz/huntarr-security-review](https://github.com/rfsbraz/huntarr-security-review)
+  - Full DE translation of all above
+
+### Developer notes
+To release a new version in future: **edit `VERSION` only** — everything else updates automatically on next build/start.
+
 ## [v6.4.4] — 2026-03-25
 
 ### Added

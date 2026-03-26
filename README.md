@@ -23,6 +23,7 @@
 Runs on a configurable schedule, keeps a SQLite history, sends rich Discord embeds, and has a first-run browser wizard. No config file editing required.
 
 > **Note:** Independent project, built from scratch. Not affiliated with Huntarr.
+
 ---
 
 ## ✨ Features
@@ -145,9 +146,9 @@ Settings → **Discord** tab:
 - [x] Export/import config *(v6.4.1)*
 - [x] Read-only API mode (no auth required for `/api/state`) *(v6.4.1)*
 - [x] Skip upcoming/unreleased content *(v6.4.3)*
+- [x] Scheduled maintenance windows *(v6.4.4)*
 - [ ] Webhook endpoint to trigger cycle from external automation
 - [ ] Push via Gotify / Apprise (alternative to Discord)
-- [ ] Scheduled maintenance windows (pause during certain hours)
 
 ## 🔒 Why not Huntarr or its forks?
 
@@ -155,13 +156,17 @@ In February 2026, a public security audit of Huntarr v9.4.2 uncovered **21 vulne
 
 ```bash
 # Anyone on your network could run this against a stock Huntarr install:
-curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: application/json"   -d '{"proxy_enabled": true}'
+curl -X POST http://huntarr:9705/api/settings/general \
+  -H "Content-Type: application/json" \
+  -d '{"proxy_enabled": true}'
 # → Full config dump: Sonarr API key, Radarr API key, Prowlarr API key — all in cleartext
 ```
 
 Community forks have appeared, but they inherit the same codebase. As the security researcher noted: *"Fixing 21 specific findings doesn't fix the process that created them."*
 
-Mediastarr was built independently from scratch — with security as a foundation, not an afterthought:
+Mediastarr was built independently from scratch — with security as a foundation, not an afterthought.
+
+> Security findings: [github.com/rfsbraz/huntarr-security-review](https://github.com/rfsbraz/huntarr-security-review) (Feb 2026).
 
 ---
 
@@ -210,16 +215,6 @@ Läuft nach einem konfigurierbaren Zeitplan, führt eine SQLite-Historie, sendet
 | 📅 Pro-Instanz Tageslimit | Jede Instanz kann ihr eigenes Tageslimit haben |
 | 💾 Config-Backup | Export / Import der gesamten Konfiguration als JSON (inkl. API-Keys) |
 | 🔓 Öffentlicher API-Modus | `/api/state` optional ohne Login erreichbar — für externe Tools |
-
-## 🔒 Warum nicht Huntarr oder seine Forks?
-
-Im Februar 2026 deckte ein öffentliches Sicherheitsaudit von Huntarr v9.4.2 **21 Schwachstellen auf — 7 kritisch, 6 hoch**. Die schwerwiegendste: Eine einzelne unauthentifizierte HTTP-Anfrage gab jeden API-Key jeder verbundenen *arr-App im Klartext zurück — ohne Login. GitHub-Repo, Subreddit und Discord wurden kurz danach gelöscht.
-
-Community-Forks sind entstanden — sie erben aber dieselbe Codebasis. Wie der Sicherheitsforscher schrieb: *„21 Findings zu fixen behebt nicht den Prozess, der sie erzeugt hat."*
-
-Mediastarr wurde unabhängig, von Grund auf neu gebaut. Siehe Vergleichstabelle im englischen Abschnitt.
-
-> Sicherheitsbefunde: [github.com/rfsbraz/huntarr-security-review](https://github.com/rfsbraz/huntarr-security-review) (Feb. 2026).
 
 ---
 
@@ -286,9 +281,27 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 - [x] Konfiguration exportieren/importieren *(v6.4.1)*
 - [x] Read-only-API-Modus (kein Auth für `/api/state`) *(v6.4.1)*
 - [x] Upcoming/unveröffentlichte Inhalte überspringen *(v6.4.3)*
+- [x] Wartungsfenster (Pause zu bestimmten Uhrzeiten) *(v6.4.4)*
 - [ ] Webhook-Endpunkt zum Auslösen eines Zyklus von externer Automatisierung
 - [ ] Push via Gotify / Apprise (Alternative zu Discord)
-- [ ] Wartungsfenster (Pause zu bestimmten Uhrzeiten)
+
+## 🔒 Warum nicht Huntarr oder seine Forks?
+
+Im Februar 2026 deckte ein öffentliches Sicherheitsaudit von Huntarr v9.4.2 **21 Schwachstellen auf — 7 kritisch, 6 hoch**. Die schwerwiegendste: Eine einzelne unauthentifizierte HTTP-Anfrage gab jeden API-Key jeder verbundenen *arr-Anwendung im Klartext zurück — ohne Login. GitHub-Repo, Subreddit und Discord wurden kurz darauf abgeschaltet.
+
+```bash
+# Jeder im Netzwerk konnte das gegen eine Standard-Huntarr-Installation ausführen:
+curl -X POST http://huntarr:9705/api/settings/general \
+  -H "Content-Type: application/json" \
+  -d '{"proxy_enabled": true}'
+# → Vollständiger Config-Dump: Sonarr-API-Key, Radarr-API-Key, Prowlarr-API-Key — alles im Klartext
+```
+
+Community-Forks sind entstanden — sie erben aber dieselbe Codebasis. Wie der Sicherheitsforscher schrieb: *„21 Findings zu fixen behebt nicht den Prozess, der sie erzeugt hat."*
+
+Mediastarr wurde unabhängig, von Grund auf neu gebaut — mit Sicherheit als Fundament, nicht als Nachgedanke.
+
+> Sicherheitsbefunde: [github.com/rfsbraz/huntarr-security-review](https://github.com/rfsbraz/huntarr-security-review) (Feb. 2026).
 
 ## 📸 Screenshots
 
