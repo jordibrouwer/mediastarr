@@ -1,5 +1,24 @@
 # Changelog
 
+## [v7.0.0] — 2026-03-26
+
+### Added
+- **Structured Logging System** — replaces ad-hoc `logger.*` calls with a unified `ms_log()` architecture:
+  - Central `ms_log(level, service, action, item)` function — writes to Docker console, rotating log file, AND the UI activity log simultaneously
+  - Convenience helpers: `ms_debug()`, `ms_info()`, `ms_warn()`, `ms_error()`
+  - Four levels: `DEBUG` | `INFO` | `WARN` | `ERROR` (replaces the previous implicit INFO-only behaviour)
+  - `log_min_level` config key — persisted to `config.json`, applied via `_apply_log_level()` at startup and on every config save
+  - Docker/Unraid console output format: `2026-03-26 14:32:10,123 [INFO] [Sonarr] Missing searched: Breaking Bad S01E03`
+  - Settings → General → Log Level dropdown — four options, saves to backend and syncs frontend immediately
+- **MSLog v2 (frontend)** — complete rewrite of the browser console logger:
+  - Timestamp format: `[2026-03-26 14:32:10] [INFO] message`
+  - `MSLog.log(level, ...args)` central function
+  - Helpers: `MSLog.debug()`, `MSLog.info()`, `MSLog.warn()`, `MSLog.error()`
+  - `MSLog.setLevel('WARN')` — suppress below threshold; persisted via `sessionStorage`
+  - `MSLog.getLevel()` — returns current level string
+  - `trace()` kept as backwards-compatible alias for `debug()`
+  - Level synced from server config on every `fetchState()` poll
+
 ## [v6.4.6] — 2026-03-26
 
 ### Fixed

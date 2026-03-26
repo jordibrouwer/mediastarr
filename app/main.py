@@ -644,6 +644,7 @@ DEFAULT_CONFIG = {
     # Rotating log file settings
     "log_max_mb":    5,    # max size per log file in MB (1–100)
     "log_backups":   2,    # number of backup files to keep (0–10)
+    "log_min_level": "INFO",  # minimum level for Docker/file log: DEBUG|INFO|WARN|ERROR
 }
 
 def _migrate_config(cfg: dict) -> dict:
@@ -751,6 +752,7 @@ def _ensure_inst_stats():
             STATE["inst_stats"][inst["id"]] = fresh_inst_stats()
 
 _ensure_inst_stats()
+_apply_log_level()  # honour log_min_level from config
 
 # ─── Validation ───────────────────────────────────────────────────────────────
 def validate_url(url: str):
@@ -885,6 +887,42 @@ class ArrClient:
             return False, "?", summarize_ping_error(str(e)[:200])
 
 # ─── Activity Log ─────────────────────────────────────────────────────────────
+# ── Log levels ────────────────────────────────────────────────────────────────
+_LOG_LEVEL_MAP = {"DEBUG": logging.DEBUG, "INFO": logging.INFO,
+                  "WARN": logging.WARNING, "WARNING": logging.WARNING,
+                  "ERROR": logging.ERROR}
+
+def _apply_log_level() -> None:
+    """Apply CONFIG log_min_level to the root logger (affects Docker console + file)."""
+    level_str = (CONFIG.get("log_min_level") or "INFO").upper()
+    level     = _LOG_LEVEL_MAP.get(level_str, logging.INFO)
+    logging.getLogger().setLevel(level)
+
+def ms_log(level: str, service: str, action: str, item: str = "") -> None:
+    """Central log function — writes to Docker console/file AND the UI activity log.
+
+    Args:
+        level:   'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+        service: source name shown in the UI (e.g. 'Sonarr', 'System')
+        action:  short description of what happened
+        item:    optional detail (title, URL, …)
+    """
+    lvl_upper = (level or "INFO").upper()
+    # Map to Python logging level
+    py_level  = _LOG_LEVEL_MAP.get(lvl_upper, logging.INFO)
+    # Log to Docker console + rotating file via Python logging
+    logger.log(py_level, "[%s] %s%s", service, action, f": {item}" if item else "")
+    # Map to UI activity-log status
+    status_map = {"DEBUG": "info", "INFO": "info", "WARN": "warning", "WARNING": "warning", "ERROR": "error"}
+    ui_status  = status_map.get(lvl_upper, "info")
+    log_act(service, action, item, ui_status)
+
+# Convenience helpers
+def ms_debug(service: str, action: str, item: str = "") -> None: ms_log("DEBUG", service, action, item)
+def ms_info (service: str, action: str, item: str = "") -> None: ms_log("INFO",  service, action, item)
+def ms_warn (service: str, action: str, item: str = "") -> None: ms_log("WARN",  service, action, item)
+def ms_error(service: str, action: str, item: str = "") -> None: ms_log("ERROR", service, action, item)
+
 def log_act(service:str, action:str, item:str, status:str="info"):
     ts = fmt_time(now_local())
     STATE["activity_log"].appendleft({
@@ -892,7 +930,10 @@ def log_act(service:str, action:str, item:str, status:str="info"):
         "action": safe_str(action,50), "item": safe_str(item,200),
         "status": status if status in ("info","success","warning","error") else "info",
     })
-    logger.info(f"[{service}] {action}: {item}")
+    # Also emit to Docker console with appropriate level
+    py_level = {"info": logging.INFO, "success": logging.INFO,
+                "warning": logging.WARNING, "error": logging.ERROR}.get(status, logging.INFO)
+    logger.log(py_level, "[%s] %s%s", service, action, f": {item}" if item else "")
 
 # ─── Jitter ───────────────────────────────────────────────────────────────────
 def jittered_delay(base_sec: int) -> tuple[int, int]:
@@ -1852,6 +1893,8 @@ def api_state():
             "public_api_state":       CONFIG.get("public_api_state", False),
             "log_max_mb":             CONFIG.get("log_max_mb",  5),
             "log_backups":            CONFIG.get("log_backups", 2),
+            "log_min_level":          CONFIG.get("log_min_level", "INFO"),
+            "log_min_level":          CONFIG.get("log_min_level", "INFO"),
             "maintenance_windows":    CONFIG.get("maintenance_windows", []),
             "in_maintenance_window":  _in_maintenance_window(),
         },
@@ -1947,6 +1990,11 @@ def api_config():
                 validated.append({"start": start, "end": end, "label": label})
             CONFIG["maintenance_windows"] = validated
     _changed_log = False
+    if "log_min_level" in d:
+        lvl = str(d.get("log_min_level","INFO")).upper()
+        if lvl in _LOG_LEVEL_MAP:
+            CONFIG["log_min_level"] = lvl
+            _apply_log_level()
     if "log_max_mb" in d:
         CONFIG["log_max_mb"]  = max(1, min(100, int(d.get("log_max_mb", 5) or 5)))
         _changed_log = True
