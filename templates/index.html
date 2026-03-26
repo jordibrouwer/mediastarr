@@ -271,7 +271,7 @@
     .help-lang-toggle { display: flex; gap: 6px; margin-bottom: 18px; }
     .help-lang-btn { padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted2); font-size: 11px; cursor: pointer; }
     .help-lang-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,107,43,.08); }
-    .help-de { display: none; } .help-en { display: block; }
+    /* help-de/help-en visibility controlled by setHelpLang() JS — no default CSS hide */
     #page-settings.content { grid-template-columns: 1fr; }
     .console-line { display:flex; gap:8px; padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
     .console-line:hover { background:rgba(255,255,255,0.02); }
@@ -2027,8 +2027,12 @@ function showPage(name) {
 const _ALL_TABS = ['general','sonarr','radarr','discord','console-tab'];
 function switchTab(name) {
   MSLog.debug('switchTab', name);
-  document.querySelectorAll('.tab-btn').forEach((b,i) => b.className = 'tab-btn' + (_ALL_TABS[i] === name ? ' active' : ''));
-  document.querySelectorAll('.tab-pane').forEach(p => p.className = 'tab-pane' + (p.id === `tab-${name}` ? ' active' : ''));
+  // Scoped to #page-settings to avoid resetting help/stats tab buttons
+  const _sp = document.getElementById('page-settings');
+  if (_sp) {
+    _sp.querySelectorAll('.tab-btn').forEach((b,i) => b.className = 'tab-btn' + (_ALL_TABS[i] === name ? ' active' : ''));
+    _sp.querySelectorAll('.tab-pane').forEach(p => p.className = 'tab-pane' + (p.id === `tab-${name}` ? ' active' : ''));
+  }
   if (name === 'sonarr') { renderSettingsInstances('sonarr'); if (!appState.instances) setTimeout(() => renderSettingsInstances('sonarr'), 800); }
   if (name === 'radarr') { renderSettingsInstances('radarr'); if (!appState.instances) setTimeout(() => renderSettingsInstances('radarr'), 800); }
 }
@@ -3701,6 +3705,8 @@ loadStats = async function() {
 };
 
 MSLog.info('Mediastarr {{ version }} — UI init');
+// Init help language so .help-de is not stuck hidden
+setTimeout(() => setHelpLang(currentLang || 'en'), 100);
 fetchState();
 syncNewInstUrlHint();
 setInterval(fetchState, 4000);
