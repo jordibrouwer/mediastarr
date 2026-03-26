@@ -255,6 +255,9 @@
     #page-log.content      { grid-template-columns: 1fr; }
     #page-console.content  { grid-template-columns: 1fr; }
     #page-help.content     { grid-template-columns: 1fr; }
+    /* Help tab panes — independent CSS from settings tab-pane */
+    .help-pane { display: none; }
+    .help-pane.active { display: block; padding: 18px 22px; }
     .help-section { margin-bottom: 28px; }
     .help-section h3 { font-family: var(--heading-font, var(--mono)); font-size: 14px; font-weight: 700; color: var(--accent); margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
     .help-section h4 { font-size: 12px; font-weight: 600; color: var(--text); margin: 14px 0 6px; }
@@ -1084,6 +1087,39 @@
             <span id="dc-msg" style="font-size:11px;display:none;align-self:center"></span>
           </div>
         </div>
+        <!-- ── TAB: CONSOLE ── -->
+        <div class="tab-pane" id="tab-console-tab">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;min-height:400px">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap">
+              <select id="console-filter-s" onchange="filterConsole()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text)">
+                <option value="">All levels</option>
+                <option value="info">INFO+</option>
+                <option value="warning">WARN+</option>
+                <option value="error">ERROR</option>
+              </select>
+              <input id="console-search-s" type="text" placeholder="Filter…" oninput="filterConsole()"
+                style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text);width:140px">
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2);cursor:pointer">
+                <input type="checkbox" id="console-autoscroll-s" checked style="cursor:pointer">
+                <span data-i18n="console_autoscroll">Auto-scroll</span>
+              </label>
+              <button class="btn" style="font-size:10px;padding:3px 8px;margin-left:auto" onclick="clearConsole()" data-i18n="btn_clear">Leeren</button>
+            </div>
+            <div id="console-output-s" style="flex:1;overflow-y:auto;padding:10px 14px;background:var(--bg);font-family:var(--mono);font-size:11px;line-height:1.7;scrollbar-width:thin;min-height:300px">
+              <div style="color:var(--muted2);text-align:center;padding:30px 0" id="console-empty-s">
+                <span data-i18n="console_waiting">Warte auf Aktivität…</span>
+              </div>
+            </div>
+            <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:6px 14px;border-top:1px solid var(--border);background:var(--surface)">
+              <span id="console-count-s" style="font-size:10px;color:var(--muted2)">0 entries</span>
+              <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green)">
+                <span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite"></span>
+                <span data-i18n="console_live">Live</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1121,38 +1157,6 @@
         <div class="log-scroll" id="logScrollFull" style="max-height:600px"><div class="log-empty">Waiting for activity...</div></div>
       </div>
   
-        <!-- ── TAB: CONSOLE ── -->
-        <div class="tab-pane" id="tab-console-tab">
-          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;min-height:400px">
-            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap">
-              <select id="console-filter-s" onchange="filterConsole()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text)">
-                <option value="">All levels</option>
-                <option value="info">INFO+</option>
-                <option value="warning">WARN+</option>
-                <option value="error">ERROR</option>
-              </select>
-              <input id="console-search-s" type="text" placeholder="Filter…" oninput="filterConsole()"
-                style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text);width:140px">
-              <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2);cursor:pointer">
-                <input type="checkbox" id="console-autoscroll-s" checked style="cursor:pointer">
-                <span data-i18n="console_autoscroll">Auto-scroll</span>
-              </label>
-              <button class="btn" style="font-size:10px;padding:3px 8px;margin-left:auto" onclick="clearConsole()" data-i18n="btn_clear">Leeren</button>
-            </div>
-            <div id="console-output-s" style="flex:1;overflow-y:auto;padding:10px 14px;background:var(--bg);font-family:var(--mono);font-size:11px;line-height:1.7;scrollbar-width:thin;min-height:300px">
-              <div style="color:var(--muted2);text-align:center;padding:30px 0" id="console-empty-s">
-                <span data-i18n="console_waiting">Warte auf Aktivität…</span>
-              </div>
-            </div>
-            <div style="flex-shrink:0;display:flex;align-items:center;gap:10px;padding:6px 14px;border-top:1px solid var(--border);background:var(--surface)">
-              <span id="console-count-s" style="font-size:10px;color:var(--muted2)">0 entries</span>
-              <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--green)">
-                <span style="width:5px;height:5px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite"></span>
-                <span data-i18n="console_live">Live</span>
-              </span>
-            </div>
-          </div>
-        </div>
   </div>
 
   <!-- ══ CONSOLE PAGE ══ -->
@@ -1214,9 +1218,8 @@
           <div class="tab-btn" onclick="switchHelpTab('huntarr')">🔓 <span data-en="Why not Huntarr?" data-de="Warum nicht Huntarr?">Why not Huntarr?</span></div>
       </div>
       <!-- Help tab panes -->
-      <div style="padding:18px 22px">
 
-          <div class="tab-pane active" id="help-tab-how" style="padding:0">
+          <div class="help-pane active" id="help-tab-how" style="padding:0">
             <div class="help-section">
 <h3>⚙️ <span class="help-en">How Mediastarr works</span><span class="help-de">Wie Mediastarr funktioniert</span></h3>
           <div class="help-en">
@@ -1258,7 +1261,7 @@
             </ul>
             </div>
           </div>
-          <div class="tab-pane" id="help-tab-milestones" style="padding:0">
+          <div class="help-pane" id="help-tab-milestones" style="padding:0">
             <div class="help-section">
 <h3>🗺️ <span class="help-en">Milestones &amp; Roadmap</span><span class="help-de">Meilensteine &amp; Roadmap</span></h3>
           <div class="help-en">
@@ -1318,7 +1321,7 @@
         <!-- Why not other tools --
             </div>
           </div>
-          <div class="tab-pane" id="help-tab-security" style="padding:0">
+          <div class="help-pane" id="help-tab-security" style="padding:0">
             <div class="help-section">
 <h3>🔒 <span class="help-en">Security &amp; Warnings</span><span class="help-de">Sicherheit &amp; Warnhinweise</span></h3>
           <div class="help-warn">
@@ -1348,7 +1351,7 @@
           </ul>
             </div>
           </div>
-          <div class="tab-pane" id="help-tab-api" style="padding:0">
+          <div class="help-pane" id="help-tab-api" style="padding:0">
             <div class="help-section">
 <h3>📡 <span data-en="API Reference" data-de="API-Referenz">API Reference</span></h3>
           <p style="margin-bottom:10px"><span class="help-en">All endpoints require authentication unless Public API mode is enabled for <code>GET /api/state</code>. Write requests require the <code>X-CSRF-Token</code> header (automatically added by the dashboard).</span><span class="help-de">Alle Endpunkte erfordern Auth. Schreibende Requests brauchen den <code>X-CSRF-Token</code>-Header.</span></p>
@@ -1373,7 +1376,7 @@
           <div class="help-api-row"><span class="help-method get">GET</span><code>/api/timezones</code><span style="color:var(--muted2);font-size:10px"><span class="help-en">All IANA timezones</span><span class="help-de">Alle IANA-Zeitzonen</span></span>
             </div>
           </div>
-          <div class="tab-pane" id="help-tab-changelog" style="padding:0">
+          <div class="help-pane" id="help-tab-changelog" style="padding:0">
             <div class="help-section">
 <h3>📋 Changelog</h3>
           <div style="font-size:11px;color:var(--muted2);line-height:1.8">
@@ -1520,7 +1523,7 @@
         <!-- Milestones / Roadmap --
             </div>
           </div>
-          <div class="tab-pane" id="help-tab-huntarr" style="padding:0">
+          <div class="help-pane" id="help-tab-huntarr" style="padding:0">
             <div class="help-section">
 <h3>🔓 <span class="help-en">Why not Huntarr or its forks?</span><span class="help-de">Warum nicht Huntarr oder seine Forks?</span></h3>
 
@@ -1589,7 +1592,6 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
         </div>
       </div>
     </div>
-  </div>
   </div>
 
   <div id="page-stats" class="content content-page">
@@ -3513,7 +3515,7 @@ function switchHelpTab(id) {
   page.querySelectorAll('.tabs-row .tab-btn').forEach(b => b.classList.remove('active'));
   const activeBtn = page.querySelector(`.tabs-row .tab-btn[onclick*="${id}"]`);
   if (activeBtn) activeBtn.classList.add('active');
-  page.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `help-tab-${id}`));
+  page.querySelectorAll('.help-pane').forEach(p => p.classList.toggle('active', p.id === `help-tab-${id}`));
 }
 
 // ── Help page language toggle ─────────────────────────────────────────────────
