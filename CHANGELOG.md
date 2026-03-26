@@ -1,5 +1,16 @@
 # Changelog
 
+## [v7.0.1] — 2026-03-26
+
+### Fixed
+- **Missing EN translations** — Sonarr/Radarr behavior section headers, instance headings, "Same as global" option, all previously untranslated
+- **Log level dropdown** — all 4 options now translated DE/EN via i18n keys
+- **Jitter** — changed from seconds to minutes in UI (min 0, max 60); stored as seconds internally; backend converts on save; hint text updated
+
+### Added
+- **Per-type global daily limit** — Sonarr and Radarr each get their own global searches/day cap (0 = unlimited); configured in Settings → Sonarr/Radarr tabs; applies across ALL instances of that type; per-instance limits apply additionally
+- **Upgrade toggle hint** — instance card now shows "(global limit ignored)" note next to the per-instance upgrade toggle to clarify that when enabled, only the instance-level daily limit applies (not the global daily limit)
+
 ## [v7.0.0] — 2026-03-26
 
 ### Added

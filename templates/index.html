@@ -621,7 +621,7 @@
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_jitter">Jitter Max (Sekunden)</label>
-              <input class="form-input" id="cfg-jitter" type="number" min="0" max="3600" value="300">
+              <input class="form-input" id="cfg-jitter" type="number" min="0" max="60" value="5">
               <div class="form-hint" data-i18n="hint_jitter">0 = kein Jitter.</div>
             </div>
             <div class="form-group">
@@ -689,10 +689,10 @@
             <div class="form-group" style="margin-bottom:12px">
               <label class="form-label" data-i18n="lbl_log_level">Log-Level (Docker &amp; Datei)</label>
               <select class="form-input" id="cfg-log-min-level" style="max-width:220px" onchange="saveLogLevel()">
-                <option value="DEBUG">DEBUG — alles</option>
-                <option value="INFO" selected>INFO — Standard</option>
-                <option value="WARN">WARN — nur Warnungen + Fehler</option>
-                <option value="ERROR">ERROR — nur Fehler</option>
+                <option value="DEBUG" data-i18n="opt_log_debug">DEBUG — alles</option>
+                <option value="INFO" selected data-i18n="opt_log_info">INFO — Standard</option>
+                <option value="WARN" data-i18n="opt_log_warn">WARN — nur Warnungen + Fehler</option>
+                <option value="ERROR" data-i18n="opt_log_error">ERROR — nur Fehler</option>
               </select>
               <div class="form-hint" data-i18n="hint_log_level">Format: <code>[2026-03-26 14:32:10] [INFO] Nachricht</code> · Gilt für Docker-Console &amp; Logdatei.</div>
             </div>
@@ -762,14 +762,14 @@
         </div>
         <div class="tab-pane" id="tab-sonarr">
           <div style="background:rgba(77,156,255,.06);border:1px solid rgba(77,156,255,.2);border-radius:9px;padding:14px 16px;margin-bottom:16px">
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px">📺 Sonarr — Suchverhalten</div>
+            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px" data-i18n="lbl_sonarr_behavior">📺 Sonarr — Suchverhalten</div>
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_mode">Suchmodus</label>
                 <select class="form-input" id="cfg-sonarr-mode">
-                  <option value="episode">Episode (Standard)</option>
-                  <option value="season">Staffel</option>
-                  <option value="series">Ganze Serie</option>
+                  <option value="episode" data-i18n="opt_episode">Episode (Standard)</option>
+                  <option value="season" data-i18n="opt_season">Staffel</option>
+                  <option value="series" data-i18n="opt_series">Ganze Serie</option>
                 </select>
               </div>
               <div class="form-group">
@@ -780,7 +780,7 @@
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_res">Zielauflösung Upgrades</label>
                 <select class="form-input" id="cfg-sonarr-target-res">
-                  <option value="">Wie global</option>
+                  <option value="" data-i18n="opt_same_global">Wie global</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
                   <option value="Bluray-720p">Bluray 720p</option>
                   <option value="WEBDL-1080p">WEB-DL 1080p</option>
@@ -790,16 +790,21 @@
                 </select>
               </div>
             </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_sonarr_global_limit">Sonarr Tageslimit gesamt (0 = ∞)</label>
+                <input class="form-input" id="cfg-sonarr-daily-limit" type="number" min="0" max="9999" value="0">
+                <div class="form-hint" data-i18n="hint_sonarr_global_limit">Max. Suchen/Tag über alle Sonarr-Instanzen. Instanz-Limits gelten zusätzlich.</div>
+              </div>
             <div class="form-actions" style="margin-top:10px">
               <button class="btn btn-start" onclick="saveConfig()" data-i18n="btn_save">Speichern</button>
             </div>
           </div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;font-weight:600">📺 Sonarr Instanzen</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;font-weight:600" data-i18n="lbl_sonarr_instances">📺 Sonarr Instanzen</div>
           <div id="settings-inst-list-sonarr" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
             <div style="text-align:center;color:var(--muted2);font-size:12px;padding:12px">Lade...</div>
           </div>
           <div style="background:var(--surface);border:2px dashed rgba(77,156,255,.3);border-radius:9px;padding:12px 14px;margin-top:4px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;font-weight:600">+ Neue Sonarr Instanz</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;font-weight:600" data-i18n="lbl_new_sonarr">+ Neue Sonarr Instanz</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
               <div class="form-group" style="grid-column:1/-1"><label class="form-label">Name</label><input class="form-input" id="new-sonarr-name" type="text" placeholder="z.B. Sonarr 4K"></div>
               <div class="form-group" style="grid-column:1/-1"><label class="form-label">URL</label><input class="form-input" id="new-sonarr-url" type="text" placeholder="http://127.0.0.1:8989"></div>
@@ -815,7 +820,7 @@
         <!-- ── TAB: RADARR ── -->
         <div class="tab-pane" id="tab-radarr">
           <div style="background:rgba(255,107,43,.06);border:1px solid rgba(255,107,43,.2);border-radius:9px;padding:14px 16px;margin-bottom:16px">
-            <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px">🎬 Radarr — Suchverhalten</div>
+            <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px" data-i18n="lbl_radarr_behavior">🎬 Radarr — Suchverhalten</div>
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_imdb">IMDb Mindestbewertung</label>
@@ -825,7 +830,7 @@
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_res">Zielauflösung Upgrades</label>
                 <select class="form-input" id="cfg-radarr-target-res">
-                  <option value="">Wie global</option>
+                  <option value="" data-i18n="opt_same_global">Wie global</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
                   <option value="Bluray-720p">Bluray 720p</option>
                   <option value="WEBDL-1080p">WEB-DL 1080p</option>
@@ -835,16 +840,21 @@
                 </select>
               </div>
             </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_radarr_global_limit">Radarr Tageslimit gesamt (0 = ∞)</label>
+                <input class="form-input" id="cfg-radarr-daily-limit" type="number" min="0" max="9999" value="0">
+                <div class="form-hint" data-i18n="hint_radarr_global_limit">Max. Suchen/Tag über alle Radarr-Instanzen. Instanz-Limits gelten zusätzlich.</div>
+              </div>
             <div class="form-actions" style="margin-top:10px">
               <button class="btn btn-start" onclick="saveConfig()" data-i18n="btn_save">Speichern</button>
             </div>
           </div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;font-weight:600">🎬 Radarr Instanzen</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;font-weight:600" data-i18n="lbl_radarr_instances">🎬 Radarr Instanzen</div>
           <div id="settings-inst-list-radarr" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
             <div style="text-align:center;color:var(--muted2);font-size:12px;padding:12px">Lade...</div>
           </div>
           <div style="background:var(--surface);border:2px dashed rgba(255,107,43,.3);border-radius:9px;padding:12px 14px;margin-top:4px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;font-weight:600">+ Neue Radarr Instanz</div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;font-weight:600" data-i18n="lbl_new_radarr">+ Neue Radarr Instanz</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
               <div class="form-group" style="grid-column:1/-1"><label class="form-label">Name</label><input class="form-input" id="new-radarr-name" type="text" placeholder="z.B. Radarr 4K"></div>
               <div class="form-group" style="grid-column:1/-1"><label class="form-label">URL</label><input class="form-input" id="new-radarr-url" type="text" placeholder="http://127.0.0.1:7878"></div>
@@ -1753,11 +1763,26 @@ const T = {
         lbl_max:'Max. Searches pro Lauf', lbl_daily:'Tageslimit (0 = unbegrenzt)',
         lbl_cooldown:'Cooldown (Tage)', lbl_timeout:'API Timeout (s)',
         lbl_search_behavior:'Suchverhalten', lbl_sonarr_mode:'Sonarr Suchmodus',
-        lbl_upgrades:'Upgrades suchen', hint_upgrades:'Änderung wird sofort gespeichert.', lbl_jitter:'Jitter Max (Sekunden)',
+        lbl_sonarr_behavior:'📺 Sonarr — Suchverhalten',
+        lbl_sonarr_global_limit:'Sonarr Tageslimit gesamt (0 = ∞)',
+        hint_sonarr_global_limit:'Max. Suchen/Tag über alle Sonarr-Instanzen. Instanz-Limits gelten zusätzlich.',
+        lbl_radarr_global_limit:'Radarr Tageslimit gesamt (0 = ∞)',
+        hint_radarr_global_limit:'Max. Suchen/Tag über alle Radarr-Instanzen. Instanz-Limits gelten zusätzlich.',
+        lbl_radarr_behavior:'🎬 Radarr — Suchverhalten',
+        lbl_sonarr_instances:'📺 Sonarr Instanzen',
+        lbl_radarr_instances:'🎬 Radarr Instanzen',
+        lbl_new_sonarr:'+ Neue Sonarr Instanz',
+        lbl_new_radarr:'+ Neue Radarr Instanz',
+        opt_same_global:'Wie global',
+        opt_log_debug:'DEBUG — alles',
+        opt_log_info:'INFO — Standard',
+        opt_log_warn:'WARN — nur Warnungen + Fehler',
+        opt_log_error:'ERROR — nur Fehler',
+        lbl_upgrades:'Upgrades suchen', hint_upgrades:'Änderung wird sofort gespeichert.', lbl_jitter:'Jitter Max (Minuten)',
         lbl_interval_adv:'Intervall & Jitter', lbl_system:'System', lbl_timezone:'Zeitzone', hint_timezone:'Aktuelle Zeitzone. Alle IANA-Zeitzonen verfügbar — tippe zum Suchen.',
         lbl_manage_instances:'Instanzen verwalten', btn_add_instance:'+ Hinzufügen',
         opt_episode:'Episode (Standard)', opt_season:'Staffel', opt_series:'Ganze Serie',
-        hint_jitter:'0 = kein Jitter. Zufällig 0–N Sek. addiert.',
+        hint_jitter:'0 = kein Jitter. Min. 5 Min. Zufällig 0–N Min. addiert.',
         hint_cooldown:'Tage bevor ein Item erneut gesucht wird.',
         hint_daily:'Gesamt pro Tag, alle Instanzen.',
         lbl_dryrun:'Dry Run', btn_save:'Speichern', lbl_new_instance:'Neue Instanz',
@@ -1825,7 +1850,22 @@ const T = {
         lbl_max:'Max searches per run', lbl_daily:'Daily limit (0 = unlimited)',
         lbl_cooldown:'Cooldown (days)', lbl_timeout:'API timeout (s)',
         lbl_search_behavior:'Search behavior', lbl_sonarr_mode:'Sonarr search mode',
-        lbl_upgrades:'Search upgrades', hint_upgrades:'Change is saved immediately.', lbl_jitter:'Jitter max (s)',
+        lbl_sonarr_behavior:'📺 Sonarr — Search behavior',
+        lbl_sonarr_global_limit:'Sonarr global daily limit (0 = ∞)',
+        hint_sonarr_global_limit:'Max searches/day across all Sonarr instances. Per-instance limits apply additionally.',
+        lbl_radarr_global_limit:'Radarr global daily limit (0 = ∞)',
+        hint_radarr_global_limit:'Max searches/day across all Radarr instances. Per-instance limits apply additionally.',
+        lbl_radarr_behavior:'🎬 Radarr — Search behavior',
+        lbl_sonarr_instances:'📺 Sonarr Instances',
+        lbl_radarr_instances:'🎬 Radarr Instances',
+        lbl_new_sonarr:'+ New Sonarr Instance',
+        lbl_new_radarr:'+ New Radarr Instance',
+        opt_same_global:'Same as global',
+        opt_log_debug:'DEBUG — everything',
+        opt_log_info:'INFO — default',
+        opt_log_warn:'WARN — warnings + errors only',
+        opt_log_error:'ERROR — errors only',
+        lbl_upgrades:'Search upgrades', hint_upgrades:'Change is saved immediately.', lbl_jitter:'Jitter max (min)',
         lbl_interval_adv:'Interval & jitter', lbl_system:'System', lbl_timezone:'Timezone', hint_timezone:'Current timezone. All IANA timezones available — type to search.',
         lbl_manage_instances:'Manage instances', btn_add_instance:'+ Add instance',
         opt_episode:'Episode (default)', opt_season:'Season', opt_series:'Full series',
@@ -2184,7 +2224,9 @@ function updateUI() {
     if (togSU) togSU.className = 'toggle' + (_skipUpcoming ? ' on' : '');
     if (labSU) labSU.textContent = t(_skipUpcoming ? 'on' : 'off');
     // Sync log rotation settings
-    if (c.log_min_level) {
+    if (c.sonarr_daily_limit != null) { const el2=document.getElementById('cfg-sonarr-daily-limit'); if(el2) el2.value=c.sonarr_daily_limit; }
+  if (c.radarr_daily_limit != null) { const el2=document.getElementById('cfg-radarr-daily-limit'); if(el2) el2.value=c.radarr_daily_limit; }
+  if (c.log_min_level) {
     const sel = el('cfg-log-min-level'); if (sel) sel.value = c.log_min_level;
     MSLog.setLevel(c.log_min_level); // sync frontend level from server config
   }
@@ -2445,6 +2487,8 @@ async function saveConfig() {
     sonarr_upgrade_target_resolution: el('cfg-sonarr-target-res')?.value || '',
     radarr_upgrade_target_resolution: el('cfg-radarr-target-res')?.value || '',
     sonarr_search_mode:   el('cfg-sonarr-mode')?.value || 'season',
+    sonarr_daily_limit:   getInt('cfg-sonarr-daily-limit', 0),
+    radarr_daily_limit:   getInt('cfg-radarr-daily-limit', 0),
     search_upgrades:      toggleStates2.upgrades,
     timezone:             (el('cfg-timezone')?.value && el('cfg-timezone').value !== 'UTC' ? el('cfg-timezone').value : el('cfg-timezone-search')?.value) || el('cfg-timezone')?.value || 'UTC',
     dry_run:              toggleStates.dry,
@@ -2644,6 +2688,7 @@ function renderSettingsInstances(type) {
             <div class="toggle ${inst.search_upgrades?'on':''}" id="tog-upg-${inst.id}"
               onclick="toggleInstUpgrades('${inst.id}')"></div>
             <span style="font-size:11px;color:var(--muted2)">${isDE4 ? 'Upgrades suchen' : 'Search upgrades'}</span>
+            <span style="font-size:10px;color:var(--muted);margin-left:4px">${isDE4 ? '(globales Limit gilt nicht)' : '(global limit ignored)'}</span>
             <span style="font-size:10px;color:var(--muted)" id="tog-upg-lab-${inst.id}">${inst.search_upgrades ? (isDE4?'An':'On') : (isDE4?'Aus':'Off')}</span>
           </div>
         </div>

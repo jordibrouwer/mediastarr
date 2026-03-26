@@ -612,7 +612,9 @@ DEFAULT_CONFIG = {
     "hunt_missing_delay":   1800,   # seconds internally (default 30min)
     "hunt_upgrade_delay":   3600,   # seconds internally (default 60min)
     "max_searches_per_run":   10,
-    "daily_limit":            20,
+    "daily_limit":            20, "sonarr_daily_limit": 0, "radarr_daily_limit": 0,
+    "sonarr_daily_limit":      0,    # global max searches/day across ALL Sonarr instances (0 = unlimited)
+    "radarr_daily_limit":      0,    # global max searches/day across ALL Radarr instances (0 = unlimited)
     "cooldown_days":           7,
     "request_timeout":        30,   # seconds for arr API calls
     "jitter_max":            300,   # max random seconds added to interval (0=off)
@@ -1515,6 +1517,11 @@ def run_cycle():
             if not inst.get("enabled") or not inst.get("api_key"): continue
             if STATE["inst_stats"].get(inst["id"],{}).get("status") != "online":
                 log_act(inst["name"], msg("skipped_offline"), "", "warning"); continue
+            itype = inst.get("type","sonarr")
+            type_limit = CONFIG.get(f"{itype}_daily_limit", 0)
+            type_today = sum(db.count_today_for_instance(i["id"]) for i in CONFIG.get("instances",[]) if i.get("type")==itype)
+            if type_limit > 0 and type_today >= type_limit:
+                ms_info("System", f"{itype.capitalize()} global daily limit reached", f"{type_today}/{type_limit}"); continue
             if inst["type"] == "sonarr":   hunt_sonarr_instance(inst)
             elif inst["type"] == "radarr": hunt_radarr_instance(inst)
         log_act("System", msg("cycle_done", n=STATE["cycle_count"], today=db.count_today()), "", "info")
@@ -1866,9 +1873,11 @@ def api_state():
             "hunt_upgrade_delay":   CONFIG["hunt_upgrade_delay"] // 60,  # minutes for UI
             "max_searches_per_run": CONFIG["max_searches_per_run"],
             "daily_limit":          CONFIG.get("daily_limit",20),
+            "sonarr_daily_limit":   CONFIG.get("sonarr_daily_limit", 0),
+            "radarr_daily_limit":   CONFIG.get("radarr_daily_limit", 0),
             "cooldown_days":        CONFIG.get("cooldown_days",7),
             "request_timeout":      CONFIG.get("request_timeout",30),
-            "jitter_max":           CONFIG.get("jitter_max",300),
+            "jitter_max":           CONFIG.get("jitter_max",300) // 60,  # UI shows minutes
             "sonarr_search_mode":   CONFIG.get("sonarr_search_mode","season"),
             "imdb_min_rating":           CONFIG.get("imdb_min_rating", 0.0),
             "sonarr_imdb_min_rating":     CONFIG.get("sonarr_imdb_min_rating", None),
@@ -1929,9 +1938,12 @@ def api_config():
     CONFIG["hunt_upgrade_delay"]   = raw_up_min * 60
     CONFIG["max_searches_per_run"] = clamp_int(d.get("max_searches_per_run", CONFIG["max_searches_per_run"]), 1, 500, CONFIG["max_searches_per_run"])
     CONFIG["daily_limit"]          = clamp_int(d.get("daily_limit",          CONFIG.get("daily_limit",20)),   0, 9999, CONFIG.get("daily_limit",20))
+    if "sonarr_daily_limit" in d: CONFIG["sonarr_daily_limit"] = clamp_int(int(d.get("sonarr_daily_limit",0) or 0),0,9999,0)
+    if "radarr_daily_limit" in d: CONFIG["radarr_daily_limit"] = clamp_int(int(d.get("radarr_daily_limit",0) or 0),0,9999,0)
     CONFIG["cooldown_days"]        = clamp_int(d.get("cooldown_days",        CONFIG.get("cooldown_days",7)),  1, 365, CONFIG.get("cooldown_days",7))
     CONFIG["request_timeout"]      = clamp_int(d.get("request_timeout",      CONFIG.get("request_timeout",30)),5, 300, 30)
-    CONFIG["jitter_max"]           = clamp_int(d.get("jitter_max",           CONFIG.get("jitter_max",300)),   0, 3600, 300)
+    raw_jitter_min = clamp_int(d.get("jitter_max", CONFIG.get("jitter_max",300)//60), 0, 60, 5)
+    CONFIG["jitter_max"] = raw_jitter_min * 60  # store seconds internally
     if "dry_run"         in d: CONFIG["dry_run"]         = bool(d["dry_run"])
     if "auto_start"      in d: CONFIG["auto_start"]      = bool(d["auto_start"])
     if "search_upgrades" in d: CONFIG["search_upgrades"] = bool(d["search_upgrades"])
