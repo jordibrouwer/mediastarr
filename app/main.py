@@ -752,7 +752,6 @@ def _ensure_inst_stats():
             STATE["inst_stats"][inst["id"]] = fresh_inst_stats()
 
 _ensure_inst_stats()
-_apply_log_level()  # honour log_min_level from config
 
 # ─── Validation ───────────────────────────────────────────────────────────────
 def validate_url(url: str):
@@ -922,6 +921,8 @@ def ms_debug(service: str, action: str, item: str = "") -> None: ms_log("DEBUG",
 def ms_info (service: str, action: str, item: str = "") -> None: ms_log("INFO",  service, action, item)
 def ms_warn (service: str, action: str, item: str = "") -> None: ms_log("WARN",  service, action, item)
 def ms_error(service: str, action: str, item: str = "") -> None: ms_log("ERROR", service, action, item)
+
+_apply_log_level()  # honour log_min_level from config — called here, after function is defined
 
 def log_act(service:str, action:str, item:str, status:str="info"):
     ts = fmt_time(now_local())
