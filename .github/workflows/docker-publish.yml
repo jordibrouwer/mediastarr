@@ -4,7 +4,23 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-  workflow_dispatch:
+    # Only trigger for files that directly affect the Docker image.
+    # Changes to docs, homepage, screenshots, or workflow files skip this build.
+    paths:
+      - 'app/**'               # Python backend (main.py, db.py, ...)
+      - 'templates/**'         # Flask Jinja2 templates
+      - 'static/favicon.ico'   # Served by Flask (inside container)
+      - 'static/icon.png'      # Served by Flask (inside container)
+      - 'Dockerfile'           # Container definition
+      - 'requirements.txt'     # Python dependencies
+      - 'VERSION'              # Version string — single source of truth
+      # ── Explicitly excluded (never trigger Docker build) ─────────────
+      # '*.md'                 → README, CHANGELOG, CONTRIBUTING, SECURITY
+      # 'index.html'           → Homepage (Cloudflare Pages, not Docker)
+      # 'static/screen_*'      → Screenshots
+      # 'mediastarr.xml'       → Unraid Community Apps template
+      # '.github/**'           → This workflow + issue templates + SECURITY
+  workflow_dispatch:           # Always allow manual trigger regardless of paths
 
 permissions:
   contents: read
