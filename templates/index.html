@@ -1,15 +1,3 @@
-
-            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.0</strong> <em style="color:var(--muted)">2026-03-26</em>
-              <ul>
-                <li>Structured logging system: central <code>ms_log(level, service, action, item)</code> writes to Docker console, log file, AND the UI activity log</li>
-                <li>Four log levels: <code>DEBUG</code> | <code>INFO</code> | <code>WARN</code> | <code>ERROR</code> — configurable in Settings → General → Log Level</li>
-                <li>Docker/Unraid console format: <code>[2026-03-26 14:32:10] [INFO] [Service] action: item</code></li>
-                <li>Backend helpers: <code>ms_debug()</code>, <code>ms_info()</code>, <code>ms_warn()</code>, <code>ms_error()</code></li>
-                <li>MSLog v2 (browser): timestamp format, <code>MSLog.log(level, ...)</code>, level persisted via <code>sessionStorage</code></li>
-                <li>Level synced from server config on every poll — one setting controls both Docker and browser</li>
-              </ul>
-            </div>
-
 <!DOCTYPE html>
 <html lang="de" data-theme="dark">
 <head>
