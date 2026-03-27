@@ -2209,6 +2209,17 @@ function updateUI() {
     syncField('cfg-max',      c.max_searches_per_run);
     syncField('cfg-daily',    c.daily_limit ?? 20);
     syncField('cfg-cooldown', c.cooldown_days ?? 7);
+    syncField('cfg-jitter',   c.jitter_max ?? 5);
+    syncField('cfg-timeout',  c.request_timeout ?? 30);
+    syncField('cfg-imdb',     c.imdb_min_rating ?? 0);
+    // Sonarr/Radarr per-type settings
+    if (c.sonarr_search_mode) { const e=document.getElementById('cfg-sonarr-mode'); if(e) e.value=c.sonarr_search_mode; }
+    { const e=document.getElementById('cfg-sonarr-imdb'); if(e) e.value=(c.sonarr_imdb_min_rating==null)?'':(c.sonarr_imdb_min_rating); }
+    { const e=document.getElementById('cfg-radarr-imdb'); if(e) e.value=(c.radarr_imdb_min_rating==null)?'':(c.radarr_imdb_min_rating); }
+    if (c.upgrade_target_resolution !== undefined) { const e=document.getElementById('cfg-target-res'); if(e) e.value=c.upgrade_target_resolution||''; }
+    if (c.sonarr_upgrade_target_resolution !== undefined) { const e=document.getElementById('cfg-sonarr-target-res'); if(e) e.value=c.sonarr_upgrade_target_resolution||''; }
+    if (c.radarr_upgrade_target_resolution !== undefined) { const e=document.getElementById('cfg-radarr-target-res'); if(e) e.value=c.radarr_upgrade_target_resolution||''; }
+    if (c.timezone) { const e=document.getElementById('cfg-timezone'); if(e) e.value=c.timezone; }
 
     toggleStates.dry    = c.dry_run;
     toggleStates.sonarr = c.sonarr?.enabled ?? true;
@@ -2494,6 +2505,20 @@ async function saveConfig() {
     dry_run:              toggleStates.dry,
     theme:                currentTheme,
     language:             currentLang,
+    // Always include current discord toggle state to prevent fetchState() from reverting unsaved changes
+    discord: {
+      enabled:         dcStates.enabled,
+      notify_missing:  dcStates.missing,
+      notify_upgrade:  dcStates.upgrade,
+      notify_cooldown: dcStates.cooldown,
+      notify_limit:    dcStates.limit,
+      notify_offline:  dcStates.offline,
+      notify_stats:    dcStates.stats,
+    },
+    // Log settings — included here so all settings save atomically from any tab
+    log_min_level: document.getElementById('cfg-log-min-level')?.value || 'INFO',
+    log_max_mb:    parseInt(document.getElementById('cfg-log-max-mb')?.value)  || 5,
+    log_backups:   parseInt(document.getElementById('cfg-log-backups')?.value) || 2,
   };
   const r = await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const d = await r.json();

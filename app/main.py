@@ -1204,7 +1204,7 @@ def hunt_sonarr_instance(inst: dict):
     stats  = STATE["inst_stats"][iid]
     mode   = CONFIG.get("sonarr_search_mode", "season")
     lang   = CONFIG.get("language", "en")
-    do_upgrades = inst.get("search_upgrades", False)  # per-instance, default off
+    do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
 
     # Build series ID → title cache once per hunt so ep titles are always correct
     # even when Sonarr omits series.title in wanted/missing responses
@@ -1360,7 +1360,7 @@ def hunt_radarr_instance(inst: dict):
     iid   = inst["id"]; name = inst["name"]
     client = ArrClient(name, inst["url"], inst["api_key"])
     stats  = STATE["inst_stats"][iid]
-    do_upgrades = inst.get("search_upgrades", False)  # per-instance, default off
+    do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
 
     # ── Missing ──
     try:
@@ -1819,6 +1819,7 @@ def api_instances_update(inst_id:str):
         if not ok: return jsonify({"ok":False,"error":f"API Key: {e}"}),400
         inst["api_key"] = key
     if "enabled" in d: inst["enabled"] = bool(d["enabled"])
+    if "search_upgrades" in d: inst["search_upgrades"] = bool(d["search_upgrades"])
     if "daily_limit" in d:
         inst["daily_limit"] = clamp_int(int(d.get("daily_limit", 0) or 0), 0, 9999, 0)
     log_act("System", "Config gespeichert" if CONFIG.get("language","en")=="de" else "Config saved", "", "info")

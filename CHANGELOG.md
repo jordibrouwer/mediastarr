@@ -1,5 +1,53 @@
 # Changelog
 
+## [v7.0.3] — 2026-03-26
+
+### Bug Analysis & Fixes
+
+### Settings audit fixes (included in v7.0.3)
+- **updateUI() incomplete sync** — 10 fields were never written back to DOM after fetchState():
+  `jitter_max`, `request_timeout`, `imdb_min_rating`, `upgrade_target_resolution`,
+  `sonarr_imdb_min_rating`, `sonarr_search_mode`, `sonarr_upgrade_target_resolution`,
+  `radarr_imdb_min_rating`, `radarr_upgrade_target_resolution`, `timezone`
+  — all now synced via additional `syncField()` and select/input assignments in `updateUI()`
+- **saveConfig() excluded log settings** — `log_min_level`, `log_max_mb`, `log_backups`
+  were only saved via their own dedicated buttons; now included in every `saveConfig()` call
+  so all settings save atomically from any tab
+- **Sonarr/Radarr IMDb null sync** — when IMDb override was unset (`null` = use global),
+  the field was left stale; now correctly clears to empty string
+
+
+**[Bug #33] Upgrade search not working even when globally enabled**
+
+*Root cause:* `hunt_sonarr_instance()` and `hunt_radarr_instance()` read only
+`inst.get("search_upgrades", False)` — the **per-instance** toggle. The global
+`CONFIG["search_upgrades"]` toggle (Settings → General → Search Upgrades) was
+saved to the config but never consulted by the hunt functions. Per-instance default
+is `False`, so upgrades never ran even with the global switch enabled.
+
+*Fix:* `do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)`
+— the global toggle is the master switch; per-instance is the fine-grained control.
+
+**[Bug #34] Per-instance Search Upgrades toggle not saved**
+
+*Root cause:* `PATCH /api/instances/<id>` handler had no `search_upgrades` branch.
+`toggleInstUpgrades()` in the frontend correctly sent the PATCH, but the backend
+silently ignored the field — so it was never written to `config.json`.
+
+*Fix:* Added `if "search_upgrades" in d: inst["search_upgrades"] = bool(d["search_upgrades"])`
+to the PATCH handler.
+
+**[Bug #35] Discord notifications toggle reverting on save**
+
+*Root cause:* Clicking Save in any settings tab (General, Sonarr, Radarr) calls
+`saveConfig()`, which on success triggers `fetchState()`. `fetchState()` then
+re-syncs `dcStates` from the server — overwriting any local discord toggle changes
+that the user made but **had not yet saved** via the Discord tab Save button.
+
+*Fix:* `saveConfig()` now always includes the current `dcStates` in the request
+body. This ensures any local discord toggle state is persisted immediately when
+saving any settings tab, preventing the revert.
+
 ## [v7.0.2] — 2026-03-26
 
 ### Fixed
