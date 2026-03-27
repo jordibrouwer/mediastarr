@@ -4,6 +4,18 @@
 
 ### Bug Analysis & Fixes
 
+### Settings revert fix (included in v7.0.3)
+- **Root cause 1 — 4-second poll overwrites user inputs**: `fetchState()` runs every 4 seconds
+  and `updateUI()` writes server config values back to all input fields. Any field the user
+  edited but had not yet saved was overwritten on the next poll tick.
+  *Fix:* Added `_configDirty` flag — set `true` on any `input`/`change` event inside
+  `#page-settings`, cleared to `false` after a successful `saveConfig()`. While dirty,
+  `updateUI()` skips the entire config sync block.
+- **Root cause 2 — `dcStates.stats` undefined**: `dcStates` was initialized without the
+  `stats` key. Every `saveConfig()` sent `notify_stats: undefined` → backend received
+  `null` → `bool(null) = False` → stats notifications silently disabled on every general save.
+  *Fix:* `dcStates` now initialized with `stats: false`.
+
 ### Settings audit fixes (included in v7.0.3)
 - **updateUI() incomplete sync** — 10 fields were never written back to DOM after fetchState():
   `jitter_max`, `request_timeout`, `imdb_min_rating`, `upgrade_target_resolution`,

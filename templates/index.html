@@ -1745,8 +1745,16 @@ const MSLog = (() => {
 })();
 // ══ State ══
 let appState = {}, historyData = [], toggleStates = {dry:false,sonarr:true,radarr:true}, toggleStates2 = {upgrades:true};
+let _configDirty = false;  // true while user has unsaved config changes
+let _configDirtyTimer = null;
+function _markDirty() {
+  _configDirty = true;
+  // Auto-clear after 5 min of inactivity (safety net)
+  if (_configDirtyTimer) clearTimeout(_configDirtyTimer);
+  _configDirtyTimer = setTimeout(() => { _configDirty = false; }, 300000);
+}
 let _syncingFromServer = false;
-let dcStates = {enabled:false,missing:true,upgrade:true,cooldown:true,limit:true,offline:true};
+let dcStates = {enabled:false,missing:true,upgrade:true,cooldown:true,limit:true,offline:true,stats:false};
 let currentLang = 'de', currentTheme = 'dark', lastLogCount = 0;
 
 // ══ i18n ══
@@ -2197,8 +2205,8 @@ function updateUI() {
     }
   }
 
-  // Config sync
-  if (s.config) {
+  // Config sync — skip while user has unsaved edits in Settings tab
+  if (s.config && !_configDirty) {
     const c = s.config;
     const el = id => document.getElementById(id);
     const syncField = (id, val) => {
@@ -2523,6 +2531,8 @@ async function saveConfig() {
   const r = await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const d = await r.json();
   if (d.ok) {
+    _configDirty = false;  // allow config sync to resume
+    if (_configDirtyTimer) { clearTimeout(_configDirtyTimer); _configDirtyTimer = null; }
     fetchState();
     const btn = document.querySelector('button[onclick="saveConfig()"]');
     if (btn) {
@@ -3824,6 +3834,13 @@ loadStats = async function() {
 
 MSLog.info('Mediastarr {{ version }} — UI init');
 // Help lang synced via setLang() called at startup
+// Mark config dirty on any user input in settings tab
+document.addEventListener('input', e => {
+  if (e.target.closest('#page-settings')) _markDirty();
+});
+document.addEventListener('change', e => {
+  if (e.target.closest('#page-settings')) _markDirty();
+});
 // Also set immediately so CSS class is correct from first render
 setHelpLang(currentLang || 'en');
 fetchState();
