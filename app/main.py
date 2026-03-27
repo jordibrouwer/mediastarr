@@ -1284,9 +1284,25 @@ def hunt_sonarr_instance(inst: dict):
             logger.debug(f"{name}: IMDb filter kept {len(recs)}/{before} missing episodes")
         stats["missing_found"] = int(data.get("totalRecords", len(recs)))
         searched = 0
+        # Dedup tracking for season/series mode — avoid sending the same
+        # SeasonSearch or SeriesSearch command multiple times for the same target
+        _searched_seasons: set[tuple] = set()  # (series_id, season_number)
+        _searched_series:  set[int]   = set()  # series_id
         for ep in recs:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
             title = ep_title(ep)
+            series_id = ep.get("series",{}).get("id") or ep.get("seriesId")
+
+            # In season/series mode: skip if we already triggered a search for this target
+            if mode == "series" and series_id and int(series_id) in _searched_series:
+                logger.debug(f"{name}: skip dup SeriesSearch for series {series_id}")
+                continue
+            if mode == "season" and series_id:
+                season_key = (int(series_id), ep.get("seasonNumber", 0))
+                if season_key in _searched_seasons:
+                    logger.debug(f"{name}: skip dup SeasonSearch for {season_key}")
+                    continue
+
             ok, reason = should_search(iid, "episode", ep["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
@@ -1305,11 +1321,13 @@ def hunt_sonarr_instance(inst: dict):
                 continue
             year = _year(ep.get("series",{}).get("year") or ep.get("airDate","")[:4])
             # Build command based on search mode
-            series_id = ep.get("series",{}).get("id", ep.get("seriesId"))
             if mode == "series" and series_id:
                 command = {"name":"SeriesSearch","seriesId":series_id}
+                _searched_series.add(int(series_id))  # mark this series as triggered
             elif mode == "season" and series_id:
-                command = {"name":"SeasonSearch","seriesId":series_id,"seasonNumber":ep.get("seasonNumber",0)}
+                snum = ep.get("seasonNumber", 0)
+                command = {"name":"SeasonSearch","seriesId":series_id,"seasonNumber":snum}
+                _searched_seasons.add((int(series_id), snum))  # mark this season as triggered
             else:
                 command = {"name":"EpisodeSearch","episodeIds":[ep["id"]]}
             do_search(client, iid, "episode", ep["id"], title, command,
@@ -1346,8 +1364,17 @@ def hunt_sonarr_instance(inst: dict):
                 if reason == "daily": break  # stop upgrades loop, not whole function
                 continue
             year = _year(ep.get("series",{}).get("year"))
+            # Upgrades also respect the search mode
+            series_id_upg = ep.get("series",{}).get("id") or ep.get("seriesId")
+            if mode == "series" and series_id_upg:
+                upg_command = {"name":"SeriesSearch","seriesId":series_id_upg}
+            elif mode == "season" and series_id_upg:
+                upg_command = {"name":"SeasonSearch","seriesId":series_id_upg,
+                               "seasonNumber":ep.get("seasonNumber",0)}
+            else:
+                upg_command = {"name":"EpisodeSearch","episodeIds":[ep["id"]]}
             do_search(client, iid, "episode_upgrade", ep["id"], title,
-                      {"name":"EpisodeSearch","episodeIds":[ep["id"]]}, year=year,
+                      upg_command, year=year,
                       item_data=enrich_ep_with_series(ep))
             stats["upgrades_searched"] += 1; searched += 1
             log_act(name, msg("upgrade"), title, "warning")

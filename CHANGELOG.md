@@ -4,6 +4,16 @@
 
 ### Bug Analysis & Fixes
 
+### Sonarr search mode + upgrade fixes (included in v7.0.3)
+- **Season/Series mode duplicate searches eliminated**: when mode is `season` or `series`,
+  `wanted/missing` returns individual episodes. Previously each episode triggered its own
+  `SeasonSearch` or `SeriesSearch` — identical commands fired multiple times for the same
+  season/series. Now dedup sets track already-triggered (series_id, season_number) pairs
+  and skip redundant commands.
+- **Upgrades now respect search mode**: the upgrade loop previously always used `EpisodeSearch`
+  regardless of the configured mode. Now it applies the same `season`/`series`/`episode` logic
+  as the missing search loop.
+
 ### Settings revert fix (included in v7.0.3)
 - **Root cause 1 — 4-second poll overwrites user inputs**: `fetchState()` runs every 4 seconds
   and `updateUI()` writes server config values back to all input fields. Any field the user
