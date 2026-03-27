@@ -582,26 +582,26 @@
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_missing">Missing-Intervall (Min.)</label>
-              <input class="form-input" id="cfg-missing" type="number" min="15" max="1440" value="30">
+              <input class="form-input" id="cfg-missing" type="number" min="15" max="1440" value="30" oninput="_autosaveConfig()">
               <div class="form-hint" data-i18n="hint_missing">Min. 15 Min. zwischen Suchzyklen.</div>
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_upgrade">Upgrade-Intervall (Min.)</label>
-              <input class="form-input" id="cfg-upgrade" type="number" min="15" max="1440" value="60">
+              <input class="form-input" id="cfg-upgrade" type="number" min="15" max="1440" value="60" oninput="_autosaveConfig()">
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_max">Max. Searches pro Lauf</label>
-              <input class="form-input" id="cfg-max" type="number" min="1" max="500" value="10">
+              <input class="form-input" id="cfg-max" type="number" min="1" max="500" value="10" oninput="_autosaveConfig()">
               <div class="form-hint" data-i18n="hint_max">Pro Zyklus, pro Service.</div>
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_daily">Tageslimit (0 = unbegrenzt)</label>
-              <input class="form-input" id="cfg-daily" type="number" min="0" max="9999" value="20" style="border-color:rgba(61,230,139,0.3)">
+              <input class="form-input" id="cfg-daily" type="number" min="0" max="9999" value="20" style="border-color:rgba(61,230,139,0.3)" oninput="_autosaveConfig()">
               <div class="form-hint" data-i18n="hint_daily">Gesamt pro Tag, alle Services.</div>
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_cooldown">Cooldown (Tage)</label>
-              <input class="form-input" id="cfg-cooldown" type="number" min="1" max="365" value="7" style="border-color:rgba(77,156,255,0.3)">
+              <input class="form-input" id="cfg-cooldown" type="number" min="1" max="365" value="7" style="border-color:rgba(77,156,255,0.3)" oninput="_autosaveConfig()">
               <div class="form-hint" data-i18n="hint_cooldown_range">Standard: 7 Tage. Bereich: 1–365.</div>
             </div>
             <div class="form-group">
@@ -621,12 +621,12 @@
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_jitter">Jitter Max (Sekunden)</label>
-              <input class="form-input" id="cfg-jitter" type="number" min="0" max="60" value="5">
+              <input class="form-input" id="cfg-jitter" type="number" min="0" max="60" value="5" oninput="_autosaveConfig()">
               <div class="form-hint" data-i18n="hint_jitter">0 = kein Jitter.</div>
             </div>
             <div class="form-group">
               <label class="form-label" data-i18n="lbl_timeout">API Timeout (Sek.)</label>
-              <input class="form-input" id="cfg-timeout" type="number" min="5" max="300" value="30">
+              <input class="form-input" id="cfg-timeout" type="number" min="5" max="300" value="30" oninput="_autosaveConfig()">
             </div>
           </div>
           <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:10px">
@@ -635,12 +635,12 @@
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-imdb" type="number" min="0" max="10" step="0.1" value="0" placeholder="0 = aus">
+                <input class="form-input" id="cfg-imdb" type="number" min="0" max="10" step="0.1" value="0" placeholder="0 = aus" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_imdb">0 = kein Filter.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_target_res">Zielauflösung Upgrades</label>
-                <select class="form-input" id="cfg-target-res">
+                <select class="form-input" id="cfg-target-res" onchange="_autosaveConfig()">
                   <option value="" data-i18n="opt_res_off">Aus (kein Filter)</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
                   <option value="Bluray-720p">Bluray 720p</option>
@@ -663,7 +663,7 @@
                     oninput="filterTimezones(this.value)"
                     onfocus="showTzDropdown()"
                     onblur="setTimeout(hideTzDropdown,200)"
-                    style="width:100%">
+                    style="width:100%" oninput="_autosaveConfig()">
                   <input type="hidden" id="cfg-timezone" value="UTC">
                   <div id="tz-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
                     background:var(--bg2);border:1px solid var(--border);border-radius:0 0 7px 7px;
@@ -677,9 +677,8 @@
               </div>
             </div>
           </div>
-          <div class="form-actions">
-            <button class="btn btn-start" onclick="saveConfig()" data-i18n="btn_save">Speichern</button>
-          </div>
+          <!-- Auto-save indicator — shows brief confirmation after any change -->
+          <div id="autosave-indicator" style="margin-top:8px;font-size:11px;color:var(--green);min-height:18px;transition:opacity .3s"></div>
 
           <!-- ── Log Rotation ── -->
           <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
@@ -699,12 +698,12 @@
             <div class="form-grid" style="margin-bottom:10px">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_log_max_mb">Max. Dateigröße (MB)</label>
-                <input class="form-input" id="cfg-log-max-mb" type="number" min="1" max="100" value="5">
+                <input class="form-input" id="cfg-log-max-mb" type="number" min="1" max="100" value="5" oninput="_autosaveLog()">
                 <div class="form-hint" data-i18n="hint_log_max_mb">1–100 MB. Standard: 5 MB.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_log_backups">Anzahl Backup-Dateien</label>
-                <input class="form-input" id="cfg-log-backups" type="number" min="0" max="10" value="2">
+                <input class="form-input" id="cfg-log-backups" type="number" min="0" max="10" value="2" oninput="_autosaveLog()">
                 <div class="form-hint" data-i18n="hint_log_backups">0–10 Backups. Standard: 2 (= 3 Dateien gesamt).</div>
               </div>
             </div>
@@ -766,7 +765,7 @@
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_mode">Suchmodus</label>
-                <select class="form-input" id="cfg-sonarr-mode">
+                <select class="form-input" id="cfg-sonarr-mode" onchange="_autosaveConfig()">
                   <option value="episode" data-i18n="opt_episode">Episode (Standard)</option>
                   <option value="season" data-i18n="opt_season">Staffel</option>
                   <option value="series" data-i18n="opt_series">Ganze Serie</option>
@@ -774,12 +773,12 @@
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-sonarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global">
+                <input class="form-input" id="cfg-sonarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_sonarr_imdb">Leer = globalen Wert verwenden.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_res">Zielauflösung Upgrades</label>
-                <select class="form-input" id="cfg-sonarr-target-res">
+                <select class="form-input" id="cfg-sonarr-target-res" onchange="_autosaveConfig()">
                   <option value="" data-i18n="opt_same_global">Wie global</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
                   <option value="Bluray-720p">Bluray 720p</option>
@@ -792,12 +791,9 @@
             </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_global_limit">Sonarr Tageslimit gesamt (0 = ∞)</label>
-                <input class="form-input" id="cfg-sonarr-daily-limit" type="number" min="0" max="9999" value="0">
+                <input class="form-input" id="cfg-sonarr-daily-limit" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_sonarr_global_limit">Max. Suchen/Tag über alle Sonarr-Instanzen. Instanz-Limits gelten zusätzlich.</div>
               </div>
-            <div class="form-actions" style="margin-top:10px">
-              <button class="btn btn-start" onclick="saveConfig()" data-i18n="btn_save">Speichern</button>
-            </div>
           </div>
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;font-weight:600" data-i18n="lbl_sonarr_instances">📺 Sonarr Instanzen</div>
           <div id="settings-inst-list-sonarr" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
@@ -824,12 +820,12 @@
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-radarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global">
+                <input class="form-input" id="cfg-radarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_radarr_imdb">Leer = globalen Wert verwenden.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_res">Zielauflösung Upgrades</label>
-                <select class="form-input" id="cfg-radarr-target-res">
+                <select class="form-input" id="cfg-radarr-target-res" onchange="_autosaveConfig()">
                   <option value="" data-i18n="opt_same_global">Wie global</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
                   <option value="Bluray-720p">Bluray 720p</option>
@@ -842,12 +838,9 @@
             </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_global_limit">Radarr Tageslimit gesamt (0 = ∞)</label>
-                <input class="form-input" id="cfg-radarr-daily-limit" type="number" min="0" max="9999" value="0">
+                <input class="form-input" id="cfg-radarr-daily-limit" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_radarr_global_limit">Max. Suchen/Tag über alle Radarr-Instanzen. Instanz-Limits gelten zusätzlich.</div>
               </div>
-            <div class="form-actions" style="margin-top:10px">
-              <button class="btn btn-start" onclick="saveConfig()" data-i18n="btn_save">Speichern</button>
-            </div>
           </div>
           <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;font-weight:600" data-i18n="lbl_radarr_instances">🎬 Radarr Instanzen</div>
           <div id="settings-inst-list-radarr" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
@@ -928,7 +921,7 @@
             <label class="form-label" id="dc-lbl-url">Webhook URL</label>
             <div style="display:flex;gap:6px">
               <input class="form-input" id="dc-url" type="password" placeholder="https://discord.com/api/webhooks/…"
-                style="flex:1;border-color:rgba(88,101,242,.35)" autocomplete="off">
+                style="flex:1;border-color:rgba(88,101,242,.35)" autocomplete="off" oninput="_autosaveDc()">
               <button class="btn" style="flex-shrink:0;font-size:11px;padding:7px 12px;border-color:rgba(88,101,242,.3);color:#5865f2"
                 onclick="dcToggleUrl()" id="dc-url-eye" title="Ein/Ausblenden">👁</button>
             </div>
@@ -1086,13 +1079,13 @@
               <div class="form-group">
                 <label class="form-label" id="dc-lbl-interval">Statistik-Intervall (Min.)</label>
                 <input class="form-input" id="dc-stats-interval" type="number" min="1" max="10080" value="60"
-                  style="border-color:rgba(255,107,43,.3)">
+                  style="border-color:rgba(255,107,43,.3)" oninput="_autosaveDc()">
                 <div class="form-hint" id="dc-hint-interval">1–10080 Min. (max. 7 Tage). Nur aktiv wenn Statistik-Bericht aktiviert.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" id="dc-lbl-ratelimit">Rate-Limit Cooldown (Sek.)</label>
                 <input class="form-input" id="dc-ratelimit" type="number" min="1" max="300" value="5"
-                  style="border-color:rgba(77,156,255,.3)">
+                  style="border-color:rgba(77,156,255,.3)" oninput="_autosaveDc()">
                 <div class="form-hint" id="dc-hint-ratelimit">Mindestabstand zwischen gleichartigen Events — schützt vor Discord HTTP 429.</div>
               </div>
             </div>
@@ -1745,14 +1738,38 @@ const MSLog = (() => {
 })();
 // ══ State ══
 let appState = {}, historyData = [], toggleStates = {dry:false,sonarr:true,radarr:true}, toggleStates2 = {upgrades:true};
-let _configDirty = false;  // true while user has unsaved config changes
+// ── Autosave utilities ────────────────────────────────────────────────────
+// _configDirty no longer needed — settings save immediately on change
+let _configDirty = false;
 let _configDirtyTimer = null;
 function _markDirty() {
   _configDirty = true;
-  // Auto-clear after 5 min of inactivity (safety net)
   if (_configDirtyTimer) clearTimeout(_configDirtyTimer);
   _configDirtyTimer = setTimeout(() => { _configDirty = false; }, 300000);
 }
+const _debounceTimers = {};
+function _debounce(key, fn, delay = 600) {
+  if (_debounceTimers[key]) clearTimeout(_debounceTimers[key]);
+  _debounceTimers[key] = setTimeout(() => { _debounceTimers[key] = null; fn(); }, delay);
+}
+// Debounced autosave functions
+const _autosaveConfig  = () => _debounce('cfg',  saveConfig,     600);
+const _autosaveDc      = () => _debounce('dc',   saveDc,         600);
+const _autosaveLog     = () => _debounce('log',  saveLogConfig,  600);
+const _autosaveMaint   = () => _debounce('maint',saveMaintenanceWindows, 800);
+
+function _showAutoSaveFeedback(ok) {
+  const el = document.getElementById('autosave-indicator');
+  if (!el) return;
+  el.textContent = ok ? (currentLang==='de' ? '✓ Automatisch gespeichert' : '✓ Auto-saved') : '✗ Fehler beim Speichern';
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.textContent = ''; }, 2500);
+}
+
+
+
+
 let _syncingFromServer = false;
 let dcStates = {enabled:false,missing:true,upgrade:true,cooldown:true,limit:true,offline:true,stats:false};
 let currentLang = 'de', currentTheme = 'dark', lastLogCount = 0;
@@ -1793,7 +1810,7 @@ const T = {
         hint_jitter:'0 = kein Jitter. Min. 5 Min. Zufällig 0–N Min. addiert.',
         hint_cooldown:'Tage bevor ein Item erneut gesucht wird.',
         hint_daily:'Gesamt pro Tag, alle Instanzen.',
-        lbl_dryrun:'Dry Run', btn_save:'Speichern', lbl_new_instance:'Neue Instanz',
+        lbl_dryrun:'Dry Run', btn_save:'Speichern', btn_save_manual:'Manuell speichern', lbl_new_instance:'Neue Instanz',
         lbl_filter:'Filter', lbl_imdb:'IMDb Mindestbewertung', lbl_target_res:'Zielauflösung (Upgrades)',
         hint_imdb:'0 = kein Filter. Nur Inhalte mit IMDb ≥ dieser Bewertung suchen.',
         hint_target_res:'Upgrades nur suchen wenn aktuelle Qualität darunter liegt.',
@@ -1880,7 +1897,7 @@ const T = {
         hint_jitter:'0 = no jitter. Random 0–N sec added to interval.',
         hint_cooldown:'Days before re-searching same item.',
         hint_daily:'Total per day across all instances.',
-        lbl_dryrun:'Dry Run', btn_save:'Save', lbl_new_instance:'New instance',
+        lbl_dryrun:'Dry Run', btn_save:'Save', btn_save_manual:'Save manually', lbl_new_instance:'New instance',
         lbl_filter:'Filter', lbl_imdb:'IMDb minimum rating', lbl_target_res:'Target resolution (upgrades)',
         hint_imdb:'0 = off. Only search content with IMDb ≥ this rating.',
         hint_target_res:'Only upgrade if current quality is below this target.',
@@ -2124,6 +2141,7 @@ function toggleCfg(key) {
   const lab = document.getElementById(`lab-${key}`);
   if (tog) tog.className = 'toggle' + (toggleStates[key] ? ' on' : '');
   if (lab) lab.textContent = t(toggleStates[key] ? 'on' : 'off');
+  _autosaveConfig();
 }
 
 // ══ Format helpers ══
@@ -2531,9 +2549,10 @@ async function saveConfig() {
   const r = await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const d = await r.json();
   if (d.ok) {
-    _configDirty = false;  // allow config sync to resume
+    _configDirty = false;
     if (_configDirtyTimer) { clearTimeout(_configDirtyTimer); _configDirtyTimer = null; }
     fetchState();
+    _showAutoSaveFeedback(true);
     const btn = document.querySelector('button[onclick="saveConfig()"]');
     if (btn) {
       const orig = btn.textContent;
@@ -2542,6 +2561,7 @@ async function saveConfig() {
       setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 2000);
     }
   } else {
+    _showAutoSaveFeedback(false);
     const btn = document.querySelector('button[onclick="saveConfig()"]');
     if (btn) {
       const orig = btn.textContent;
@@ -2872,7 +2892,7 @@ function toggleCfg2(key, persist = false) {
   const lab = document.getElementById(`lab-${key}`);
   if (tog) tog.className = 'toggle' + (toggleStates2[key] ? ' on' : '');
   if (lab) lab.textContent = toggleStates2[key] ? t('on') : t('off');
-  if (persist) saveConfig();
+  _autosaveConfig();
 }
 
 /* ══ Stats ══ */
@@ -3290,6 +3310,7 @@ function toggleDc(key) {
   const lab = document.getElementById(`lab-dc-${key}`);
   if (tog) tog.className = 'toggle' + (dcStates[key] ? ' on' : '');
   if (lab) lab.textContent = t(dcStates[key] ? 'on' : 'off');
+  _autosaveDc();
 }
 
 async function saveDc() {
@@ -3569,12 +3590,12 @@ function renderMaintenanceWindows() {
   }
   list.innerHTML = _maintWindows.map((w, i) => `
     <div style="display:flex;gap:6px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 10px;flex-wrap:wrap">
-      <input type="time" value="${w.start||'00:00'}" id="mw-start-${i}"
+      <input type="time" value="${w.start||'00:00'}" id="mw-start-${i}" onchange="_autosaveMaint()"
         style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:11px;color:var(--text);width:90px">
       <span style="color:var(--muted2);font-size:11px">→</span>
-      <input type="time" value="${w.end||'00:00'}" id="mw-end-${i}"
+      <input type="time" value="${w.end||'00:00'}" id="mw-end-${i}" onchange="_autosaveMaint()"
         style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:11px;color:var(--text);width:90px">
-      <input type="text" value="${escHtml(w.label||'')}" id="mw-label-${i}"
+      <input type="text" value="${escHtml(w.label||'')}" id="mw-label-${i}" oninput="_autosaveMaint()"
         placeholder="${isDE ? 'Bezeichnung (optional)' : 'Label (optional)'}"
         style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;color:var(--text);flex:1;min-width:100px">
       <button onclick="removeMaintenanceWindow(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted2);font-size:14px;padding:0 4px" title="${isDE?'Entfernen':'Remove'}">✕</button>
@@ -3835,12 +3856,7 @@ loadStats = async function() {
 MSLog.info('Mediastarr {{ version }} — UI init');
 // Help lang synced via setLang() called at startup
 // Mark config dirty on any user input in settings tab
-document.addEventListener('input', e => {
-  if (e.target.closest('#page-settings')) _markDirty();
-});
-document.addEventListener('change', e => {
-  if (e.target.closest('#page-settings')) _markDirty();
-});
+// Input auto-save handled via oninput/onchange attributes and _autosaveConfig()
 // Also set immediately so CSS class is correct from first render
 setHelpLang(currentLang || 'en');
 fetchState();
