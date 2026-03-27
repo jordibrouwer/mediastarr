@@ -1255,7 +1255,7 @@ def hunt_sonarr_instance(inst: dict):
 
     # ── Missing ──
     try:
-        data  = client.get("wanted/missing", params={"pageSize":500,"sortKey":"airDateUtc","sortDir":"desc"})
+        data  = client.get("wanted/missing", params={"pageSize":2000,"sortKey":"airDateUtc","sortDir":"desc"})
         recs  = data.get("records", [])
         random.shuffle(recs)
         # Skip upcoming (not yet aired) episodes
@@ -1343,7 +1343,7 @@ def hunt_sonarr_instance(inst: dict):
 
     # ── Upgrades ──
     try:
-        data  = client.get("wanted/cutoff", params={"pageSize":500})
+        data  = client.get("wanted/cutoff", params={"pageSize":2000})
         recs  = data.get("records", [])
         random.shuffle(recs)  # random selection
         target_res_s  = CONFIG.get("sonarr_upgrade_target_resolution","") or CONFIG.get("upgrade_target_resolution","")
@@ -1435,7 +1435,7 @@ def hunt_radarr_instance(inst: dict):
 
     # ── Upgrades ──
     try:
-        data  = client.get("wanted/cutoff", params={"pageSize":500})
+        data  = client.get("wanted/cutoff", params={"pageSize":2000})
         recs  = data.get("records", [])
         random.shuffle(recs)  # random selection
         stats["upgrades_found"] = int(data.get("totalRecords", len(recs)))
