@@ -644,6 +644,8 @@ DEFAULT_CONFIG = {
     # Searches are paused while local time is within any window.
     "maintenance_windows": [],
     # Rotating log file settings
+    "tag_enabled":  False,  # add a tag to searched items in Sonarr/Radarr
+    "tag_label":    "mediastarr",  # tag label to create/use
     "log_max_mb":    5,    # max size per log file in MB (1–100)
     "log_backups":   2,    # number of backup files to keep (0–10)
     "log_min_level": "INFO",  # minimum level for Docker/file log: DEBUG|INFO|WARN|ERROR
@@ -671,6 +673,7 @@ def _migrate_config(cfg: dict) -> dict:
         if "daily_limit"      not in inst: inst["daily_limit"]      = 0
         if "type"             not in inst: inst["type"]             = "sonarr"
         if "search_upgrades"  not in inst: inst["search_upgrades"]  = False
+        if "tag_enabled"      not in inst: inst["tag_enabled"]      = None   # None = use global
     return cfg
 
 def load_config() -> dict:
@@ -880,6 +883,11 @@ class ArrClient:
                           json=data, timeout=self._timeout())
         r.raise_for_status(); return r.json()
 
+    def put(self, path, data=None):
+        r = requests.put(f"{self.url}/api/v3/{path}", headers=self._h,
+                         json=data, timeout=self._timeout())
+        r.raise_for_status(); return r.json()
+
     def ping(self):
         try:
             d = self.get("system/status")
@@ -1034,6 +1042,49 @@ def _movie_is_released(movie: dict) -> bool:
     dt = _pick_release_dt(movie, "digitalRelease", "physicalRelease", "inCinemas", "releaseDate")
     return _is_released(dt)
 
+# ── Tagging helpers ──────────────────────────────────────────────────────────
+def _ensure_tag(client: ArrClient, label: str) -> int | None:
+    """Return the tag ID for `label`, creating it if necessary. Returns None on error."""
+    label = label.strip().lower()
+    if not label: return None
+    try:
+        tags = client.get("tag")
+        for t in tags:
+            if t.get("label","").lower() == label:
+                return int(t["id"])
+        created = client.post("tag", {"label": label})
+        return int(created["id"])
+    except Exception as e:
+        logger.warning(f"Tag ensure failed for '{label}': {e}")
+        return None
+
+def _apply_tag(client: ArrClient, inst_type: str, item_id: int,
+               item_data: dict | None, tag_id: int) -> None:
+    """Add tag_id to the series (Sonarr) or movie (Radarr) if not already present."""
+    try:
+        if inst_type == "sonarr":
+            # Tags live on the series, not on individual episodes
+            series_id = None
+            if item_data:
+                series_id = (item_data.get("series",{}).get("id")
+                             or item_data.get("seriesId"))
+            if not series_id: return
+            series = client.get(f"series/{series_id}")
+            existing = series.get("tags", [])
+            if tag_id in existing: return  # already tagged
+            series["tags"] = existing + [tag_id]
+            client.put(f"series/{series_id}", series)
+            logger.debug(f"Tagged series {series_id} with tag {tag_id}")
+        else:  # radarr
+            movie = client.get(f"movie/{item_id}")
+            existing = movie.get("tags", [])
+            if tag_id in existing: return
+            movie["tags"] = existing + [tag_id]
+            client.put(f"movie/{item_id}", movie)
+            logger.debug(f"Tagged movie {item_id} with tag {tag_id}")
+    except Exception as e:
+        logger.warning(f"Tag apply failed (type={inst_type} id={item_id}): {e}")
+
 def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
               title: str, command: dict, changed=None, year=None,
               item_data: dict | None = None):
@@ -1041,6 +1092,17 @@ def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
     result = "dry_run" if CONFIG["dry_run"] else "triggered"
     if not CONFIG["dry_run"]: client.post("command", command)
     db.upsert_search(iid, item_type, item_id, title, result, changed, year)
+    # ── Tagging ──────────────────────────────────────────────────────────────
+    if not CONFIG.get("dry_run"):
+        inst_cfg  = next((i for i in CONFIG["instances"] if i["id"] == iid), {})
+        inst_tag  = inst_cfg.get("tag_enabled")  # None = use global
+        tag_on    = CONFIG.get("tag_enabled", False) if inst_tag is None else inst_tag
+        if tag_on:
+            _label  = safe_str(CONFIG.get("tag_label","mediastarr").strip() or "mediastarr", 50)
+            _itype  = inst_cfg.get("type","sonarr")
+            tag_id  = _ensure_tag(client, _label)
+            if tag_id is not None:
+                _apply_tag(client, _itype, item_id, item_data, tag_id)
 
     # ── Rich Discord notification ─────────────────────────────────────────────
     inst      = next((i for i in CONFIG["instances"] if i["id"] == iid), {})
@@ -1847,6 +1909,9 @@ def api_instances_update(inst_id:str):
         inst["api_key"] = key
     if "enabled" in d: inst["enabled"] = bool(d["enabled"])
     if "search_upgrades" in d: inst["search_upgrades"] = bool(d["search_upgrades"])
+    if "tag_enabled"     in d:
+        v = d.get("tag_enabled")
+        inst["tag_enabled"] = None if v is None else bool(v)  # None=use global
     if "daily_limit" in d:
         inst["daily_limit"] = clamp_int(int(d.get("daily_limit", 0) or 0), 0, 9999, 0)
     log_act("System", "Config gespeichert" if CONFIG.get("language","en")=="de" else "Config saved", "", "info")
@@ -1916,6 +1981,8 @@ def api_state():
             "update_available":           is_update_available(),
             "latest_version":             _version_cache.get("latest",""),
             "search_upgrades":      CONFIG.get("search_upgrades",True),
+            "tag_enabled":          CONFIG.get("tag_enabled", False),
+            "tag_label":            CONFIG.get("tag_label", "mediastarr"),
             "dry_run":              CONFIG["dry_run"],
             "language":             CONFIG["language"],
             "theme":                CONFIG.get("theme","dark"),
@@ -1975,6 +2042,10 @@ def api_config():
     if "dry_run"         in d: CONFIG["dry_run"]         = bool(d["dry_run"])
     if "auto_start"      in d: CONFIG["auto_start"]      = bool(d["auto_start"])
     if "search_upgrades" in d: CONFIG["search_upgrades"] = bool(d["search_upgrades"])
+    if "tag_enabled"     in d: CONFIG["tag_enabled"]     = bool(d["tag_enabled"])
+    if "tag_label"       in d:
+        _lbl = safe_str(str(d.get("tag_label","mediastarr")).strip(), 50)
+        CONFIG["tag_label"] = _lbl if _lbl else "mediastarr"
     mode = safe_str(d.get("sonarr_search_mode",""), 10)
     if mode in ALLOWED_SONARR_MODES: CONFIG["sonarr_search_mode"] = mode
     if "imdb_min_rating" in d:

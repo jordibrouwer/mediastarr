@@ -680,6 +680,22 @@
           <!-- Auto-save indicator — shows brief confirmation after any change -->
           <div id="autosave-indicator" style="margin-top:8px;font-size:11px;color:var(--green);min-height:18px;transition:opacity .3s"></div>
 
+          <!-- ── Tagging ── -->
+          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_tagging">Tagging</div>
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:10px" data-i18n="hint_tagging">Fügt verarbeiteten Serien/Filmen einen Tag hinzu, damit du in Sonarr/Radarr sehen kannst, welche Einträge Mediastarr bereits durchsucht hat.</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <div class="toggle" id="tog-tag-global" onclick="toggleTagGlobal()"></div>
+              <span class="toggle-label" id="lab-tag-global">Aus</span>
+              <span style="font-size:11px;color:var(--muted2)" data-i18n="lbl_tag_enabled">Tags aktivieren (global)</span>
+            </div>
+            <div class="form-group" style="max-width:300px">
+              <label class="form-label" data-i18n="lbl_tag_label">Tag-Name</label>
+              <input class="form-input" id="cfg-tag-label" type="text" maxlength="50" value="mediastarr" placeholder="mediastarr">
+              <div class="form-hint" data-i18n="hint_tag_label">Wird in Sonarr/Radarr angelegt falls nicht vorhanden. Standard: mediastarr</div>
+            </div>
+          </div>
+
           <!-- ── Log Rotation ── -->
           <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_log_rotation">Log-Rotation</div>
@@ -1788,6 +1804,11 @@ const T = {
         lbl_max:'Max. Searches pro Lauf', lbl_daily:'Tageslimit (0 = unbegrenzt)',
         lbl_cooldown:'Cooldown (Tage)', lbl_timeout:'API Timeout (s)',
         lbl_search_behavior:'Suchverhalten', lbl_sonarr_mode:'Sonarr Suchmodus',
+        lbl_tagging:'Tagging',
+        hint_tagging:'Fügt verarbeiteten Serien/Filmen einen Tag hinzu, damit du in Sonarr/Radarr sehen kannst, welche Einträge Mediastarr bereits durchsucht hat.',
+        lbl_tag_enabled:'Tags aktivieren (global)',
+        lbl_tag_label:'Tag-Name',
+        hint_tag_label:'Wird in Sonarr/Radarr angelegt falls nicht vorhanden. Standard: mediastarr',
         lbl_sonarr_behavior:'📺 Sonarr — Suchverhalten',
         lbl_sonarr_global_limit:'Sonarr Tageslimit gesamt (0 = ∞)',
         hint_sonarr_global_limit:'Max. Suchen/Tag über alle Sonarr-Instanzen. Instanz-Limits gelten zusätzlich.',
@@ -1875,6 +1896,11 @@ const T = {
         lbl_max:'Max searches per run', lbl_daily:'Daily limit (0 = unlimited)',
         lbl_cooldown:'Cooldown (days)', lbl_timeout:'API timeout (s)',
         lbl_search_behavior:'Search behavior', lbl_sonarr_mode:'Sonarr search mode',
+        lbl_tagging:'Tagging',
+        hint_tagging:'Adds a tag to processed series/movies so you can see in Sonarr/Radarr which items Mediastarr has already searched.',
+        lbl_tag_enabled:'Enable tagging (global)',
+        lbl_tag_label:'Tag name',
+        hint_tag_label:'Created in Sonarr/Radarr if it does not exist. Default: mediastarr',
         lbl_sonarr_behavior:'📺 Sonarr — Search behavior',
         lbl_sonarr_global_limit:'Sonarr global daily limit (0 = ∞)',
         hint_sonarr_global_limit:'Max searches/day across all Sonarr instances. Per-instance limits apply additionally.',
@@ -2261,7 +2287,15 @@ function updateUI() {
     if (togSU) togSU.className = 'toggle' + (_skipUpcoming ? ' on' : '');
     if (labSU) labSU.textContent = t(_skipUpcoming ? 'on' : 'off');
     // Sync log rotation settings
-    if (c.sonarr_daily_limit != null) { const el2=document.getElementById('cfg-sonarr-daily-limit'); if(el2) el2.value=c.sonarr_daily_limit; }
+    // Sync tag settings
+  if (c.tag_enabled !== undefined) {
+    const tog = document.getElementById('tog-tag-global');
+    const lab = document.getElementById('lab-tag-global');
+    if (tog) tog.className = 'toggle' + (c.tag_enabled?' on':'');
+    if (lab) lab.textContent = t(c.tag_enabled?'on':'off');
+  }
+  if (c.tag_label) { const e=document.getElementById('cfg-tag-label'); if(e) e.value=c.tag_label; }
+  if (c.sonarr_daily_limit != null) { const el2=document.getElementById('cfg-sonarr-daily-limit'); if(el2) el2.value=c.sonarr_daily_limit; }
   if (c.radarr_daily_limit != null) { const el2=document.getElementById('cfg-radarr-daily-limit'); if(el2) el2.value=c.radarr_daily_limit; }
   if (c.log_min_level) {
     const sel = el('cfg-log-min-level'); if (sel) sel.value = c.log_min_level;
@@ -2527,6 +2561,8 @@ async function saveConfig() {
     sonarr_daily_limit:   getInt('cfg-sonarr-daily-limit', 0),
     radarr_daily_limit:   getInt('cfg-radarr-daily-limit', 0),
     search_upgrades:      toggleStates2.upgrades,
+    tag_enabled:          document.getElementById('tog-tag-global')?.classList.contains('on') ?? false,
+    tag_label:            document.getElementById('cfg-tag-label')?.value?.trim() || 'mediastarr',
     timezone:             (el('cfg-timezone')?.value && el('cfg-timezone').value !== 'UTC' ? el('cfg-timezone').value : el('cfg-timezone-search')?.value) || el('cfg-timezone')?.value || 'UTC',
     dry_run:              toggleStates.dry,
     theme:                currentTheme,
@@ -2746,6 +2782,13 @@ function renderSettingsInstances(type) {
             <span style="font-size:10px;color:var(--muted);margin-left:4px">${isDE4 ? '(globales Limit gilt nicht)' : '(global limit ignored)'}</span>
             <span style="font-size:10px;color:var(--muted)" id="tog-upg-lab-${inst.id}">${inst.search_upgrades ? (isDE4?'An':'On') : (isDE4?'Aus':'Off')}</span>
           </div>
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            <div class="toggle ${inst.tag_enabled===true?'on':''}" id="tog-tag-${inst.id}"
+              onclick="toggleInstTag('${inst.id}')" title="${isDE4?'Klicken zum Wechsel: Global → An → Aus':'Click to cycle: Global → On → Off'}"></div>
+            <span style="font-size:11px;color:var(--muted2)">${isDE4 ? 'Tagging' : 'Tagging'}</span>
+            <span style="font-size:10px;color:var(--muted)" id="tog-tag-lab-${inst.id}">${inst.tag_enabled===null?(isDE4?'Global':'Global'):inst.tag_enabled?(isDE4?'An':'On'):(isDE4?'Aus':'Off')}</span>
+            <span style="font-size:10px;color:var(--muted2);margin-left:2px">${isDE4?'(Global/An/Aus)':'(Global/On/Off)'}</span>
+          </div>
         </div>
         <div style="display:flex;gap:7px;align-items:center">
           <button class="btn btn-now" style="font-size:11px" onclick="pingInstSave('${inst.id}')">🔌 Test</button>
@@ -2857,6 +2900,36 @@ async function saveInst(id) {
     if (d.ok) setTimeout(() => { msg.style.display='none'; }, 2500);
   }
   if (d.ok) { fetchState(); setTimeout(renderSettingsInstances, 400); }
+}
+
+// ── Global tag toggle ─────────────────────────────────────────────────────
+function toggleTagGlobal() {
+  const isOn = document.getElementById('tog-tag-global')?.classList.contains('on');
+  const newVal = !isOn;
+  const tog = document.getElementById('tog-tag-global');
+  const lab = document.getElementById('lab-tag-global');
+  if (tog) tog.className = 'toggle' + (newVal?' on':'');
+  if (lab) lab.textContent = t(newVal?'on':'off');
+  _markDirty();
+}
+
+// ── Per-instance tag toggle (3-state: null→true→false→null) ──────────────
+async function toggleInstTag(id) {
+  const inst = (appState.instances||[]).find(i=>i.id===id);
+  if (!inst) return;
+  // Cycle: null (global) → true (on) → false (off) → null
+  const cur = inst.tag_enabled;
+  const newVal = cur === null ? true : cur === true ? false : null;
+  inst.tag_enabled = newVal;
+  const tog = document.getElementById(`tog-tag-${id}`);
+  const lab = document.getElementById(`tog-tag-lab-${id}`);
+  if (tog) tog.className = 'toggle' + (newVal===true?' on':'');
+  if (lab) lab.textContent = newVal===null?(currentLang==='de'?'Global':'Global'):newVal?(currentLang==='de'?'An':'On'):(currentLang==='de'?'Aus':'Off');
+  try {
+    await fetch(`/api/instances/${id}`, {method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({tag_enabled: newVal})});
+  } catch(e) { MSLog.error('toggleInstTag', e); }
 }
 
 async function toggleInstUpgrades(id) {

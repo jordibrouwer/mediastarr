@@ -1,5 +1,22 @@
 # Changelog
 
+## [v7.0.4] — 2026-03-27
+
+### Added
+- **Feature #36 — Tagging** — after each successful search, Mediastarr optionally adds a tag to the item in Sonarr/Radarr so you can see which entries it has already processed:
+  - **Global toggle + label** in Settings → General → Tagging: enable/disable for all instances; configure the tag name (default: `mediastarr`); tag is created in each Sonarr/Radarr instance automatically if it does not exist
+  - **Per-instance override** in each instance card: three states — `Global` (inherit global setting), `On` (always tag), `Off` (never tag); click to cycle through states
+  - For Sonarr: the tag is applied to the **series** (tags live on series level in Sonarr, not on episodes)
+  - For Radarr: the tag is applied to the **movie**
+  - Tag is never applied in Dry Run mode
+  - `_ensure_tag(client, label)` creates the tag if missing, returns existing ID if already present — idempotent
+  - `_apply_tag(client, inst_type, item_id, item_data, tag_id)` adds tag only if not already present — no duplicate tags
+  - `ArrClient.put()` method added for series/movie update calls
+  - Default: **off** (global and per-instance)
+
+### Changed
+- **API page size increased 500 → 2000** — `wanted/missing` and `wanted/cutoff` now request up to 2000 records per call so large libraries are fully covered
+
 ## [v7.0.3] — 2026-03-26
 
 ### Fixed
