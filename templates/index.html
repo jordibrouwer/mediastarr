@@ -960,6 +960,19 @@
               <span style="color:#5865f2">🔒</span>
               <span id="dc-hint-url-text">Niemals in API-Antworten oder Logs zurückgegeben.</span>
             </div>
+            <!-- Sonarr-only webhook (optional) -->
+            <div class="form-group" style="margin-top:8px">
+              <label class="form-label" data-i18n="lbl_dc_url_sonarr">📺 Sonarr-Webhook (optional)</label>
+              <input class="form-input" id="dc-url-sonarr" type="password" placeholder="https://discord.com/api/webhooks/… (leer = globaler Webhook)" style="border-color:rgba(77,156,255,.3)" autocomplete="off" oninput="_autosaveDc()">
+              <div class="form-hint" data-i18n="hint_dc_url_sonarr">Separater Webhook nur für Sonarr-Events. Leer = globalen Webhook verwenden.</div>
+            </div>
+            <!-- Radarr-only webhook (optional) -->
+            <div class="form-group" style="margin-top:4px">
+              <label class="form-label" data-i18n="lbl_dc_url_radarr">🎬 Radarr-Webhook (optional)</label>
+              <input class="form-input" id="dc-url-radarr" type="password" placeholder="https://discord.com/api/webhooks/… (leer = globaler Webhook)" style="border-color:rgba(255,107,43,.3)" autocomplete="off" oninput="_autosaveDc()">
+              <div class="form-hint" data-i18n="hint_dc_url_radarr">Separater Webhook nur für Radarr-Events. Leer = globalen Webhook verwenden.</div>
+            </div>
+
           </div>
 
           <!-- ④ Event toggles — richer cards -->
@@ -1312,6 +1325,11 @@
               <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, Discord embed fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Huntarr comparison text, homepage badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console dual-output fix, startup version fix, per-instance upgrade toggle, improved logging, mobile language selector, help page redesign, stats layout fix</li>
+              <li>✅ <strong>v7.0.5</strong> — Tag chips persist (no re-render on poll), tag filter per instance (#37), separate Discord webhooks (#38), webhook trigger endpoint, log spam fix, Chrome flag emoji fix</li>
+              <li>✅ <strong>v7.0.4</strong> — Feature #36: tagging (global + per-instance), page size 500→2000</li>
+              <li>✅ <strong>v7.0.3</strong> — Bug #33/#34/#35 upgrades/toggles/Discord, settings revert fix, season dedup, 10-field sync</li>
+              <li>✅ <strong>v7.0.2</strong> — Skip items no longer consume slots; should_search() key fix</li>
+              <li>✅ <strong>v7.0.1</strong> — EN translations, jitter in minutes, per-type global daily limits</li>
               <li>✅ <strong>v7.0.0</strong> — Structured logging system: <code>ms_log()</code> / <code>MSLog v2</code> with configurable DEBUG/INFO/WARN/ERROR, Docker format <code>[DATE TIME] [LEVEL] msg</code>, Settings UI</li>
             </ul>
             <h4>Planned</h4>
@@ -1336,6 +1354,11 @@
               <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Discord-Embed-Fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Huntarr-Vergleichstext, Homepage-Badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console-Dual-Output-Fix, Startup-Version-Fix, Upgrades pro Instanz, verbessertes Logging, Mobile Sprachauswahl, Hilfe-Seiten-Redesign, Statistik-Layout-Fix</li>
+              <li>✅ <strong>v7.0.5</strong> — Tag-Chips bleiben beim Poll erhalten, Tag-Filter pro Instanz (#37), separate Discord-Webhooks (#38), Webhook-Trigger, Log-Spam-Fix, Chrome Flag-Emoji-Fix</li>
+              <li>✅ <strong>v7.0.4</strong> — Feature #36: Tagging (global + pro Instanz), Seitengröße 500→2000</li>
+              <li>✅ <strong>v7.0.3</strong> — Bug #33/#34/#35 Upgrades/Toggles/Discord, Einstellungen-Revert-Fix, Staffel-Dedup, 10-Felder-Sync</li>
+              <li>✅ <strong>v7.0.2</strong> — Übersprungene Items zählen nicht gegen Suchslots</li>
+              <li>✅ <strong>v7.0.1</strong> — EN-Übersetzungen, Jitter in Minuten, globale Tageslimits pro Typ</li>
               <li>✅ <strong>v7.0.0</strong> — Strukturiertes Logging: <code>ms_log()</code> / <code>MSLog v2</code>, konfigurierbares DEBUG/INFO/WARN/ERROR, Docker-Format <code>[DATUM UHRZEIT] [LEVEL] Nachricht</code>, Einstellungen-UI</li>
             </ul>
             <h4>Geplant</h4>
@@ -1405,6 +1428,44 @@
 <h3>📋 Changelog</h3>
           <div class="help-en">
 
+            <h4>v7.0.5 — 2026-03-30</h4>
+            <ul>
+              <li><strong>Fix</strong> — Tag toggle and tag chips no longer reset every 4 seconds; instance cards are no longer re-rendered on each poll cycle — only on tab open or after save/add/delete</li>
+              <li><strong>Fix</strong> — Tag global toggle now correctly persists via <code>_tagGlobalEnabled</code> variable (was reading stale DOM class)</li>
+              <li><strong>Add</strong> — Feature #37: per-instance tag filter — load tags from Sonarr/Radarr, select one or more, only matching items are searched</li>
+              <li><strong>Add</strong> — Feature #38: separate Discord webhooks for Sonarr and Radarr (optional, falls back to main webhook)</li>
+              <li><strong>Add</strong> — Webhook trigger endpoint <code>POST /api/webhook/trigger</code> for external automation</li>
+              <li><strong>Fix</strong> — Log rotation spam (#39): only reconfigures when values actually change</li>
+              <li><strong>Fix</strong> — Radarr/Sonarr add form pre-filled with default name (#40)</li>
+              <li><strong>Fix</strong> — Flag emojis replaced with CSS badges for Chrome on Windows</li>
+              <li><strong>Fix</strong> — Discord tab now shows 💬 emoji</li>
+              <li><strong>Add</strong> — README: full API reference table (EN + DE)</li>
+            </ul>
+            <h4>v7.0.4 — 2026-03-27</h4>
+            <ul>
+              <li><strong>Add</strong> — Feature #36: tagging — after each search, Mediastarr adds a configurable tag to the series/movie in Sonarr/Radarr; global toggle + per-instance 3-state override (Global/On/Off)</li>
+              <li><strong>Fix</strong> — Page size increased 500 → 2000 for <code>wanted/missing</code> and <code>wanted/cutoff</code></li>
+            </ul>
+            <h4>v7.0.3 — 2026-03-26</h4>
+            <ul>
+              <li><strong>Fix</strong> — Bug #33: upgrade search never ran (global + per-instance toggle logic fixed)</li>
+              <li><strong>Fix</strong> — Bug #34: per-instance upgrade toggle not saved to config</li>
+              <li><strong>Fix</strong> — Bug #35: Discord toggles reverted on general settings save</li>
+              <li><strong>Fix</strong> — Settings reverted every 4 seconds (<code>_configDirty</code> guard added)</li>
+              <li><strong>Fix</strong> — 10 settings fields not synced back to DOM after poll</li>
+              <li><strong>Fix</strong> — Season/Series mode: eliminated duplicate SeasonSearch/SeriesSearch per cycle</li>
+              <li><strong>Fix</strong> — Upgrades now respect the configured search mode</li>
+            </ul>
+            <h4>v7.0.2 — 2026-03-26</h4>
+            <ul>
+              <li><strong>Fix</strong> — Skip items no longer counted against search slots; <code>should_search()</code> reason key mismatch fixed (<code>"daily_limit"</code> → <code>"daily"</code>)</li>
+            </ul>
+            <h4>v7.0.1 — 2026-03-26</h4>
+            <ul>
+              <li><strong>Fix</strong> — Missing EN translations in Sonarr/Radarr tabs; log level dropdown; jitter changed to minutes</li>
+              <li><strong>Add</strong> — Per-type global daily limit (Sonarr + Radarr separately)</li>
+            </ul>
+
             <h4>v7.0.0 — 2026-03-26</h4>
             <ul>
               <li><strong>Logging-System</strong> — <code>ms_log(level, service, action, item)</code>: schreibt in Docker-Console, Logdatei und UI-Aktivitätslog</li>
@@ -1464,6 +1525,40 @@
 
           </div>
           <div class="help-de">
+            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.5</strong> <em style="color:var(--muted)">2026-03-30</em>
+              <ul>
+                <li><strong>Fix</strong> — Tag-Toggle und Tag-Chips werden nicht mehr alle 4 Sekunden zurückgesetzt; Instanz-Karten nur noch beim Tab-Wechsel neu gerendert</li>
+                <li><strong>Fix</strong> — Globaler Tag-Toggle persistiert jetzt korrekt über <code>_tagGlobalEnabled</code></li>
+                <li><strong>Add</strong> — Feature #37: Tag-Filter pro Instanz (Multi-Select aus Sonarr/Radarr-Tags)</li>
+                <li><strong>Add</strong> — Feature #38: Separate Discord-Webhooks für Sonarr und Radarr</li>
+                <li><strong>Add</strong> — Webhook-Trigger <code>POST /api/webhook/trigger</code></li>
+                <li><strong>Fix</strong> — Log-Rotation-Spam (#39), Standard-Namen in Add-Formular (#40), Sprachschalter-Emojis</li>
+              </ul>
+            </div>
+            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.4</strong> <em style="color:var(--muted)">2026-03-27</em>
+              <ul>
+                <li><strong>Add</strong> — Feature #36: Tagging (global + 3-Zustands-Override pro Instanz: Global/An/Aus)</li>
+                <li><strong>Fix</strong> — Seitengröße 500 → 2000</li>
+              </ul>
+            </div>
+            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.3</strong> <em style="color:var(--muted)">2026-03-26</em>
+              <ul>
+                <li><strong>Fix</strong> — Bug #33/#34/#35: Upgrade-Suche, per-Instanz Toggle, Discord-Revert</li>
+                <li><strong>Fix</strong> — Einstellungen-Revert alle 4 Sekunden; 10 Felder nicht zurück ins DOM geschrieben</li>
+                <li><strong>Fix</strong> — Staffel/Serien-Modus: keine doppelten SeasonSearch/SeriesSearch mehr</li>
+              </ul>
+            </div>
+            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.2</strong> <em style="color:var(--muted)">2026-03-26</em>
+              <ul>
+                <li><strong>Fix</strong> — Übersprungene Items zählen nicht gegen Suchslots; <code>should_search()</code> Key-Fehler</li>
+              </ul>
+            </div>
+            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.1</strong> <em style="color:var(--muted)">2026-03-26</em>
+              <ul>
+                <li><strong>Fix</strong> — Fehlende EN-Übersetzungen; Jitter auf Minuten umgestellt</li>
+                <li><strong>Add</strong> — Globales Tageslimit pro Typ (Sonarr/Radarr)</li>
+              </ul>
+            </div>
             <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.0</strong> <em style="color:var(--muted)">2026-03-26</em>
               <ul>
                 <li>Strukturiertes Logging-System: zentrales <code>ms_log(level, service, action, item)</code> schreibt in Docker-Console, Logdatei UND das UI-Aktivitätslog gleichzeitig</li>
@@ -1825,6 +1920,10 @@ const T = {
         lbl_tag_enabled:'Tags aktivieren (global)',
         lbl_tag_label:'Tag-Name',
         hint_tag_label:'Wird in Sonarr/Radarr angelegt falls nicht vorhanden. Standard: mediastarr',
+        lbl_dc_url_sonarr:'📺 Sonarr-Webhook (optional)',
+        hint_dc_url_sonarr:'Separater Webhook nur für Sonarr-Events. Leer = globalen Webhook verwenden.',
+        lbl_dc_url_radarr:'🎬 Radarr-Webhook (optional)',
+        hint_dc_url_radarr:'Separater Webhook nur für Radarr-Events. Leer = globalen Webhook verwenden.',
         lbl_sonarr_behavior:'📺 Sonarr — Suchverhalten',
         lbl_sonarr_global_limit:'Sonarr Tageslimit gesamt (0 = ∞)',
         hint_sonarr_global_limit:'Max. Suchen/Tag über alle Sonarr-Instanzen. Instanz-Limits gelten zusätzlich.',
@@ -1917,6 +2016,10 @@ const T = {
         lbl_tag_enabled:'Enable tagging (global)',
         lbl_tag_label:'Tag name',
         hint_tag_label:'Created in Sonarr/Radarr if it does not exist. Default: mediastarr',
+        lbl_dc_url_sonarr:'📺 Sonarr webhook (optional)',
+        hint_dc_url_sonarr:'Separate webhook for Sonarr events only. Empty = use global webhook.',
+        lbl_dc_url_radarr:'🎬 Radarr webhook (optional)',
+        hint_dc_url_radarr:'Separate webhook for Radarr events only. Empty = use global webhook.',
         lbl_sonarr_behavior:'📺 Sonarr — Search behavior',
         lbl_sonarr_global_limit:'Sonarr global daily limit (0 = ∞)',
         hint_sonarr_global_limit:'Max searches/day across all Sonarr instances. Per-instance limits apply additionally.',
@@ -2224,9 +2327,11 @@ async function fetchState() {
     appState = await r.json();
     MSLog.trace('fetchState ok, running=', appState.running);
     updateUI();
-    // Re-render instances if a type tab is currently visible
-    if (document.getElementById('tab-sonarr')?.classList.contains('active')) renderSettingsInstances('sonarr');
-    if (document.getElementById('tab-radarr')?.classList.contains('active')) renderSettingsInstances('radarr');
+    // NOTE: instance cards are NOT re-rendered on every poll to preserve
+    // user interactions (open tag chip selectors, unsaved fields, etc.).
+    // Cards re-render only on switchTab() and after save/add/delete actions.
+    // Sync instance toggle states without rebuilding the DOM:
+    _syncInstToggles();
   } catch(e) { MSLog.warn('fetchState failed', e); }
 }
 
@@ -2412,14 +2517,14 @@ function updateUI() {
       if (rlEl && document.activeElement !== rlEl && c_always.discord.rate_limit_cooldown != null)
         rlEl.value = c_always.discord.rate_limit_cooldown;
     }
-    if (c_always.tag_enabled !== undefined) {
+    if (!_configDirty && c_always.tag_enabled !== undefined) {
       _tagGlobalEnabled = !!c_always.tag_enabled;
       const tog = document.getElementById('tog-tag-global');
       const lab = document.getElementById('lab-tag-global');
       if (tog) tog.className = 'toggle' + (_tagGlobalEnabled?' on':'');
       if (lab) lab.textContent = t(_tagGlobalEnabled?'on':'off');
     }
-    if (c_always.tag_label) { const e=document.getElementById('cfg-tag-label'); if(e) e.value=c_always.tag_label; }
+    if (!_configDirty && c_always.tag_label) { const e=document.getElementById('cfg-tag-label'); if(e) e.value=c_always.tag_label; }
   }
 
 
@@ -2491,6 +2596,10 @@ function renderInstanceCards(instances, instStats) {
         </div>
       </div>`;
   }).join('');
+  // Auto-load available tags for each instance
+  setTimeout(() => {
+    (appState.instances||[]).forEach(inst => loadInstTags(inst.id));
+  }, 100);
 }
 
 function renderLog(entries, containerId) {
@@ -2817,6 +2926,16 @@ function renderSettingsInstances(type) {
             <span style="font-size:10px;color:var(--muted)" id="tog-tag-lab-${inst.id}">${inst.tag_enabled===null?(isDE4?'Global':'Global'):inst.tag_enabled?(isDE4?'An':'On'):(isDE4?'Aus':'Off')}</span>
             <span style="font-size:10px;color:var(--muted2);margin-left:2px">${isDE4?'(Global/An/Aus)':'(Global/On/Off)'}</span>
           </div>
+          <!-- Tag filter: multi-select loaded from instance -->
+          <div class="form-group" style="margin-top:6px" id="tag-filter-group-${inst.id}">
+            <label class="form-label" style="font-size:10px">${isDE4?'Tag-Filter (leer = alle)':'Tag filter (empty = all)'}</label>
+            <select multiple id="tag-filter-${inst.id}" size="3"
+              style="width:100%;font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px;color:var(--text)"
+              onchange="saveInstTagFilter('${inst.id}')">
+              <option value="" disabled>${isDE4?'⏳ Lade Tags…':'⏳ Loading tags…'}</option>
+            </select>
+            <div class="form-hint">${isDE4?'Tags aus Radarr/Sonarr. Nur Elemente mit gewähltem Tag werden durchsucht.':'Tags from Radarr/Sonarr. Only items with selected tag(s) are searched.'}</div>
+          </div>
           <!-- Tag filter -->
           <div class="form-group" style="margin-top:4px">
             <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">
@@ -2941,6 +3060,29 @@ async function saveInst(id) {
   if (d.ok) { fetchState(); setTimeout(renderSettingsInstances, 400); }
 }
 
+// Sync per-instance toggle DOM without rebuilding cards
+function _syncInstToggles() {
+  const insts = appState.instances || [];
+  insts.forEach(inst => {
+    const id = inst.id;
+    // Upgrade toggle
+    const togUpg = document.getElementById(`tog-upg-${id}`);
+    const labUpg = document.getElementById(`tog-upg-lab-${id}`);
+    if (togUpg) togUpg.className = 'toggle' + (inst.search_upgrades?' on':'');
+    if (labUpg) labUpg.textContent = inst.search_upgrades?(currentLang==='de'?'An':'On'):(currentLang==='de'?'Aus':'Off');
+    // Tag toggle
+    const togTag = document.getElementById(`tog-tag-${id}`);
+    const labTag = document.getElementById(`tog-tag-lab-${id}`);
+    if (togTag) togTag.className = 'toggle' + (inst.tag_enabled===true?' on':'');
+    if (labTag) labTag.textContent = inst.tag_enabled===null?(currentLang==='de'?'Global':'Global'):inst.tag_enabled?(currentLang==='de'?'An':'On'):(currentLang==='de'?'Aus':'Off');
+    // Enabled toggle (instance card header)
+    const togEn = document.getElementById(`tog-en-${id}`);
+    const labEn = document.getElementById(`tog-en-lab-${id}`);
+    if (togEn) togEn.className = 'toggle' + ((inst.enabled!==false)?' on':'');
+    if (labEn) labEn.textContent = (inst.enabled!==false)?(currentLang==='de'?'An':'On'):(currentLang==='de'?'Aus':'Off');
+  });
+}
+
 // ── Global tag toggle ─────────────────────────────────────────────────────
 function toggleTagGlobal() {
   _tagGlobalEnabled = !_tagGlobalEnabled;
@@ -2992,6 +3134,22 @@ async function toggleTagFilter(el, instId, tagId) {
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({tag_filter:inst.tag_filter})});
   } catch(e){ MSLog.error("toggleTagFilter",e); }
+}
+
+// ── Load available tags from instance and mark selected ones ──────────────
+
+
+async function saveInstTagFilter(id) {
+  const sel = document.getElementById(`tag-filter-${id}`);
+  if (!sel) return;
+  const selected = Array.from(sel.selectedOptions).map(o=>parseInt(o.value)).filter(v=>!isNaN(v));
+  const inst = (appState.instances||[]).find(i=>i.id===id);
+  if (inst) inst.tag_filter_ids = selected;
+  try {
+    await fetch(`/api/instances/${id}`,{method:"PATCH",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({tag_filter_ids:selected})});
+  } catch(e) { MSLog.error("saveInstTagFilter", e); }
 }
 
 async function toggleInstTag(id) {
@@ -3499,6 +3657,12 @@ async function saveDc() {
     }
   };
   if (url) body.discord.webhook_url = url;
+  const urlSonarr = document.getElementById('dc-url-sonarr')?.value?.trim() || '';
+  const urlRadarr = document.getElementById('dc-url-radarr')?.value?.trim() || '';
+  if (urlSonarr) body.discord.webhook_url_sonarr = urlSonarr;
+  else body.discord.webhook_url_sonarr = '';  // empty = clear
+  if (urlRadarr) body.discord.webhook_url_radarr = urlRadarr;
+  else body.discord.webhook_url_radarr = '';  // empty = clear
   const sonarrUrl = document.getElementById('dc-sonarr-url')?.value?.trim();
   const radarrUrl = document.getElementById('dc-radarr-url')?.value?.trim();
   body.discord.sonarr_webhook_url = sonarrUrl || '';

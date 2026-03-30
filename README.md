@@ -147,7 +147,7 @@ All endpoints require authentication if a password is configured (header `X-Api-
 | `POST` | `/api/config/import` | Import config from JSON |
 | `GET` | `/api/instances` | List all configured instances |
 | `POST` | `/api/instances` | Add a new instance — body: `{"type":"sonarr","name":"…","url":"…","api_key":"…"}` |
-| `PATCH` | `/api/instances/<id>` | Update instance fields (name, url, api_key, enabled, daily_limit, search_upgrades, tag_enabled, tag_filter) |
+| `PATCH` | `/api/instances/<id>` | Update instance fields (name, url, api_key, enabled, daily_limit, search_upgrades, tag_enabled, tag_filter_ids) |
 | `DELETE` | `/api/instances/<id>` | Remove an instance |
 | `GET` | `/api/instances/<id>/ping` | Test connectivity to a Sonarr/Radarr instance |
 | `GET` | `/api/instances/<id>/tags` | Fetch available tags from the instance (for tag-filter UI) |
@@ -181,7 +181,7 @@ Alle Endpunkte erfordern Authentifizierung wenn ein Passwort konfiguriert ist (H
 | `POST` | `/api/config/import` | Konfiguration aus JSON importieren |
 | `GET` | `/api/instances` | Alle konfigurierten Instanzen auflisten |
 | `POST` | `/api/instances` | Neue Instanz hinzufügen — Body: `{"type":"sonarr","name":"…","url":"…","api_key":"…"}` |
-| `PATCH` | `/api/instances/<id>` | Instanzfelder aktualisieren (name, url, api_key, enabled, daily_limit, search_upgrades, tag_enabled, tag_filter) |
+| `PATCH` | `/api/instances/<id>` | Instanzfelder aktualisieren (name, url, api_key, enabled, daily_limit, search_upgrades, tag_enabled, tag_filter_ids) |
 | `DELETE` | `/api/instances/<id>` | Instanz entfernen |
 | `GET` | `/api/instances/<id>/ping` | Verbindung zu einer Sonarr/Radarr-Instanz testen |
 | `GET` | `/api/instances/<id>/tags` | Verfügbare Tags der Instanz abrufen (für Tag-Filter) |

@@ -268,6 +268,7 @@ def _link_buttons(links: list[tuple[str,str]]) -> str:
 def discord_send(event_type: str, title: str, description: str,
                  instance_name: str = "", fields: list | None = None,
                  force: bool = False,
+                 inst_type: str = "",  # "sonarr"|"radarr" for per-type webhook routing
                  thumbnail_url: str = "",
                  image_url: str = "",
                  embed_url: str = "",
@@ -655,6 +656,7 @@ DEFAULT_CONFIG = {
     "maintenance_windows": [],
     # Rotating log file settings
     "tag_enabled":  False,  # add a tag to searched items in Sonarr/Radarr
+    "webhook_trigger_key": "",  # optional auth key for POST /api/webhook/trigger
     "tag_label":    "mediastarr",  # tag label to create/use
     "log_max_mb":    5,    # max size per log file in MB (1–100)
     "log_backups":   2,    # number of backup files to keep (0–10)
@@ -684,6 +686,7 @@ def _migrate_config(cfg: dict) -> dict:
         if "type"             not in inst: inst["type"]             = "sonarr"
         if "search_upgrades"  not in inst: inst["search_upgrades"]  = False
         if "tag_enabled"      not in inst: inst["tag_enabled"]      = None   # None = use global
+        if "tag_filter_ids"   not in inst: inst["tag_filter_ids"]   = []     # empty = no filter (search all)
         if "tag_filter"       not in inst: inst["tag_filter"]       = []     # empty = all items
     return cfg
 
@@ -1238,6 +1241,7 @@ def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
     discord_send(
         event, ev_title, description,
         instance_name = inst_name,
+        inst_type     = inst_type,
         fields        = fields or None,
         thumbnail_url = poster,
         image_url     = fanart,
@@ -1281,11 +1285,13 @@ def hunt_sonarr_instance(inst: dict):
     lang   = CONFIG.get("language", "en")
     do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
     logger.debug(f"📺 [{name}] hunt start — mode={mode} upgrades={do_upgrades}")
+    ms_info(name, "🔄 Hunt start", f"mode={mode} upgrades={do_upgrades}")
 
     # Build series ID → title cache once per hunt so ep titles are always correct
     # even when Sonarr omits series.title in wanted/missing responses
     # Full series objects keyed by series ID — used for rich Discord embeds
     # (poster, fanart, multi-source ratings, TVDB/IMDb/TMDB links, genres, network)
+    ms_info(name, f"🔄 Hunt start", f"mode={mode} upgrades={do_upgrades}")
     series_cache: dict[int, str]   = {}
     series_full:  dict[int, dict]  = {}
     try:
@@ -1359,7 +1365,7 @@ def hunt_sonarr_instance(inst: dict):
             recs = [ep for ep in recs if _ep_imdb_r(ep) == 0.0 or _ep_imdb_r(ep) >= imdb_min_s]
             logger.debug(f"{name}: IMDb filter kept {len(recs)}/{before} missing episodes")
         # Tag filter — only keep episodes whose series carries one of the selected tag IDs
-        _tag_filter = inst.get("tag_filter", [])
+        _tag_filter = inst.get("tag_filter_ids", [])
         if _tag_filter:
             before_tf = len(recs)
             def _ep_has_tag(ep):
@@ -1369,7 +1375,7 @@ def hunt_sonarr_instance(inst: dict):
             recs = [ep for ep in recs if _ep_has_tag(ep)]
             logger.debug(f"{name}: tag filter kept {len(recs)}/{before_tf} episodes")
         stats["missing_found"] = int(data.get("totalRecords", len(recs)))
-        logger.debug(f"📺 [{name}] missing: {len(recs)} items after filters (mode={mode})")
+        ms_info(name, "📺 Missing", f"{len(recs)} items after filters (mode={mode})")
         searched = 0
         # Dedup tracking for season/series mode — avoid sending the same
         # SeasonSearch or SeriesSearch command multiple times for the same target
@@ -1424,7 +1430,16 @@ def hunt_sonarr_instance(inst: dict):
                 _searched_seasons.add((int(series_id), snum))  # mark this season as triggered
             else:
                 command = {"name":"EpisodeSearch","episodeIds":[ep["id"]]}
-            do_search(client, iid, "episode", ep["id"], title, command,
+            # Record search at correct granularity (season/series/episode)
+            if mode == "series" and series_id:
+                _rec_type = "series"; _rec_id = int(series_id)
+            elif mode == "season" and series_id:
+                _rec_type = "season"
+                _rec_snum = ep.get("seasonNumber", 0)
+                _rec_id   = int(series_id) * 1000 + _rec_snum
+            else:
+                _rec_type = "episode"; _rec_id = ep["id"]
+            do_search(client, iid, _rec_type, _rec_id, title, command,
                       ep.get("series",{}).get("lastInfoSync"), year,
                       item_data=enrich_ep_with_series(ep))
             stats["missing_searched"] += 1; searched += 1
@@ -1463,7 +1478,13 @@ def hunt_sonarr_instance(inst: dict):
                 if _res_rank(cur_q) >= target_rank_s:
                     logger.debug(f"{name}: skip upgrade {title} already at {cur_q}")
                     continue
-            ok, reason = should_search(iid, "episode_upgrade", ep["id"])
+            if mode == "series" and series_id_upg:
+                ok, reason = should_search(iid, "series_upgrade", int(series_id_upg))
+            elif mode == "season" and series_id_upg:
+                _us_snum = ep.get("seasonNumber", 0)
+                ok, reason = should_search(iid, "season_upgrade", int(series_id_upg) * 1000 + _us_snum)
+            else:
+                ok, reason = should_search(iid, "episode_upgrade", ep["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
                 if reason == "daily": break  # stop upgrades loop, not whole function
@@ -1478,7 +1499,15 @@ def hunt_sonarr_instance(inst: dict):
                                "seasonNumber":ep.get("seasonNumber",0)}
             else:
                 upg_command = {"name":"EpisodeSearch","episodeIds":[ep["id"]]}
-            do_search(client, iid, "episode_upgrade", ep["id"], title,
+            if mode == "series" and series_id_upg:
+                _urs_type = "series_upgrade"; _urs_id = int(series_id_upg)
+            elif mode == "season" and series_id_upg:
+                _urs_type = "season_upgrade"
+                _urs_snum = ep.get("seasonNumber", 0)
+                _urs_id   = int(series_id_upg) * 1000 + _urs_snum
+            else:
+                _urs_type = "episode_upgrade"; _urs_id = ep["id"]
+            do_search(client, iid, _urs_type, _urs_id, title,
                       upg_command, year=year,
                       item_data=enrich_ep_with_series(ep))
             stats["upgrades_searched"] += 1; searched += 1
@@ -1495,6 +1524,7 @@ def hunt_radarr_instance(inst: dict):
     do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
     logger.debug(f"🎬 [{name}] hunt start — upgrades={do_upgrades}")
 
+    ms_info(name, "🔄 Hunt start", f"upgrades={do_upgrades}")
     # ── Missing ──
     try:
         movies  = client.get("movie")
@@ -1514,13 +1544,13 @@ def hunt_radarr_instance(inst: dict):
         if skipped_up:
             logger.info(f"{name}: skipped {skipped_up} unreleased movie(s) (upcoming filter)")
         # Tag filter — only include movies that carry one of the selected tag IDs
-        _tag_filter_r = inst.get("tag_filter", [])
+        _tag_filter_r = inst.get("tag_filter_ids", [])
         if _tag_filter_r:
             before_tf_r = len(missing)
             missing = [m for m in missing if bool(set(m.get("tags",[])) & set(_tag_filter_r))]
             logger.debug(f"{name}: tag filter kept {len(missing)}/{before_tf_r} movies")
         stats["missing_found"] = len(missing)
-        logger.debug(f"🎬 [{name}] missing: {len(missing)} movies after filters")
+        ms_info(name, "🎬 Missing", f"{len(missing)} movies after filters")
         searched = 0
         for movie in missing:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
@@ -1963,6 +1993,9 @@ def api_instances_update(inst_id:str):
     if "tag_enabled"     in d:
         v = d.get("tag_enabled")
         inst["tag_enabled"] = None if v is None else bool(v)  # None=use global
+    if "tag_filter_ids"  in d:
+        raw = d.get("tag_filter_ids", [])
+        inst["tag_filter_ids"] = [int(x) for x in raw if str(x).isdigit()] if isinstance(raw, list) else []
     if "tag_filter"     in d:
         raw_tf = d.get("tag_filter") or []
         if isinstance(raw_tf, list):
@@ -2050,6 +2083,7 @@ def api_state():
             "latest_version":             _version_cache.get("latest",""),
             "search_upgrades":      CONFIG.get("search_upgrades",True),
             "tag_enabled":          CONFIG.get("tag_enabled", False),
+            "webhook_trigger_key_set": bool(CONFIG.get("webhook_trigger_key","").strip()),
             "tag_label":            CONFIG.get("tag_label", "mediastarr"),
             "dry_run":              CONFIG["dry_run"],
             "language":             CONFIG["language"],
@@ -2146,6 +2180,11 @@ def api_config():
         for bool_key in ("enabled","notify_missing","notify_upgrade",
                          "notify_cooldown","notify_limit","notify_offline","notify_stats"):
             if bool_key in dc_in: dc[bool_key] = bool(dc_in[bool_key])
+        for url_key in ("webhook_url_sonarr","webhook_url_radarr"):
+            if url_key in dc_in:
+                u = safe_str(dc_in[url_key], 512).strip()
+                if u == "" or u.startswith(("http://","https://")):
+                    dc[url_key] = u
         if "stats_interval_min" in dc_in:
             dc["stats_interval_min"] = clamp_int(dc_in.get("stats_interval_min", 60), 1, 10080, 60)
         if "rate_limit_cooldown" in dc_in:

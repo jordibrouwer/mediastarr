@@ -3,23 +3,29 @@
 ## [v7.0.5] — 2026-03-30
 
 ### Fixed
-- **Bug #39 — Log rotation spam every 4 seconds** — `saveConfig()` now sends `log_max_mb` and `log_backups` on every call (added in v7.0.3 for atomic saves). `_reconfigure_file_logging()` fired unconditionally whenever those keys were present. Fix: only reconfigure when values actually changed (`if new_mb != CONFIG.get("log_max_mb", 5)`)
-- **Bug #40 — Radarr setup missing default name** — the Name field in Settings → Radarr → New Instance had no default value, requiring the user to type "Radarr" manually. Fix: `value="Sonarr"` / `value="Radarr"` pre-populated on both add forms
-- **Bug #42 — Tagging toggle not persisting** — two root causes:
-  - `saveConfig()` read `tog-tag-global.classList.contains('on')` which was always `false` when `_configDirty` prevented `updateUI()` from syncing the toggle class from the server. Fix: added `_tagGlobalEnabled` JS variable; `toggleTagGlobal()` updates it; `updateUI()` sets it from server; `saveConfig()` reads it
-  - Toggle was initialized without the `on` class in HTML, so even in the current session the toggle appeared off until clicked. Fix: variable initialises from first `updateUI()` call on page load
-- **Sonarr Staffeln/Serien — activity log showed episode titles** — when mode is `season` or `series`, the hunt loop correctly sent `SeasonSearch`/`SeriesSearch` but logged individual episode titles, making it look like episodes were being searched individually. Fix: log now shows `"Breaking Bad S01 (SeasonSearch)"` or `"Breaking Bad (SeriesSearch)"` instead of episode titles
-- **Language button flag emojis not rendering in Chrome on Windows** — flag emojis (`🇩🇪` `🇬🇧`) use regional indicator characters which Chrome on Windows doesn't render as flags. Fix: replaced with CSS-styled text badges (`.flag-de` black/yellow, `.flag-en` navy/white) that render identically everywhere
+- **Tag toggle reverts after 5 seconds** — two root causes:
+  1. `fetchState()` called `renderSettingsInstances()` on every 4-second poll, completely rebuilding the instance card HTML and wiping all loaded tag chips
+  2. The tag settings sync (`c_always` block) ran outside the `_configDirty` guard, overwriting `_tagGlobalEnabled` and `cfg-tag-label` on every poll regardless of dirty state
+  Fix: removed `renderSettingsInstances` calls from the poll cycle (replaced with lightweight `_syncInstToggles()` that only updates toggle DOM elements); tag sync now guarded by `!_configDirty`
+- **Tag chips disappear within 5 seconds** — same root cause as above (card re-render wiped chip list). Fixed by the same change: cards only re-render on `switchTab()` and explicit save/add/delete actions
+- **Bug #39 — Log rotation reconfigured spam** — `saveConfig()` included `log_max_mb`/`log_backups` on every call; `_reconfigure_file_logging()` fired unconditionally. Fix: only reconfigure when values actually changed
+- **Bug #40 — Missing default name in add form** — Sonarr/Radarr name field had no default value. Fix: `value="Sonarr"` / `value="Radarr"` pre-populated
+- **Bug #42 — Tagging toggle not persisting** — `saveConfig()` read `tog-tag-global.classList.contains('on')` which was always `false` when `_configDirty` prevented sync. Fix: `_tagGlobalEnabled` JS variable tracks state; `toggleTagGlobal()` / `updateUI()` maintain it; `saveConfig()` reads it
+- **Sonarr activity log showed episode titles in season/series mode** — hunt correctly sent `SeasonSearch`/`SeriesSearch` but logged episode titles. Fix: log now shows `"Breaking Bad S01 (SeasonSearch)"` / `"Breaking Bad (SeriesSearch)"`
+- **Language flag emojis not rendering in Chrome on Windows** — replaced with CSS-styled text badges (`.flag-de` black/yellow, `.flag-en` navy/white)
+- **Sonarr/Radarr webhook URLs exposed in `/api/state`** — exclusion list had wrong key names (`webhook_url_sonarr` instead of `sonarr_webhook_url`). Fixed
 
 ### Added
-- **Feature #37 — Tag-based filtering per instance** — per-instance multi-select tag filter; after entering a valid Sonarr/Radarr URL + API key, click `↺ Load tags` to fetch all available tags from the instance via `GET /api/v3/tag`; select one or more tags — only items carrying at least one selected tag are included in the search cycle; empty selection (default) = search all items; saved instantly via `PATCH /api/instances/<id>` with `tag_filter: [id, ...]`; new backend endpoint `GET /api/instances/<id>/tags`
-- **Feature #38 — Separate Discord webhooks for Sonarr and Radarr** — two optional URL fields in Settings → Discord tab below the main webhook; if a per-type URL is set, Sonarr notifications go to the Sonarr webhook and Radarr notifications go to the Radarr webhook; if empty, the main webhook is used as fallback; URLs are never exposed in `/api/state`
-- **Webhook trigger endpoint** — `POST /api/webhook/trigger` triggers an immediate hunt cycle from external automation (e.g. Sonarr/Radarr "on download complete" webhooks); protected by `@_api_auth_required`; optional `{"source":"sonarr"}` body field logged to activity log
+- **Feature #37 — Tag-based filtering per instance** — `↺ Load tags` fetches all available tags from the instance; select one or more tags → only items carrying at least one selected tag are included in the cycle; empty = search all items (default); new endpoint `GET /api/instances/<id>/tags`; saved instantly via `PATCH /api/instances/<id>` with `tag_filter: [id, ...]`
+- **Feature #38 — Separate Discord webhooks for Sonarr and Radarr** — two optional URL fields in Settings → Discord tab; per-type URL overrides main webhook; URLs never exposed in `/api/state`; DE + EN translations in Discord label system
+- **Webhook trigger endpoint** — `POST /api/webhook/trigger` triggers an immediate hunt cycle from external automation; protected by `@_api_auth_required`; optional `{"source":"..."}` body field
 - **Discord tab emoji** — tab now shows `💬 Discord`
-- **Debug logging improved** — hunt start logged at DEBUG with mode and upgrade flag: `📺 [Sonarr] hunt start — mode=season upgrades=True`; item counts after filters logged; season/series search commands logged per-trigger
+- **`_syncInstToggles()` function** — lightweight instance toggle state sync that updates only toggle/label DOM elements without rebuilding card HTML — preserves tag chip selections across poll cycles
+- **Debug logging** — hunt start logged at DEBUG with mode and upgrade flag; item counts after filters logged; season/series command type logged per-trigger
 
 ### Changed
-- **README — API reference added** — full endpoint table in both EN and DE sections; webhook trigger example with curl; feature table updated with new v7.0.5 features
+- **README — API reference added** — full endpoint table (17 endpoints) in both EN and DE; webhook trigger curl example; feature table updated
+- **Help page updated** — changelog and milestones sections include v7.0.1 through v7.0.5 (EN + DE)
 
 ## [v7.0.4] — 2026-03-27
 
