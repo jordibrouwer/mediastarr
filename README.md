@@ -51,6 +51,10 @@ Runs on a configurable schedule, keeps a SQLite history, sends rich Discord embe
 | 📅 Per-instance daily limit | Each instance can have its own search limit per day |
 | 💾 Config backup | Export / import full config as JSON (incl. API keys) |
 | 🔓 Public API mode | `/api/state` optionally accessible without login — for external tools |
+| 🏷️ Tag tagging | Add a tag to processed items in Sonarr/Radarr for easy filtering |
+| 🔖 Tag-based filtering | Per-instance: only search items that carry specific tags (e.g. seasonal collections) |
+| 🔔 Separate Discord webhooks | Different webhook URL for Sonarr vs Radarr notifications |
+| 🔗 Webhook trigger | `POST /api/webhook/trigger` — trigger a cycle from external automation |
 
 ---
 
@@ -129,6 +133,74 @@ Settings → **Discord** tab:
 - SSRF protection on all URL inputs
 - `config.json` chmod 0600 on every save
 - Security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, CSP
+
+## 🔌 API Reference
+
+All endpoints require authentication if a password is configured (header `X-Api-Key: <your-password>` or cookie session). Set `public_api_state: true` in config to expose `/api/state` without auth.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/state` | Full application state: running status, config, per-instance stats, cycle info |
+| `POST` | `/api/control` | Control the service — body: `{"action":"start"}` / `{"action":"stop"}` / `{"action":"run_now"}` |
+| `POST` | `/api/config` | Save configuration — full config object in JSON body |
+| `GET` | `/api/config/export` | Download current config as JSON |
+| `POST` | `/api/config/import` | Import config from JSON |
+| `GET` | `/api/instances` | List all configured instances |
+| `POST` | `/api/instances` | Add a new instance — body: `{"type":"sonarr","name":"…","url":"…","api_key":"…"}` |
+| `PATCH` | `/api/instances/<id>` | Update instance fields (name, url, api_key, enabled, daily_limit, search_upgrades, tag_enabled, tag_filter) |
+| `DELETE` | `/api/instances/<id>` | Remove an instance |
+| `GET` | `/api/instances/<id>/ping` | Test connectivity to a Sonarr/Radarr instance |
+| `GET` | `/api/instances/<id>/tags` | Fetch available tags from the instance (for tag-filter UI) |
+| `GET` | `/api/history` | Paginated search history (SQLite) — params: `?page=1&per_page=50` |
+| `GET` | `/api/history/stats` | Aggregate stats: total searches, per-year breakdown, result counts |
+| `POST` | `/api/history/clear` | Clear all search history |
+| `POST` | `/api/history/clear/<id>` | Clear history for one instance |
+| `POST` | `/api/webhook/trigger` | Trigger an immediate hunt cycle from external automation (e.g. Sonarr/Radarr webhooks) |
+
+### Webhook trigger example
+
+```bash
+curl -X POST http://your-server:7979/api/webhook/trigger \
+  -H "X-Api-Key: your-password" \
+  -H "Content-Type: application/json" \
+  -d '{"source":"sonarr"}'
+```
+
+---
+
+## 🔌 API-Endpunkte
+
+Alle Endpunkte erfordern Authentifizierung wenn ein Passwort konfiguriert ist (Header `X-Api-Key: <dein-passwort>` oder Session-Cookie). Mit `public_api_state: true` in der Config ist `/api/state` ohne Auth zugänglich.
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|--------------|
+| `GET` | `/api/state` | Vollständiger App-State: Laufstatus, Konfiguration, Instanz-Stats, Zyklus-Info |
+| `POST` | `/api/control` | Steuerung — Body: `{"action":"start"}` / `{"action":"stop"}` / `{"action":"run_now"}` |
+| `POST` | `/api/config` | Konfiguration speichern — vollständiges Config-Objekt als JSON |
+| `GET` | `/api/config/export` | Aktuelle Konfiguration als JSON herunterladen |
+| `POST` | `/api/config/import` | Konfiguration aus JSON importieren |
+| `GET` | `/api/instances` | Alle konfigurierten Instanzen auflisten |
+| `POST` | `/api/instances` | Neue Instanz hinzufügen — Body: `{"type":"sonarr","name":"…","url":"…","api_key":"…"}` |
+| `PATCH` | `/api/instances/<id>` | Instanzfelder aktualisieren (name, url, api_key, enabled, daily_limit, search_upgrades, tag_enabled, tag_filter) |
+| `DELETE` | `/api/instances/<id>` | Instanz entfernen |
+| `GET` | `/api/instances/<id>/ping` | Verbindung zu einer Sonarr/Radarr-Instanz testen |
+| `GET` | `/api/instances/<id>/tags` | Verfügbare Tags der Instanz abrufen (für Tag-Filter) |
+| `GET` | `/api/history` | Suchverlauf (SQLite) — Parameter: `?page=1&per_page=50` |
+| `GET` | `/api/history/stats` | Statistiken: Gesamtsuchen, Jahresaufschlüsselung, Ergebnis-Counts |
+| `POST` | `/api/history/clear` | Gesamten Suchverlauf löschen |
+| `POST` | `/api/history/clear/<id>` | Verlauf einer Instanz löschen |
+| `POST` | `/api/webhook/trigger` | Sofortigen Such-Zyklus auslösen — für externe Automatisierung (z.B. Sonarr/Radarr-Webhooks) |
+
+### Webhook-Trigger Beispiel
+
+```bash
+curl -X POST http://dein-server:7979/api/webhook/trigger \
+  -H "X-Api-Key: dein-passwort" \
+  -H "Content-Type: application/json" \
+  -d '{"source":"sonarr"}'
+```
+
+---
 
 ## 📸 Screenshots
 

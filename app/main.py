@@ -277,7 +277,17 @@ def discord_send(event_type: str, title: str, description: str,
     """Fire-and-forget rich Discord embed. Daemon thread."""
     dc = CONFIG.get("discord", {})
     if not dc.get("enabled"): return
-    url = safe_str(dc.get("webhook_url", ""), 512).strip()
+    # Pick URL: per-type override if set, else global webhook
+    # Determine instance type from inst_type hint embedded in function call
+    _dc_inst_type = getattr(discord_send, "_current_inst_type", "")
+    _sonarr_url = safe_str(dc.get("sonarr_webhook_url",""), 512).strip()
+    _radarr_url = safe_str(dc.get("radarr_webhook_url",""), 512).strip()
+    if _dc_inst_type == "sonarr" and _sonarr_url:
+        url = _sonarr_url
+    elif _dc_inst_type == "radarr" and _radarr_url:
+        url = _radarr_url
+    else:
+        url = safe_str(dc.get("webhook_url", ""), 512).strip()
     if not url or not url.startswith(("http://", "https://")): return
 
     toggle_map = {
@@ -674,6 +684,7 @@ def _migrate_config(cfg: dict) -> dict:
         if "type"             not in inst: inst["type"]             = "sonarr"
         if "search_upgrades"  not in inst: inst["search_upgrades"]  = False
         if "tag_enabled"      not in inst: inst["tag_enabled"]      = None   # None = use global
+        if "tag_filter"       not in inst: inst["tag_filter"]       = []     # empty = all items
     return cfg
 
 def load_config() -> dict:
@@ -1223,6 +1234,7 @@ def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
     # Service author icon
     svc_icon = _ICON_SONARR if inst_type == "sonarr" else _ICON_RADARR
 
+    discord_send._current_inst_type = inst_type  # for per-type webhook routing
     discord_send(
         event, ev_title, description,
         instance_name = inst_name,
@@ -1233,6 +1245,7 @@ def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
         author_name   = f"{inst_name}  •  {'Sonarr' if inst_type=='sonarr' else 'Radarr'}",
         author_icon   = svc_icon,
     )
+    discord_send._current_inst_type = ""  # reset
     return result
 
 def _ep_title(ep: dict, lang: str) -> str:
@@ -1267,6 +1280,7 @@ def hunt_sonarr_instance(inst: dict):
     mode   = CONFIG.get("sonarr_search_mode", "season")
     lang   = CONFIG.get("language", "en")
     do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
+    logger.debug(f"📺 [{name}] hunt start — mode={mode} upgrades={do_upgrades}")
 
     # Build series ID → title cache once per hunt so ep titles are always correct
     # even when Sonarr omits series.title in wanted/missing responses
@@ -1344,7 +1358,18 @@ def hunt_sonarr_instance(inst: dict):
                 return r
             recs = [ep for ep in recs if _ep_imdb_r(ep) == 0.0 or _ep_imdb_r(ep) >= imdb_min_s]
             logger.debug(f"{name}: IMDb filter kept {len(recs)}/{before} missing episodes")
+        # Tag filter — only keep episodes whose series carries one of the selected tag IDs
+        _tag_filter = inst.get("tag_filter", [])
+        if _tag_filter:
+            before_tf = len(recs)
+            def _ep_has_tag(ep):
+                sid = ep.get("seriesId") or ep.get("series",{}).get("id")
+                s = series_full.get(int(sid), {}) if sid else {}
+                return bool(set(s.get("tags",[])) & set(_tag_filter))
+            recs = [ep for ep in recs if _ep_has_tag(ep)]
+            logger.debug(f"{name}: tag filter kept {len(recs)}/{before_tf} episodes")
         stats["missing_found"] = int(data.get("totalRecords", len(recs)))
+        logger.debug(f"📺 [{name}] missing: {len(recs)} items after filters (mode={mode})")
         searched = 0
         # Dedup tracking for season/series mode — avoid sending the same
         # SeasonSearch or SeriesSearch command multiple times for the same target
@@ -1365,7 +1390,14 @@ def hunt_sonarr_instance(inst: dict):
                     logger.debug(f"{name}: skip dup SeasonSearch for {season_key}")
                     continue
 
-            ok, reason = should_search(iid, "episode", ep["id"])
+            # Cooldown check at the right granularity for the current search mode
+            if mode == "series" and series_id:
+                ok, reason = should_search(iid, "series", int(series_id))
+            elif mode == "season" and series_id:
+                _ss_snum = ep.get("seasonNumber", 0)
+                ok, reason = should_search(iid, "season", int(series_id) * 1000 + _ss_snum)
+            else:
+                ok, reason = should_search(iid, "episode", ep["id"])
             if not ok:
                 stats[f"skipped_{reason}"] += 1
                 if reason == "daily":
@@ -1396,7 +1428,18 @@ def hunt_sonarr_instance(inst: dict):
                       ep.get("series",{}).get("lastInfoSync"), year,
                       item_data=enrich_ep_with_series(ep))
             stats["missing_searched"] += 1; searched += 1
-            log_act(name, msg("missing"), title, "success")
+            # Log what was actually triggered (season/series vs episode)
+            if mode == "series":
+                s_title = resolve_series_title(ep) or title
+                log_label = f"{s_title} (SeriesSearch)"
+                logger.debug(f"📺 [{name}] SeriesSearch → {s_title}")
+            elif mode == "season":
+                s_title = resolve_series_title(ep) or title
+                log_label = f"{s_title} S{ep.get('seasonNumber',0):02d} (SeasonSearch)"
+                logger.debug(f"📺 [{name}] SeasonSearch → {s_title} S{ep.get('seasonNumber',0):02d}")
+            else:
+                log_label = title
+            log_act(name, msg("missing"), log_label, "success")
             time.sleep(1.5)
     except Exception as e:
         log_act(name, msg("error"), str(e)[:200], "error")
@@ -1450,6 +1493,7 @@ def hunt_radarr_instance(inst: dict):
     client = ArrClient(name, inst["url"], inst["api_key"])
     stats  = STATE["inst_stats"][iid]
     do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
+    logger.debug(f"🎬 [{name}] hunt start — upgrades={do_upgrades}")
 
     # ── Missing ──
     try:
@@ -1469,7 +1513,14 @@ def hunt_radarr_instance(inst: dict):
         skipped_up = before_up - len(missing)
         if skipped_up:
             logger.info(f"{name}: skipped {skipped_up} unreleased movie(s) (upcoming filter)")
+        # Tag filter — only include movies that carry one of the selected tag IDs
+        _tag_filter_r = inst.get("tag_filter", [])
+        if _tag_filter_r:
+            before_tf_r = len(missing)
+            missing = [m for m in missing if bool(set(m.get("tags",[])) & set(_tag_filter_r))]
+            logger.debug(f"{name}: tag filter kept {len(missing)}/{before_tf_r} movies")
         stats["missing_found"] = len(missing)
+        logger.debug(f"🎬 [{name}] missing: {len(missing)} movies after filters")
         searched = 0
         for movie in missing:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
@@ -1912,6 +1963,10 @@ def api_instances_update(inst_id:str):
     if "tag_enabled"     in d:
         v = d.get("tag_enabled")
         inst["tag_enabled"] = None if v is None else bool(v)  # None=use global
+    if "tag_filter"     in d:
+        raw_tf = d.get("tag_filter") or []
+        if isinstance(raw_tf, list):
+            inst["tag_filter"] = [int(x) for x in raw_tf if str(x).isdigit()][:50]
     if "daily_limit" in d:
         inst["daily_limit"] = clamp_int(int(d.get("daily_limit", 0) or 0), 0, 9999, 0)
     log_act("System", "Config gespeichert" if CONFIG.get("language","en")=="de" else "Config saved", "", "info")
@@ -1925,6 +1980,19 @@ def api_instances_delete(inst_id:str):
     if len(CONFIG["instances"]) == before: return jsonify({"ok":False,"error":"Nicht gefunden"}),404
     STATE["inst_stats"].pop(inst_id,None); save_config(CONFIG)
     return jsonify({"ok":True})
+
+@app.route("/api/instances/<inst_id>/tags")
+@_api_auth_required
+def api_instance_tags(inst_id: str):
+    """Return available tags from the Sonarr/Radarr instance for UI display."""
+    inst = next((i for i in CONFIG["instances"] if i["id"] == inst_id), None)
+    if not inst: return jsonify({"ok": False, "error": "Not found"}), 404
+    client = ArrClient(inst["name"], inst["url"], inst["api_key"])
+    try:
+        tags = client.get("tag")
+        return jsonify({"ok": True, "tags": [{"id": t["id"], "label": t["label"]} for t in tags]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)[:200]}), 502
 
 @app.route("/api/instances/<inst_id>/ping")
 @_api_auth_required
@@ -1991,9 +2059,11 @@ def api_state():
             "instance_count":       len(CONFIG["instances"]),
             "discord": {
                 k: v for k, v in CONFIG.get("discord", {}).items()
-                if k not in ("webhook_url", "stats_last_sent_at")  # never expose
+                if k not in ("webhook_url", "sonarr_webhook_url", "radarr_webhook_url", "stats_last_sent_at")
             },
-            "discord_configured": bool(CONFIG.get("discord",{}).get("webhook_url","")),
+            "discord_configured":    bool(CONFIG.get("discord",{}).get("webhook_url","")),
+            "sonarr_webhook_set": bool(CONFIG.get("discord",{}).get("sonarr_webhook_url","")),
+            "radarr_webhook_set": bool(CONFIG.get("discord",{}).get("radarr_webhook_url","")),
             "discord_webhook_set": bool(CONFIG.get("discord",{}).get("webhook_url","")),
             "public_api_state":       CONFIG.get("public_api_state", False),
             "log_max_mb":             CONFIG.get("log_max_mb",  5),
@@ -2084,6 +2154,11 @@ def api_config():
             url = safe_str(dc_in["webhook_url"], 512).strip()
             if url == "" or url.startswith(("http://","https://")):
                 dc["webhook_url"] = url
+        for _wh_key in ("sonarr_webhook_url", "radarr_webhook_url"):
+            if _wh_key in dc_in:
+                wh = safe_str(dc_in[_wh_key], 512).strip()
+                if wh == "" or wh.startswith(("http://","https://")):
+                    dc[_wh_key] = wh
     if "public_api_state" in d:
         CONFIG["public_api_state"] = bool(d["public_api_state"])
     if "maintenance_windows" in d:
@@ -2108,11 +2183,15 @@ def api_config():
             CONFIG["log_min_level"] = lvl
             _apply_log_level()
     if "log_max_mb" in d:
-        CONFIG["log_max_mb"]  = max(1, min(100, int(d.get("log_max_mb", 5) or 5)))
-        _changed_log = True
+        new_mb = max(1, min(100, int(d.get("log_max_mb", 5) or 5)))
+        if new_mb != CONFIG.get("log_max_mb", 5):
+            CONFIG["log_max_mb"] = new_mb
+            _changed_log = True
     if "log_backups" in d:
-        CONFIG["log_backups"] = max(0, min(10, int(d.get("log_backups", 2) or 2)))
-        _changed_log = True
+        new_bk = max(0, min(10, int(d.get("log_backups", 2) or 2)))
+        if new_bk != CONFIG.get("log_backups", 2):
+            CONFIG["log_backups"] = new_bk
+            _changed_log = True
     if _changed_log: _reconfigure_file_logging()
     save_config(CONFIG); return jsonify({"ok":True})
 
@@ -2183,6 +2262,25 @@ def api_config_import():
     return jsonify({"ok": True, "instances": len(merged.get("instances", []))})
 
 # ── History API ───────────────────────────────────────────────────────────────
+@app.route("/api/webhook/trigger", methods=["POST"])
+@_api_auth_required
+def api_webhook_trigger():
+    """Trigger an immediate hunt cycle from external automation (e.g. Sonarr/Radarr webhooks).
+    Requires authentication. Same as pressing Run Now in the UI.
+    Body: {} or {"source": "sonarr"} — source is logged only, not acted upon.
+    """
+    d = request.get_json(silent=True) or {}
+    source = safe_str(d.get("source","external"), 30)
+    lang   = CONFIG.get("language","en")
+    is_de  = lang == "de"
+    log_act("System",
+            "Webhook-Trigger empfangen" if is_de else "Webhook trigger received",
+            source, "info")
+    if STATE["running"]:
+        STOP_EVENT.set()
+    threading.Thread(target=run_cycle, daemon=True).start()
+    return jsonify({"ok": True, "message": "Hunt cycle triggered", "source": source})
+
 @app.route("/api/history")
 @_api_auth_required
 def api_history():
