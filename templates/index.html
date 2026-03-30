@@ -954,24 +954,12 @@
               <input class="form-input" id="dc-radarr-url" type="password" placeholder="https://discord.com/api/webhooks/…">
               <div class="form-hint" id="dc-hint-radarr-url">Separater Webhook für Radarr-Benachrichtigungen. Leer = Haupt-Webhook wird verwendet.</div>
             </div>
-            <div style="display:none"><!-- close dc-url wrapper -->
-            </div>
+
             <div class="form-hint" id="dc-hint-url" style="margin-top:4px;display:flex;align-items:center;gap:6px">
               <span style="color:#5865f2">🔒</span>
               <span id="dc-hint-url-text">Niemals in API-Antworten oder Logs zurückgegeben.</span>
             </div>
-            <!-- Sonarr-only webhook (optional) -->
-            <div class="form-group" style="margin-top:8px">
-              <label class="form-label" data-i18n="lbl_dc_url_sonarr">📺 Sonarr-Webhook (optional)</label>
-              <input class="form-input" id="dc-url-sonarr" type="password" placeholder="https://discord.com/api/webhooks/… (leer = globaler Webhook)" style="border-color:rgba(77,156,255,.3)" autocomplete="off" oninput="_autosaveDc()">
-              <div class="form-hint" data-i18n="hint_dc_url_sonarr">Separater Webhook nur für Sonarr-Events. Leer = globalen Webhook verwenden.</div>
-            </div>
-            <!-- Radarr-only webhook (optional) -->
-            <div class="form-group" style="margin-top:4px">
-              <label class="form-label" data-i18n="lbl_dc_url_radarr">🎬 Radarr-Webhook (optional)</label>
-              <input class="form-input" id="dc-url-radarr" type="password" placeholder="https://discord.com/api/webhooks/… (leer = globaler Webhook)" style="border-color:rgba(255,107,43,.3)" autocomplete="off" oninput="_autosaveDc()">
-              <div class="form-hint" data-i18n="hint_dc_url_radarr">Separater Webhook nur für Radarr-Events. Leer = globalen Webhook verwenden.</div>
-            </div>
+
 
           </div>
 
@@ -2927,26 +2915,19 @@ function renderSettingsInstances(type) {
             <span style="font-size:10px;color:var(--muted2);margin-left:2px">${isDE4?'(Global/An/Aus)':'(Global/On/Off)'}</span>
           </div>
           <!-- Tag filter: multi-select loaded from instance -->
-          <div class="form-group" style="margin-top:6px" id="tag-filter-group-${inst.id}">
-            <label class="form-label" style="font-size:10px">${isDE4?'Tag-Filter (leer = alle)':'Tag filter (empty = all)'}</label>
-            <select multiple id="tag-filter-${inst.id}" size="3"
-              style="width:100%;font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px;color:var(--text)"
-              onchange="saveInstTagFilter('${inst.id}')">
-              <option value="" disabled>${isDE4?'⏳ Lade Tags…':'⏳ Loading tags…'}</option>
-            </select>
-            <div class="form-hint">${isDE4?'Tags aus Radarr/Sonarr. Nur Elemente mit gewähltem Tag werden durchsucht.':'Tags from Radarr/Sonarr. Only items with selected tag(s) are searched.'}</div>
-          </div>
-          <!-- Tag filter -->
-          <div class="form-group" style="margin-top:4px">
+          <div class="form-group" style="margin-top:6px">
             <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">
-              ${isDE4?'Tag-Filter':'Tag filter'}
-              <span style="color:var(--muted);font-size:9px"> — ${isDE4?'nur Elemente mit diesen Tags':'only items with these tags'}</span>
-              <span style="cursor:pointer;margin-left:6px;font-size:10px;color:var(--blue)" onclick="loadInstTags('${inst.id}')">↺</span>
+              ${isDE4?'Tag-Filter (leer = alle)':'Tag filter (empty = all)'}
+              <span style="cursor:pointer;margin-left:6px;font-size:9px;color:var(--blue)" onclick="loadInstTagSelect('${inst.id}')">↺</span>
             </div>
-            <div id="tag-filter-chips-${inst.id}" style="display:flex;flex-wrap:wrap;gap:4px;min-height:18px">
-              <span style="font-size:10px;color:var(--muted);cursor:pointer" onclick="loadInstTags('${inst.id}')">${isDE4?'Tags laden':'Load tags'}</span>
-            </div>
+            <select multiple id="tag-select-${inst.id}" size="4"
+              style="width:100%;font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px;color:var(--text);max-height:80px"
+              onchange="saveInstTagFilter('${inst.id}')">
+              <option value="" disabled>${isDE4?'↺ Klicken zum Laden…':'↺ Click to load…'}</option>
+            </select>
+            <div style="font-size:9px;color:var(--muted);margin-top:2px">${isDE4?'Tags aus Radarr/Sonarr. Nur Elemente mit gewähltem Tag werden durchsucht. Mehrfachauswahl möglich.':'Tags from Radarr/Sonarr. Only items with selected tag(s) are searched. Multi-select.'}</div>
           </div>
+
         </div>
         <div style="display:flex;gap:7px;align-items:center">
           <button class="btn btn-now" style="font-size:11px" onclick="pingInstSave('${inst.id}')">🔌 Test</button>
@@ -2957,6 +2938,8 @@ function renderSettingsInstances(type) {
       </div>
     </div>`;
   }).join('');
+  // Auto-load tags for all rendered instances
+  insts.forEach(inst => { loadInstTagSelect(inst.id); });
 }
 
 async function addInstByType(type) {
@@ -3095,28 +3078,31 @@ function toggleTagGlobal() {
 
 // ── Per-instance tag toggle (3-state: null→true→false→null) ──────────────
 async function loadInstTags(id) {
-  const wrap = document.getElementById(`tag-filter-chips-${id}`);
-  if (!wrap) return;
-  wrap.innerHTML = '<span style="font-size:10px;color:var(--muted)">…</span>';
+  return loadInstTagSelect(id);
+}
+
+async function loadInstTagSelect(id) {
+  const sel = document.getElementById(`tag-select-${id}`);
+  if (!sel) return;
+  sel.innerHTML = `<option value="" disabled>${currentLang==="de"?"⏳ Lade Tags…":"⏳ Loading tags…"}</option>`;
   try {
     const r = await fetch(`/api/instances/${id}/tags`);
     const d = await r.json();
-    if (!d.ok || !d.tags?.length) {
-      wrap.innerHTML = `<span style="font-size:10px;color:var(--muted)">${currentLang==="de"?"Keine Tags gefunden":"No tags found"}</span>`;
+    if (!d.ok) {
+      sel.innerHTML = `<option value="" disabled>✗ ${d.error||"Error"}</option>`;
+      return;
+    }
+    if (!d.tags?.length) {
+      sel.innerHTML = `<option value="" disabled>${currentLang==="de"?"Keine Tags gefunden":"No tags found"}</option>`;
       return;
     }
     const inst = (appState.instances||[]).find(i=>i.id===id);
-    const activeFilter = inst?.tag_filter || [];
-    wrap.innerHTML = d.tags.map(t => {
-      const active = activeFilter.includes(t.id);
-      return `<span class="tag-chip${active?" active":""}" data-inst="${id}" data-tid="${t.id}"
-        onclick="toggleTagFilter(this,'${id}',${t.id})"
-        style="cursor:pointer;font-size:10px;padding:2px 8px;border-radius:12px;border:1px solid var(--border2);
-        background:${active?"var(--blue)":"var(--surface)"};color:${active?"#fff":"var(--muted2)"};
-        transition:all 0.15s">${t.label}</span>`;
-    }).join("");
+    const activeFilter = (inst?.tag_filter_ids || inst?.tag_filter || []);
+    sel.innerHTML = d.tags.map(t =>
+      `<option value="${t.id}" ${activeFilter.includes(t.id)?"selected":""}>${t.label}</option>`
+    ).join("");
   } catch(e) {
-    wrap.innerHTML = `<span style="font-size:10px;color:var(--red)">✗ ${e.message||"Error"}</span>`;
+    sel.innerHTML = `<option value="" disabled>✗ ${e.message||"Error"}</option>`;
   }
 }
 
@@ -3140,7 +3126,7 @@ async function toggleTagFilter(el, instId, tagId) {
 
 
 async function saveInstTagFilter(id) {
-  const sel = document.getElementById(`tag-filter-${id}`);
+  const sel = document.getElementById(`tag-select-${id}`);
   if (!sel) return;
   const selected = Array.from(sel.selectedOptions).map(o=>parseInt(o.value)).filter(v=>!isNaN(v));
   const inst = (appState.instances||[]).find(i=>i.id===id);
@@ -3657,12 +3643,6 @@ async function saveDc() {
     }
   };
   if (url) body.discord.webhook_url = url;
-  const urlSonarr = document.getElementById('dc-url-sonarr')?.value?.trim() || '';
-  const urlRadarr = document.getElementById('dc-url-radarr')?.value?.trim() || '';
-  if (urlSonarr) body.discord.webhook_url_sonarr = urlSonarr;
-  else body.discord.webhook_url_sonarr = '';  // empty = clear
-  if (urlRadarr) body.discord.webhook_url_radarr = urlRadarr;
-  else body.discord.webhook_url_radarr = '';  // empty = clear
   const sonarrUrl = document.getElementById('dc-sonarr-url')?.value?.trim();
   const radarrUrl = document.getElementById('dc-radarr-url')?.value?.trim();
   body.discord.sonarr_webhook_url = sonarrUrl || '';

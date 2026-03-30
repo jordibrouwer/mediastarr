@@ -2,6 +2,12 @@
 
 ## [v7.0.5] — 2026-03-30
 
+### Hotfix (v7.0.5 patch)
+- **Duplicate Discord webhook fields** — two competing implementations coexisted in the Discord tab HTML (ids `dc-sonarr-url` and `dc-url-sonarr`); the old implementation with stray unclosed div caused layout breakage. Removed the old duplicate, kept the clean implementation
+- **Duplicate tag filter widget** — the instance card had both a `<select multiple>` implementation and a chip-based implementation; both rendered simultaneously causing a split layout. Removed the chip implementation, kept and fixed the `<select multiple>` approach
+- **Tag filter now auto-loads** — tags are fetched automatically when the instance card is rendered, no manual ↺ click required; selections are pre-highlighted based on saved `tag_filter_ids`
+- **Tag filter uses correct field key** — both frontend `saveInstTagFilter()` and backend PATCH handler now consistently use `tag_filter_ids`
+
 ### Fixed
 - **Tag toggle reverts after 5 seconds** — two root causes:
   1. `fetchState()` called `renderSettingsInstances()` on every 4-second poll, completely rebuilding the instance card HTML and wiping all loaded tag chips
