@@ -1,5 +1,24 @@
 # Changelog
 
+## [v7.0.6] — 2026-03-30
+
+### Fixed
+- **Tag multi-select redesigned** — replaced the native `<select multiple>` (requires Ctrl+click, no deselect) with an interactive chip UI: clickable tag chips that toggle on/off visually, active count badge, "Clear all" button, deselect support, chips auto-load when instance card opens
+
+### Added
+- **Feature #45 — Separate upgrade daily limit** — upgrades can now be limited independently from the missing-search daily limit:
+  - **Global** — Settings → General: "Upgrade daily limit (0 = ∞)" — applies across ALL instances
+  - **Per type** — Settings → Sonarr/Radarr tab: separate limit for Sonarr upgrades and Radarr upgrades
+  - **Per instance** — instance card: "Upgrade limit/day" field per instance
+  - **Logic**: global limit → per-type limit → per-instance limit (all checked independently)
+  - Both missing-search DB function and new `count_today_upgrades()` / `count_today_upgrades_for_instance()` functions in `db.py`
+  - Hunt loops check upgrade limit before entering the upgrades section and mid-loop to stop promptly
+- **tini as PID 1 handler** — added to Dockerfile (`apt-get install tini`); gunicorn runs under tini via `ENTRYPOINT ["/usr/bin/tini", "--"]`. S6 overlay evaluated and rejected: Mediastarr is a single-process app, S6 would add ~20MB image size and startup complexity with zero benefit. tini is the minimal correct solution
+- **Screenshots updated** — 9 new Playwright-generated screenshots (dashboard, settings, Sonarr tab, Discord tab, history, stats, log, setup wizard, mobile view); stored in `static/screenshots/`
+
+### Changed
+- **`_syncInstToggles()` updated** — now syncs upgrade_daily_limit field in instance cards without re-rendering
+
 ## [v7.0.5] — 2026-03-30
 
 ### Hotfix (v7.0.5 patch)

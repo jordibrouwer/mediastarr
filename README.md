@@ -40,6 +40,7 @@ Runs on a configurable schedule, keeps a SQLite history, sends rich Discord embe
 | 🎲 Random selection | Items picked randomly per cycle for even coverage |
 | ⭐ IMDb filter | Min. rating — global or per Sonarr/Radarr tab |
 | 🎯 Target resolution | Only upgrade below your quality target |
+| 🔢 Upgrade daily limit | Separate limit for upgrades — global, per Sonarr/Radarr type, or per instance |
 | ⏱ Jitter | Random ±N sec offset per cycle |
 | 🔔 Discord | Rich embeds: poster + fanart, IMDb/TVDB/TMDB links, ratings, genres, runtime |
 | 📊 Stats report | Periodic Discord embed with progress bar + per-instance table |
@@ -203,6 +204,11 @@ curl -X POST http://dein-server:7979/api/webhook/trigger \
 ---
 
 ## 📸 Screenshots
+
+| Dashboard | Settings | Discord | Mobile |
+|-----------|----------|---------|--------|
+| ![Dashboard](static/screenshots/01_dashboard.png) | ![Settings](static/screenshots/04_settings_general.png) | ![Discord](static/screenshots/06_settings_discord.png) | ![Mobile](static/screenshots/08_mobile.png) |
+
 
 | Dashboard | Settings | Discord |
 |:---:|:---:|:---:|

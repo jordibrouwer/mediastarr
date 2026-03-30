@@ -180,6 +180,34 @@ def count_today_for_instance(service: str) -> int:
     return row["n"] if row else 0
 
 
+def count_today_upgrades() -> int:
+    """Number of upgrade searches triggered today (item_type contains 'upgrade')."""
+    _require_init()
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    with _lock:
+        row = _conn.execute("""
+            SELECT COUNT(*) AS n FROM search_history
+            WHERE searched_at LIKE ?
+              AND item_type LIKE '%upgrade%'
+              AND result IN ('triggered', 'dry_run', 'downloaded')
+        """, (today + "%",)).fetchone()
+    return row["n"] if row else 0
+
+
+def count_today_upgrades_for_instance(service: str) -> int:
+    """Number of upgrade searches triggered today for one specific instance."""
+    _require_init()
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    with _lock:
+        row = _conn.execute("""
+            SELECT COUNT(*) AS n FROM search_history
+            WHERE service=? AND searched_at LIKE ?
+              AND item_type LIKE '%upgrade%'
+              AND result IN ('triggered', 'dry_run', 'downloaded')
+        """, (service, today + "%")).fetchone()
+    return row["n"] if row else 0
+
+
 def total_count() -> int:
     _require_init()
     with _lock:

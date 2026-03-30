@@ -624,6 +624,9 @@ DEFAULT_CONFIG = {
     "hunt_upgrade_delay":   3600,   # seconds internally (default 60min)
     "max_searches_per_run":   10,
     "daily_limit":            20, "sonarr_daily_limit": 0, "radarr_daily_limit": 0,
+    "upgrade_daily_limit":    0,    # global max upgrades/day across ALL instances (0 = unlimited)
+    "sonarr_upgrade_daily_limit": 0,
+    "radarr_upgrade_daily_limit": 0,
     "sonarr_daily_limit":      0,    # global max searches/day across ALL Sonarr instances (0 = unlimited)
     "radarr_daily_limit":      0,    # global max searches/day across ALL Radarr instances (0 = unlimited)
     "cooldown_days":           7,
@@ -688,6 +691,7 @@ def _migrate_config(cfg: dict) -> dict:
         if "tag_enabled"      not in inst: inst["tag_enabled"]      = None   # None = use global
         if "tag_filter_ids"   not in inst: inst["tag_filter_ids"]   = []     # empty = no filter (search all)
         if "tag_filter"       not in inst: inst["tag_filter"]       = []     # empty = all items
+        if "upgrade_daily_limit" not in inst: inst["upgrade_daily_limit"] = 0  # 0 = use global
     return cfg
 
 def load_config() -> dict:
@@ -969,6 +973,27 @@ def jittered_delay(base_sec: int) -> tuple[int, int]:
     return total, jitter
 
 # ─── Hunt helpers ─────────────────────────────────────────────────────────────
+def upgrade_daily_limit_reached(iid: str = "", inst_type: str = "sonarr") -> bool:
+    """True if the global upgrade daily limit OR this instance upgrade limit is reached."""
+    global_upgrade_limit = CONFIG.get("upgrade_daily_limit", 0)
+    if global_upgrade_limit > 0 and db.count_today_upgrades() >= global_upgrade_limit:
+        return True
+    # Per-type global limit
+    type_upg_limit = CONFIG.get(f"{inst_type}_upgrade_daily_limit", 0)
+    if type_upg_limit > 0:
+        type_upg_today = sum(
+            db.count_today_upgrades_for_instance(i["id"])
+            for i in CONFIG.get("instances", []) if i.get("type") == inst_type
+        )
+        if type_upg_today >= type_upg_limit: return True
+    # Per-instance limit
+    if iid:
+        inst = next((i for i in CONFIG["instances"] if i["id"] == iid), None)
+        inst_upg_limit = clamp_int(int(inst.get("upgrade_daily_limit", 0) or 0), 0, 9999, 0) if inst else 0
+        if inst_upg_limit > 0 and db.count_today_upgrades_for_instance(iid) >= inst_upg_limit:
+            return True
+    return False
+
 def daily_limit_reached(iid: str = "") -> bool:
     """True if the global daily limit OR this instance's own limit is reached."""
     # Global limit
@@ -1462,6 +1487,8 @@ def hunt_sonarr_instance(inst: dict):
     if not do_upgrades: return
 
     # ── Upgrades ──
+    if upgrade_daily_limit_reached(iid, "sonarr"):
+        ms_info(name, "Sonarr upgrade daily limit reached", ""); return
     try:
         data  = client.get("wanted/cutoff", params={"pageSize":2000})
         recs  = data.get("records", [])
@@ -1472,6 +1499,7 @@ def hunt_sonarr_instance(inst: dict):
         searched = 0
         for ep in recs:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
+            if upgrade_daily_limit_reached(iid, "sonarr"): break  # mid-loop check
             title = ep_title(ep)
             if target_rank_s > 0:
                 cur_q = ep.get("episodeFile",{}).get("quality",{}).get("quality",{}).get("name","")
@@ -1577,6 +1605,8 @@ def hunt_radarr_instance(inst: dict):
     if not do_upgrades: return
 
     # ── Upgrades ──
+    if upgrade_daily_limit_reached(iid, "radarr"):
+        ms_info(name, "Radarr upgrade daily limit reached", ""); return
     try:
         data  = client.get("wanted/cutoff", params={"pageSize":2000})
         recs  = data.get("records", [])
@@ -1588,6 +1618,7 @@ def hunt_radarr_instance(inst: dict):
         imdb_min_up = float(_radarr_imdb_override if _radarr_imdb_override is not None else CONFIG.get("imdb_min_rating", 0) or 0)
         for movie in recs:
             if STOP_EVENT.is_set() or searched >= CONFIG["max_searches_per_run"]: break
+            if upgrade_daily_limit_reached(iid, "radarr"): break  # mid-loop check
             title = str(movie.get("title","?"))[:100]
             year  = _year(movie.get("year"))
             if year: title = f"{title} ({year})"
@@ -2002,6 +2033,8 @@ def api_instances_update(inst_id:str):
             inst["tag_filter"] = [int(x) for x in raw_tf if str(x).isdigit()][:50]
     if "daily_limit" in d:
         inst["daily_limit"] = clamp_int(int(d.get("daily_limit", 0) or 0), 0, 9999, 0)
+    if "upgrade_daily_limit" in d:
+        inst["upgrade_daily_limit"] = clamp_int(int(d.get("upgrade_daily_limit", 0) or 0), 0, 9999, 0)
     log_act("System", "Config gespeichert" if CONFIG.get("language","en")=="de" else "Config saved", "", "info")
     save_config(CONFIG); return jsonify({"ok":True})
 
@@ -2068,6 +2101,10 @@ def api_state():
             "max_searches_per_run": CONFIG["max_searches_per_run"],
             "daily_limit":          CONFIG.get("daily_limit",20),
             "sonarr_daily_limit":   CONFIG.get("sonarr_daily_limit", 0),
+            "radarr_daily_limit":   CONFIG.get("radarr_daily_limit", 0),
+            "upgrade_daily_limit":  CONFIG.get("upgrade_daily_limit", 0),
+            "sonarr_upgrade_daily_limit": CONFIG.get("sonarr_upgrade_daily_limit", 0),
+            "radarr_upgrade_daily_limit": CONFIG.get("radarr_upgrade_daily_limit", 0),
             "radarr_daily_limit":   CONFIG.get("radarr_daily_limit", 0),
             "cooldown_days":        CONFIG.get("cooldown_days",7),
             "request_timeout":      CONFIG.get("request_timeout",30),
@@ -2138,6 +2175,9 @@ def api_config():
     CONFIG["max_searches_per_run"] = clamp_int(d.get("max_searches_per_run", CONFIG["max_searches_per_run"]), 1, 500, CONFIG["max_searches_per_run"])
     CONFIG["daily_limit"]          = clamp_int(d.get("daily_limit",          CONFIG.get("daily_limit",20)),   0, 9999, CONFIG.get("daily_limit",20))
     if "sonarr_daily_limit" in d: CONFIG["sonarr_daily_limit"] = clamp_int(int(d.get("sonarr_daily_limit",0) or 0),0,9999,0)
+    if "radarr_daily_limit" in d: CONFIG["radarr_daily_limit"] = clamp_int(int(d.get("radarr_daily_limit",0) or 0),0,9999,0)
+    for _upg_key in ("upgrade_daily_limit","sonarr_upgrade_daily_limit","radarr_upgrade_daily_limit"):
+        if _upg_key in d: CONFIG[_upg_key] = clamp_int(int(d.get(_upg_key,0) or 0),0,9999,0)
     if "radarr_daily_limit" in d: CONFIG["radarr_daily_limit"] = clamp_int(int(d.get("radarr_daily_limit",0) or 0),0,9999,0)
     CONFIG["cooldown_days"]        = clamp_int(d.get("cooldown_days",        CONFIG.get("cooldown_days",7)),  1, 365, CONFIG.get("cooldown_days",7))
     CONFIG["request_timeout"]      = clamp_int(d.get("request_timeout",      CONFIG.get("request_timeout",30)),5, 300, 30)
