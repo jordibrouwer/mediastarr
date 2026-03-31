@@ -1858,7 +1858,10 @@ def _api_auth_required(f):
 
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
-    next_path = request.args.get("next", "/")
+    # Validate next_path: only allow relative paths on the same host
+    # This prevents open redirect attacks (py/url-redirection CodeQL)
+    _raw_next = request.args.get("next", "/")
+    next_path = "/" if not _raw_next or not _raw_next.startswith("/") or "//" in _raw_next else _raw_next
     error = None
     if request.method == "POST":
         # Check lockout first
@@ -1911,11 +1914,11 @@ def api_setup_ping():
     if not ok: return jsonify({"ok":False,"msg":f"URL ungültig: {err}"}),400
     key = safe_str(d.get("api_key",""), 128)
     ok, err = validate_api_key(key)
-    if not ok: return jsonify({"ok":False,"msg":f"API Key: {err}"}),400
+    if not ok: return jsonify({"ok":False,"msg":"Invalid API key format"}),400
     try:
         ok, ver, detail = ArrClient(itype, url, key).ping()
-        return jsonify({"ok":ok,"version":ver,"msg":detail})
-    except Exception: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
+        return jsonify({"ok":ok,"version":ver,"msg":detail[:100] if detail else ""})
+    except Exception: return jsonify({"ok":False,"msg":"Connection failed"})
 
 @app.route("/api/setup/complete", methods=["POST"])
 @_api_auth_required
@@ -2058,7 +2061,7 @@ def api_instance_tags(inst_id: str):
         tags = client.get("tag")
         return jsonify({"ok": True, "tags": [{"id": t["id"], "label": t["label"]} for t in tags]})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)[:200]}), 502
+        return jsonify({"ok": False, "error": "Could not fetch tags from instance"}), 502
 
 @app.route("/api/instances/<inst_id>/ping")
 @_api_auth_required
@@ -2072,8 +2075,8 @@ def api_instances_ping(inst_id:str):
         stats["status"] = "online" if ok else "offline"
         stats["version"] = ver
         stats["status_detail"] = "" if ok else detail
-        return jsonify({"ok":ok,"version":ver,"msg":detail})
-    except Exception: return jsonify({"ok":False,"msg":"Verbindung fehlgeschlagen"})
+        return jsonify({"ok":ok,"version":ver,"msg":detail[:100] if detail else ""})
+    except Exception: return jsonify({"ok":False,"msg":"Connection failed"})
 
 # ── Main API ──────────────────────────────────────────────────────────────────
 @app.route("/api/state")
@@ -2304,7 +2307,7 @@ def api_config_import():
         raw  = file.read(1_024 * 512)   # 512 KB hard cap
         data = json.loads(raw)
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Invalid JSON: {e}"}), 400
+        return jsonify({"ok": False, "error": "Invalid JSON in uploaded file"}), 400
 
     if not isinstance(data, dict):
         return jsonify({"ok": False, "error": "Root must be a JSON object"}), 400
@@ -2448,7 +2451,7 @@ def api_log_rotate():
         })
     except Exception as e:
         logger.error(f"Log rotation failed: {e}")
-        return jsonify({"ok": False, "error": str(e)})
+        return jsonify({"ok": False, "error": "Log rotation configuration failed"})
 
 @app.route("/api/log/status")
 @_api_auth_required
@@ -2474,7 +2477,8 @@ def api_log_status():
             "log_dir":      str(pathlib.Path(_file_handler.baseFilename).parent),
         })
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)})
+        logger.debug(f"api_log_status error: {e}")
+        return jsonify({"ok": False, "error": "Could not read log status"})
 
 @app.route("/api/discord/test", methods=["POST"])
 @_api_auth_required

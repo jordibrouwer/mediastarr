@@ -1,5 +1,24 @@
 # Changelog
 
+## [v7.0.6 — security patch] — 2026-03-31
+
+### Fixed (Security — CodeQL alerts)
+- **#1 Information exposure — API key validation** (`py/stack-trace-exposure`) — setup ping endpoint returned raw validation error detail. Now returns generic `"Invalid API key format"` message
+- **#2 Information exposure — tag fetch** (`py/stack-trace-exposure`) — `/api/instances/<id>/tags` returned `str(e)[:200]` from exception. Now returns `"Could not fetch tags from instance"`
+- **#3 Information exposure — instance ping detail** (`py/stack-trace-exposure`) — ping response `msg` field forwarded raw exception detail. Now truncated to 100 chars max
+- **#4 Information exposure — JSON import** (`py/stack-trace-exposure`) — config import endpoint returned `f"Invalid JSON: {e}"` leaking parser internals. Now returns `"Invalid JSON in uploaded file"`
+- **#5 Information exposure — log rotation** (`py/stack-trace-exposure`) — log reconfiguration endpoint returned `str(e)` from OS-level exception. Now returns generic message; original error still logged via `logger.error()`
+- **#6 Information exposure — log status** (`py/stack-trace-exposure`) — `/api/log/status` returned `str(e)` from file system exception. Now logs debug-level and returns `"Could not read log status"`
+- **#7 URL redirect from remote source** (`py/url-redirection`) — `?next=` parameter on login was passed directly to `redirect()` without validation. Now validated: must start with `/` and must not contain `//` (prevents protocol-relative redirect `//evil.com`)
+
+### Changed
+- **GitHub Actions workflow upgraded** — replaced simple `docker-publish.yml` with smart workflow:
+  - **Weekly base image check** (`schedule: 0 3 * * 1`) — rebuilds automatically on Monday if `python:3.12-slim` digest changed
+  - **Digest caching** — skips scheduled build if base image unchanged (saves CI minutes)
+  - **`weekly` tag** — scheduled builds get a `weekly` tag alongside `latest`
+  - **`no-cache` on schedule** — full rebuild on base image update
+  - All other behavior identical to previous workflow
+
 ## [v7.0.6] — 2026-03-30
 
 ### Fixed
