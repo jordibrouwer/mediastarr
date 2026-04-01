@@ -1,9 +1,9 @@
 # Changelog
 
+
 ## [v7.1.0] — 2026-04-01
 
 ### Added
-
 **Feature #46 — Stalled Download Monitor**
 - Monitors the Sonarr/Radarr queue API (`GET /api/v3/queue`) on every hunt cycle
 - Detects stalled downloads via `trackedDownloadStatus` ("warning"/"error"), `trackedDownloadState` ("stalled"), and keyword scan in `statusMessages` ("no seeds", "no peers", "dead", etc.)
@@ -23,6 +23,11 @@
 - Pattern: first 4 + `****` + last 4 chars (e.g. `abc1****3d4e`)
 - API keys are already excluded from `/api/state` (`k != "api_key"` filter) and webhook URLs excluded from Discord config in state
 - Webhook URLs (Sonarr, Radarr, main) never returned in `/api/state`
+
+### Fixed (Security — CodeQL alerts)
+- **CodeQL #8 — Information exposure in setup ping** (`py/stack-trace-exposure`) — `detail[:100]` from `ArrClient.ping()` still flowed from exception via `summarize_ping_error(str(e))`. Fix: introduced `_safe_ping_msg()` with a hardcoded `_SAFE_PING_MESSAGES` allowlist. Only strings from the allowlist are returned; anything else becomes `"Connection failed"`. Breaks the taint chain at the source.
+- **CodeQL #9 — Information exposure in instance ping** (`py/stack-trace-exposure`) — same root cause as #8 in the `/api/instances/<id>/ping` route. Same fix applied.
+- **CodeQL #7 — URL redirect from remote source** (`py/url-redirection`) — previous fix validated `startswith("/")` and `"//"` absence, but CodeQL still flags `request.args.get()` as tainted. Hardened with `urllib.parse.urlparse()`: rejects any URL with a scheme, netloc, or `//` prefix. Now fully breaks the taint flow.
 
 ### Changed
 - **README** — roadmap updated: all completed features marked `[x]` with version tags through v7.1.0; new roadmap items added (Gotify/Apprise, per-indexer stall, import lists); language order confirmed EN → DE; features table updated with new v7.1.0 entries

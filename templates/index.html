@@ -1354,6 +1354,7 @@
               <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, Discord embed fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Huntarr comparison text, homepage badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console dual-output fix, startup version fix, per-instance upgrade toggle, improved logging, mobile language selector, help page redesign, stats layout fix</li>
+              <li>✅ <strong>v7.1.0</strong> — Stalled download monitor (#46), API key censoring (#41), CodeQL security fixes #7/#8/#9</li>
               <li>✅ <strong>v7.0.5</strong> — Tag chips persist (no re-render on poll), tag filter per instance (#37), separate Discord webhooks (#38), webhook trigger endpoint, log spam fix, Chrome flag emoji fix</li>
               <li>✅ <strong>v7.0.4</strong> — Feature #36: tagging (global + per-instance), page size 500→2000</li>
               <li>✅ <strong>v7.0.3</strong> — Bug #33/#34/#35 upgrades/toggles/Discord, settings revert fix, season dedup, 10-field sync</li>
@@ -1383,6 +1384,7 @@
               <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Discord-Embed-Fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Huntarr-Vergleichstext, Homepage-Badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console-Dual-Output-Fix, Startup-Version-Fix, Upgrades pro Instanz, verbessertes Logging, Mobile Sprachauswahl, Hilfe-Seiten-Redesign, Statistik-Layout-Fix</li>
+              <li>✅ <strong>v7.1.0</strong> — Stalled-Download-Monitor (#46), API-Key-Zensierung (#41), CodeQL-Sicherheitsfixes #7/#8/#9</li>
               <li>✅ <strong>v7.0.5</strong> — Tag-Chips bleiben beim Poll erhalten, Tag-Filter pro Instanz (#37), separate Discord-Webhooks (#38), Webhook-Trigger, Log-Spam-Fix, Chrome Flag-Emoji-Fix</li>
               <li>✅ <strong>v7.0.4</strong> — Feature #36: Tagging (global + pro Instanz), Seitengröße 500→2000</li>
               <li>✅ <strong>v7.0.3</strong> — Bug #33/#34/#35 Upgrades/Toggles/Discord, Einstellungen-Revert-Fix, Staffel-Dedup, 10-Felder-Sync</li>
@@ -1456,6 +1458,14 @@
         <div class="help-section">
 <h3>📋 Changelog</h3>
           <div class="help-en">
+
+            <h4>v7.1.0 — 2026-04-01</h4>
+            <ul>
+              <li><strong>Add</strong> — Feature #46: Stalled Download Monitor — detects stuck downloads via Sonarr/Radarr queue API; configurable threshold (minutes) and action (new search / Discord warning only); global toggle + per-instance override</li>
+              <li><strong>Add</strong> — Feature #41: API key censoring — all 32–128 char strings masked in activity log; API keys and webhooks never returned in <code>/api/state</code></li>
+              <li><strong>Fix</strong> — CodeQL #8/#9: <code>_safe_ping_msg()</code> allowlist ensures only known-safe strings are returned from ping endpoints (no exception taint)</li>
+              <li><strong>Fix</strong> — CodeQL #7: URL redirect validation hardened with <code>urlparse</code> to fully block open redirect attacks</li>
+            </ul>
 
             <h4>v7.0.5 — 2026-03-30</h4>
             <ul>
@@ -1554,6 +1564,14 @@
 
           </div>
           <div class="help-de">
+            <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.1.0</strong> <em style="color:var(--muted)">2026-04-01</em>
+              <ul>
+                <li><strong>Add</strong> — Feature #46: Stalled-Download-Monitor — erkennt feststeckende Downloads über die Sonarr/Radarr-Queue-API; konfigurierbarer Schwellenwert und Aktion (Neue Suche / nur Discord-Warnung); globaler Toggle + pro-Instanz-Override</li>
+                <li><strong>Add</strong> — Feature #41: API-Key-Zensierung — alle 32–128-stelligen Strings im Aktivitätslog maskiert; API-Keys und Webhooks nie in <code>/api/state</code> zurückgegeben</li>
+                <li><strong>Fix</strong> — CodeQL #8/#9: <code>_safe_ping_msg()</code>-Allowlist verhindert Taint-Flow von Exceptions in Ping-Antworten</li>
+                <li><strong>Fix</strong> — CodeQL #7: URL-Redirect mit <code>urlparse</code> gehärtet gegen Open-Redirect-Angriffe</li>
+              </ul>
+            </div>
             <div style="margin-bottom:14px"><strong style="color:var(--accent)">v7.0.5</strong> <em style="color:var(--muted)">2026-03-30</em>
               <ul>
                 <li><strong>Fix</strong> — Tag-Toggle und Tag-Chips werden nicht mehr alle 4 Sekunden zurückgesetzt; Instanz-Karten nur noch beim Tab-Wechsel neu gerendert</li>

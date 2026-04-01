@@ -869,6 +869,19 @@ def e500(e): logger.error(f"500:{e}"); return jsonify({"ok":False,"error":"Inter
 
 # ─── *arr API Client ──────────────────────────────────────────────────────────
 
+# Safe allowlist for ping error messages returned to client
+_SAFE_PING_MESSAGES = frozenset([
+    "Authentication failed", "API endpoint not found", "Host not found",
+    "Timed out", "Connection refused", "Host unreachable", "TLS/SSL error",
+    "Connection failed", "Network error",
+])
+
+def _safe_ping_msg(detail: str) -> str:
+    """Return detail only if it is a known-safe message, else generic fallback.
+    This breaks the CodeQL taint chain from exception to HTTP response.
+    """
+    return detail if detail in _SAFE_PING_MESSAGES else "Connection failed"
+
 def summarize_ping_error(raw: str) -> str:
     """Turn a raw exception string into a short user-readable message."""
     text = str(raw or "").strip()
@@ -2022,10 +2035,18 @@ def _api_auth_required(f):
 
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
-    # Validate next_path: only allow relative paths on the same host
-    # This prevents open redirect attacks (py/url-redirection CodeQL)
-    _raw_next = request.args.get("next", "/")
-    next_path = "/" if not _raw_next or not _raw_next.startswith("/") or "//" in _raw_next else _raw_next
+    # Validate next_path strictly — CodeQL py/url-redirection fix
+    # Only allow relative paths: must start with /, no //, no scheme, no host
+    _raw_next = request.args.get("next", "/") or "/"
+    try:
+        from urllib.parse import urlparse as _up
+        _parsed = _up(_raw_next)
+        # Reject anything with a scheme or netloc (absolute URL)
+        _safe = (not _parsed.scheme and not _parsed.netloc and
+                 _raw_next.startswith("/") and not _raw_next.startswith("//"))
+    except Exception:
+        _safe = False
+    next_path = _raw_next if _safe else "/"
     error = None
     if request.method == "POST":
         # Check lockout first
@@ -2081,7 +2102,7 @@ def api_setup_ping():
     if not ok: return jsonify({"ok":False,"msg":"Invalid API key format"}),400
     try:
         ok, ver, detail = ArrClient(itype, url, key).ping()
-        return jsonify({"ok":ok,"version":ver,"msg":detail[:100] if detail else ""})
+        return jsonify({"ok":ok,"version":ver,"msg":_safe_ping_msg(detail)})
     except Exception: return jsonify({"ok":False,"msg":"Connection failed"})
 
 @app.route("/api/setup/complete", methods=["POST"])
@@ -2242,7 +2263,7 @@ def api_instances_ping(inst_id:str):
         stats["status"] = "online" if ok else "offline"
         stats["version"] = ver
         stats["status_detail"] = "" if ok else detail
-        return jsonify({"ok":ok,"version":ver,"msg":detail[:100] if detail else ""})
+        return jsonify({"ok":ok,"version":ver,"msg":_safe_ping_msg(detail)})
     except Exception: return jsonify({"ok":False,"msg":"Connection failed"})
 
 # ── Main API ──────────────────────────────────────────────────────────────────
