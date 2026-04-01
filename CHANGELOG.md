@@ -1,5 +1,32 @@
 # Changelog
 
+## [v7.1.0] — 2026-04-01
+
+### Added
+
+**Feature #46 — Stalled Download Monitor**
+- Monitors the Sonarr/Radarr queue API (`GET /api/v3/queue`) on every hunt cycle
+- Detects stalled downloads via `trackedDownloadStatus` ("warning"/"error"), `trackedDownloadState` ("stalled"), and keyword scan in `statusMessages` ("no seeds", "no peers", "dead", etc.)
+- Two-stage detection: first sighting starts a timer; action only fires after `stall_threshold_min` minutes (default 60, min 5)
+- Two actions selectable:
+  - **New search** — removes download from client (with blocklist flag so it won't re-grab), then triggers `MoviesSearch` / `EpisodeSearch` / `SeriesSearch`
+  - **Warn only** — Discord notification without removing the download
+- **Master switch** in Settings → General → Stalled Download Monitor (global on/off)
+- **Per-instance override** via `PATCH /api/instances/<id>` (`stall_monitor_enabled`: `null` = use global, `true` / `false` = override)
+- Configurable threshold (minutes) and action via UI and `POST /api/config`
+- Stall state tracked in-memory (`_stall_seen` dict keyed by `instance_id:downloadId`)
+- `ArrClient.delete_with_params()` method added for queue item removal with `blocklist` + `removeFromClient` params
+
+**Feature #41 — API Key Censoring**
+- `_censor_log(text)` function automatically masks any 32–128 character alphanumeric string in log text
+- Applied to all `log_act()` calls — both the action and item fields
+- Pattern: first 4 + `****` + last 4 chars (e.g. `abc1****3d4e`)
+- API keys are already excluded from `/api/state` (`k != "api_key"` filter) and webhook URLs excluded from Discord config in state
+- Webhook URLs (Sonarr, Radarr, main) never returned in `/api/state`
+
+### Changed
+- **README** — roadmap updated: all completed features marked `[x]` with version tags through v7.1.0; new roadmap items added (Gotify/Apprise, per-indexer stall, import lists); language order confirmed EN → DE; features table updated with new v7.1.0 entries
+
 ## [v7.0.6 — security patch] — 2026-03-31
 
 ### Fixed (Security — CodeQL alerts)

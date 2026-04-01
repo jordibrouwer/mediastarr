@@ -664,6 +664,11 @@ DEFAULT_CONFIG = {
     "log_max_mb":    5,    # max size per log file in MB (1–100)
     "log_backups":   2,    # number of backup files to keep (0–10)
     "log_min_level": "INFO",  # minimum level for Docker/file log: DEBUG|INFO|WARN|ERROR
+    # Stalled download monitor (Feature #46)
+    "stall_monitor_enabled":   False,   # master switch
+    "stall_threshold_min":     60,      # minutes with no progress before action
+    "stall_action":            "search", # "search" = trigger new search | "warn" = Discord only
+
 }
 
 def _migrate_config(cfg: dict) -> dict:
@@ -692,6 +697,7 @@ def _migrate_config(cfg: dict) -> dict:
         if "tag_filter_ids"   not in inst: inst["tag_filter_ids"]   = []     # empty = no filter (search all)
         if "tag_filter"       not in inst: inst["tag_filter"]       = []     # empty = all items
         if "upgrade_daily_limit" not in inst: inst["upgrade_daily_limit"] = 0  # 0 = use global
+        if "stall_monitor_enabled" not in inst: inst["stall_monitor_enabled"] = None  # None = use global
     return cfg
 
 def load_config() -> dict:
@@ -906,6 +912,11 @@ class ArrClient:
                          json=data, timeout=self._timeout())
         r.raise_for_status(); return r.json()
 
+    def delete_with_params(self, path, params=None):
+        r = requests.delete(f"{self.url}/api/v3/{path}", headers=self._h,
+                            params=params, timeout=self._timeout())
+        r.raise_for_status()
+
     def ping(self):
         try:
             d = self.get("system/status")
@@ -952,11 +963,21 @@ def ms_error(service: str, action: str, item: str = "") -> None: ms_log("ERROR",
 
 _apply_log_level()  # honour log_min_level from config — called here, after function is defined
 
+_API_KEY_RE_LOG = __import__("re").compile(r"\b[A-Za-z0-9]{32,128}\b")
+
+def _censor_log(text: str) -> str:
+    """Replace any bare API-key-like string in log text with ****.
+    Only applies to strings that look like API keys (32-128 alphanum chars).
+    URL paths, titles, etc. are safe because they contain non-alphanum chars.
+    """
+    if not text or len(text) < 32: return text
+    return _API_KEY_RE_LOG.sub(lambda m: m.group()[:4] + "****" + m.group()[-4:], text)
+
 def log_act(service:str, action:str, item:str, status:str="info"):
     ts = fmt_time(now_local())
     STATE["activity_log"].appendleft({
         "ts": ts, "service": safe_str(service,30),
-        "action": safe_str(action,50), "item": safe_str(item,200),
+        "action": safe_str(_censor_log(action),50), "item": safe_str(_censor_log(item),200),
         "status": status if status in ("info","success","warning","error") else "info",
     })
     # Also emit to Docker console with appropriate level
@@ -1644,6 +1665,143 @@ def hunt_radarr_instance(inst: dict):
     except Exception as e:
         log_act(name, msg("error"), str(e)[:200], "error")
 
+
+# ─── Stalled Download Monitor ────────────────────────────────────────────────
+_stall_seen: dict[str, float] = {}   # downloadId → first_stall_seen_ts
+
+def _check_stalled_queue(inst: dict) -> None:
+    """Check Sonarr/Radarr queue for stalled downloads and take action.
+    
+    Stall criteria: item has status 'downloading' but sizeleft unchanged
+    for stall_threshold_min minutes. Uses trackedDownloadState / trackedDownloadStatus
+    to detect stalls without needing to track size over time.
+    """
+    global_enabled = CONFIG.get("stall_monitor_enabled", False)
+    inst_override  = inst.get("stall_monitor_enabled")  # None = use global
+    enabled = global_enabled if inst_override is None else inst_override
+    if not enabled:
+        return
+
+    iid    = inst["id"]
+    name   = inst["name"]
+    itype  = inst.get("type", "sonarr")
+    client = ArrClient(name, inst["url"], inst["api_key"])
+    threshold_min = max(5, int(CONFIG.get("stall_threshold_min", 60) or 60))
+    action        = CONFIG.get("stall_action", "search")
+    lang          = CONFIG.get("language", "en")
+    is_de         = lang == "de"
+    now_ts        = time.time()
+
+    try:
+        params = {"page": 1, "pageSize": 200, "includeUnknownMovieItems": "true",
+                  "includeUnknownSeriesItems": "true"}
+        data   = client.get("queue", params=params)
+        items  = data.get("records", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+    except Exception as e:
+        logger.debug(f"[{name}] Queue fetch failed for stall check: {e}")
+        return
+
+    for item in items:
+        dl_id   = str(item.get("downloadId") or item.get("id") or "")
+        if not dl_id:
+            continue
+
+        status         = str(item.get("status", "")).lower()
+        tracked_state  = str(item.get("trackedDownloadState", "")).lower()
+        tracked_status = str(item.get("trackedDownloadStatus", "")).lower()
+        sizeleft       = item.get("sizeleft", -1)
+        title          = str(item.get("title") or item.get("movieTitle") or item.get("seriesTitle") or "?")[:100]
+
+        # Only check actively downloading items
+        if status not in ("downloading", "queued", "paused"):
+            _stall_seen.pop(dl_id, None)
+            continue
+
+        # Stall detection: trackedDownloadStatus is "warning" or "error" with no seeds
+        is_stalled = (
+            tracked_status in ("warning", "error") or
+            tracked_state  in ("importpending", "stalled") or
+            (sizeleft == 0 and status == "queued")   # stuck at 0 bytes
+        )
+
+        # Also stall if sizeleft > 0 and hasn't moved in threshold minutes
+        # We track first-seen-as-potentially-stalled time
+        stall_key = f"{iid}:{dl_id}"
+        if not is_stalled and sizeleft > 0:
+            # Check status messages for stall indicators
+            for msg_obj in item.get("statusMessages", []):
+                for sm in msg_obj.get("messages", []):
+                    if any(kw in str(sm).lower() for kw in
+                           ("no seeds", "no peers", "stalled", "dead", "ratio", "seeding time")):
+                        is_stalled = True
+                        break
+
+        if is_stalled:
+            if stall_key not in _stall_seen:
+                _stall_seen[stall_key] = now_ts
+                logger.debug(f"[{name}] Stall first detected: {title} ({dl_id})")
+                continue  # wait for threshold before acting
+
+            stall_age_min = (now_ts - _stall_seen[stall_key]) / 60
+            if stall_age_min < threshold_min:
+                continue  # not long enough yet
+
+            # ── Threshold exceeded → take action ────────────────────────────
+            logger.info(f"[{name}] Stalled download ({stall_age_min:.0f}min): {title}")
+            _stall_seen.pop(stall_key, None)  # reset so we don't act twice
+
+            if action == "warn":
+                # Discord-only warning
+                label = ("⏳ Stockender Download" if is_de else "⏳ Stalled download")
+                desc  = (f"**{title}** ist seit **{stall_age_min:.0f} Minuten** nicht mehr aktiv."
+                         if is_de else
+                         f"**{title}** has been stalled for **{stall_age_min:.0f} minutes**.")
+                discord_send("offline", label, desc, name)
+                ms_warn(name, "Stalled download (warn only)", title)
+
+            elif action == "search":
+                # Remove from queue (mark failed) and trigger new search
+                try:
+                    queue_id = item.get("id")
+                    if queue_id:
+                        # blocklist=true marks it as failed so it won't be re-grabbed immediately
+                        client.delete_with_params(
+                            f"queue/{queue_id}",
+                            {"removeFromClient": "true", "blocklist": "true", "skipRequeue": "false"}
+                        )
+                    # Trigger new search — use the media item if available
+                    if itype == "radarr":
+                        movie_id = item.get("movieId")
+                        if movie_id:
+                            client.post("command", {"name": "MoviesSearch", "movieIds": [movie_id]})
+                            ms_info(name, "Stalled → new search triggered", title)
+                    else:
+                        series_id = item.get("seriesId")
+                        ep_id     = item.get("episodeId")
+                        if series_id and ep_id:
+                            client.post("command", {"name": "EpisodeSearch", "episodeIds": [ep_id]})
+                            ms_info(name, "Stalled → new search triggered", title)
+                        elif series_id:
+                            client.post("command", {"name": "SeriesSearch", "seriesId": series_id})
+                            ms_info(name, "Stalled → new search triggered", title)
+
+                    # Discord notification
+                    label = ("⚡ Stockender Download neu gesucht" if is_de
+                             else "⚡ Stalled download — new search triggered")
+                    desc  = (f"**{title}** war seit **{stall_age_min:.0f} Minuten** blockiert.\n"
+                             f"Download wurde abgebrochen und eine neue Suche gestartet."
+                             if is_de else
+                             f"**{title}** was stalled for **{stall_age_min:.0f} minutes**.\n"
+                             f"Download removed and new search triggered.")
+                    discord_send("missing", label, desc, name)
+
+                except Exception as e:
+                    logger.warning(f"[{name}] Stall action failed for {title}: {e}")
+        else:
+            # Not stalled — reset tracking
+            _stall_seen.pop(stall_key, None)
+
+
 # ─── Ping ─────────────────────────────────────────────────────────────────────
 def ping_all():
     _ensure_inst_stats()
@@ -1694,6 +1852,12 @@ def run_cycle():
             for k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily"):
                 s[k] = 0
         ping_all()
+        # ── Stalled download check ────────────────────────────────────────────
+        if CONFIG.get("stall_monitor_enabled", False):
+            for inst in CONFIG["instances"]:
+                if inst.get("enabled") and inst.get("api_key"):
+                    try: _check_stalled_queue(inst)
+                    except Exception as e: logger.warning(f"Stall check error: {e}")
         removed = db.purge_expired(CONFIG.get("cooldown_days",7))
         if removed:
             log_act("System", msg("db_pruned", n=removed), "", "info")
@@ -2038,6 +2202,9 @@ def api_instances_update(inst_id:str):
         inst["daily_limit"] = clamp_int(int(d.get("daily_limit", 0) or 0), 0, 9999, 0)
     if "upgrade_daily_limit" in d:
         inst["upgrade_daily_limit"] = clamp_int(int(d.get("upgrade_daily_limit", 0) or 0), 0, 9999, 0)
+    if "stall_monitor_enabled" in d:
+        v = d.get("stall_monitor_enabled")
+        inst["stall_monitor_enabled"] = None if v is None else bool(v)  # None=use global
     log_act("System", "Config gespeichert" if CONFIG.get("language","en")=="de" else "Config saved", "", "info")
     save_config(CONFIG); return jsonify({"ok":True})
 
@@ -2140,6 +2307,9 @@ def api_state():
             "radarr_webhook_set": bool(CONFIG.get("discord",{}).get("radarr_webhook_url","")),
             "discord_webhook_set": bool(CONFIG.get("discord",{}).get("webhook_url","")),
             "public_api_state":       CONFIG.get("public_api_state", False),
+"stall_monitor_enabled":  CONFIG.get("stall_monitor_enabled", False),
+            "stall_threshold_min":    CONFIG.get("stall_threshold_min", 60),
+            "stall_action":           CONFIG.get("stall_action", "search"),
             "log_max_mb":             CONFIG.get("log_max_mb",  5),
             "log_backups":            CONFIG.get("log_backups", 2),
             "log_min_level":          CONFIG.get("log_min_level", "INFO"),
@@ -2258,6 +2428,11 @@ def api_config():
                 if not _re.match(r"^[0-2][0-9]:[0-5][0-9]$", end):   continue
                 validated.append({"start": start, "end": end, "label": label})
             CONFIG["maintenance_windows"] = validated
+    if "stall_monitor_enabled" in d: CONFIG["stall_monitor_enabled"] = bool(d["stall_monitor_enabled"])
+    if "stall_threshold_min"   in d: CONFIG["stall_threshold_min"]   = clamp_int(d.get("stall_threshold_min", 60), 5, 10080, 60)
+    if "stall_action"          in d:
+        _sa = safe_str(d.get("stall_action","search"), 10)
+        if _sa in ("search","warn"): CONFIG["stall_action"] = _sa
     _changed_log = False
     if "log_min_level" in d:
         lvl = str(d.get("log_min_level","INFO")).upper()

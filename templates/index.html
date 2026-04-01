@@ -703,6 +703,32 @@
             </div>
           </div>
 
+          <!-- ── Stalled Download Monitor ── -->
+          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_stall_monitor">Stalled Download Monitor</div>
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:10px" data-i18n="hint_stall_monitor">Überwacht die Download-Queue auf steckengebliebene Downloads und löst automatisch eine neue Suche aus.</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <div class="toggle" id="tog-stall-enabled" onclick="toggleStall()"></div>
+              <span class="toggle-label" id="lab-stall-enabled">Aus</span>
+              <span style="font-size:11px;color:var(--muted2)" data-i18n="lbl_stall_enabled">Aktivieren</span>
+            </div>
+            <div class="form-grid" id="stall-settings" style="display:none">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_stall_threshold">Schwellenwert (Minuten)</label>
+                <input class="form-input" id="cfg-stall-threshold" type="number" min="5" max="10080" value="60">
+                <div class="form-hint" data-i18n="hint_stall_threshold">Downloads, die länger als N Minuten nicht aktiv sind, werden neu gesucht.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_stall_action">Aktion</label>
+                <select class="form-input" id="cfg-stall-action">
+                  <option value="search" data-i18n="opt_stall_search">Neue Suche starten</option>
+                  <option value="warn" data-i18n="opt_stall_warn">Nur Discord-Warnung</option>
+                </select>
+                <div class="form-hint" data-i18n="hint_stall_action">Was passiert wenn ein steckengebliebener Download erkannt wird.</div>
+              </div>
+            </div>
+          </div>
+
           <!-- ── Log Rotation ── -->
           <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
             <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_log_rotation">Log-Rotation</div>
@@ -1918,6 +1944,15 @@ const T = {
         lbl_max:'Max. Searches pro Lauf', lbl_daily:'Tageslimit gesamt (0 = ∞)',
         lbl_cooldown:'Cooldown (Tage)', lbl_timeout:'API Timeout (s)',
         lbl_search_behavior:'Suchverhalten', lbl_sonarr_mode:'Sonarr Suchmodus',
+        lbl_stall_monitor:'Stalled Download Monitor',
+        hint_stall_monitor:'Überwacht die Queue auf steckengebliebene Downloads. Startet bei Bedarf automatisch eine neue Suche.',
+        lbl_stall_enabled:'Aktivieren (global)',
+        lbl_stall_threshold:'Schwellenwert (Minuten)',
+        hint_stall_threshold:'Downloads die länger als N Minuten inaktiv sind werden neu gesucht. Minimum 5 Min.',
+        lbl_stall_action:'Aktion bei Erkennung',
+        hint_stall_action:'Neue Suche: Download abbrechen + neu suchen. Nur Warnung: Discord-Meldung ohne Eingriff.',
+        opt_stall_search:'Neue Suche starten',
+        opt_stall_warn:'Nur Discord-Warnung',
         lbl_tagging:'Tagging',
         hint_tagging:'Fügt verarbeiteten Serien/Filmen einen Tag hinzu, damit du in Sonarr/Radarr sehen kannst, welche Einträge Mediastarr bereits durchsucht hat.',
         lbl_tag_enabled:'Tags aktivieren (global)',
@@ -2020,6 +2055,15 @@ const T = {
         lbl_max:'Max searches per run', lbl_daily:'Total daily limit (0 = ∞)',
         lbl_cooldown:'Cooldown (days)', lbl_timeout:'API timeout (s)',
         lbl_search_behavior:'Search behavior', lbl_sonarr_mode:'Sonarr search mode',
+        lbl_stall_monitor:'Stalled Download Monitor',
+        hint_stall_monitor:'Monitors the download queue for stalled downloads and automatically triggers a new search.',
+        lbl_stall_enabled:'Enable (global)',
+        lbl_stall_threshold:'Threshold (minutes)',
+        hint_stall_threshold:'Downloads inactive for more than N minutes will be re-searched. Minimum 5 min.',
+        lbl_stall_action:'Action on detection',
+        hint_stall_action:'New search: remove download + trigger new search. Warn only: Discord alert without intervening.',
+        opt_stall_search:'Trigger new search',
+        opt_stall_warn:'Discord warning only',
         lbl_tagging:'Tagging',
         hint_tagging:'Adds a tag to processed series/movies so you can see in Sonarr/Radarr which items Mediastarr has already searched.',
         lbl_tag_enabled:'Enable tagging (global)',
@@ -2536,6 +2580,19 @@ function updateUI() {
       if (rlEl && document.activeElement !== rlEl && c_always.discord.rate_limit_cooldown != null)
         rlEl.value = c_always.discord.rate_limit_cooldown;
     }
+    // Sync stall monitor settings
+    if (c_always.stall_monitor_enabled !== undefined) {
+      const tog2 = document.getElementById('tog-stall-enabled');
+      const lab2 = document.getElementById('lab-stall-enabled');
+      const set2 = document.getElementById('stall-settings');
+      if (!_configDirty) {
+        if (tog2) tog2.className = 'toggle' + (c_always.stall_monitor_enabled?' on':'');
+        if (lab2) lab2.textContent = t(c_always.stall_monitor_enabled?'on':'off');
+        if (set2) set2.style.display = c_always.stall_monitor_enabled?'':' none';
+      }
+    }
+    if (!_configDirty && c_always.stall_threshold_min != null) { const e=document.getElementById('cfg-stall-threshold'); if(e && document.activeElement!==e) e.value=c_always.stall_threshold_min; }
+    if (!_configDirty && c_always.stall_action) { const e=document.getElementById('cfg-stall-action'); if(e) e.value=c_always.stall_action; }
     if (!_configDirty && c_always.tag_enabled !== undefined) {
       _tagGlobalEnabled = !!c_always.tag_enabled;
       const tog = document.getElementById('tog-tag-global');
@@ -2721,6 +2778,9 @@ async function saveConfig() {
     radarr_upgrade_daily_limit:  getInt('cfg-radarr-upgrade-daily', 0),
 
     search_upgrades:      toggleStates2.upgrades,
+    stall_monitor_enabled: document.getElementById('tog-stall-enabled')?.classList.contains('on') ?? false,
+    stall_threshold_min:   parseInt(document.getElementById('cfg-stall-threshold')?.value) || 60,
+    stall_action:          document.getElementById('cfg-stall-action')?.value || 'search',
     tag_enabled:          _tagGlobalEnabled,
     tag_label:            document.getElementById('cfg-tag-label')?.value?.trim() || 'mediastarr',
     timezone:             (el('cfg-timezone')?.value && el('cfg-timezone').value !== 'UTC' ? el('cfg-timezone').value : el('cfg-timezone-search')?.value) || el('cfg-timezone')?.value || 'UTC',
@@ -3112,6 +3172,18 @@ function _syncInstToggles() {
 }
 
 // ── Global tag toggle ─────────────────────────────────────────────────────
+function toggleStall() {
+  const tog = document.getElementById('tog-stall-enabled');
+  const lab = document.getElementById('lab-stall-enabled');
+  const settings = document.getElementById('stall-settings');
+  const isOn = tog?.classList.contains('on');
+  const newVal = !isOn;
+  if (tog) tog.className = 'toggle' + (newVal?' on':'');
+  if (lab) lab.textContent = t(newVal?'on':'off');
+  if (settings) settings.style.display = newVal?'':' none';
+  _markDirty();
+}
+
 function toggleTagGlobal() {
   _tagGlobalEnabled = !_tagGlobalEnabled;
   const tog = document.getElementById('tog-tag-global');

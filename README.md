@@ -41,6 +41,8 @@ Runs on a configurable schedule, keeps a SQLite history, sends rich Discord embe
 | ⭐ IMDb filter | Min. rating — global or per Sonarr/Radarr tab |
 | 🎯 Target resolution | Only upgrade below your quality target |
 | 🔢 Upgrade daily limit | Separate limit for upgrades — global, per Sonarr/Radarr type, or per instance |
+| 🔒 API key censoring | API keys are masked in activity log and never returned in API responses |
+| ⚡ Stalled download monitor | Automatically detects stuck downloads and triggers a new search (queue API-based) |
 | ⏱ Jitter | Random ±N sec offset per cycle |
 | 🔔 Discord | Rich embeds: poster + fanart, IMDb/TVDB/TMDB links, ratings, genres, runtime |
 | 📊 Stats report | Periodic Discord embed with progress bar + per-instance table |
@@ -157,6 +159,7 @@ All endpoints require authentication if a password is configured (header `X-Api-
 | `POST` | `/api/history/clear` | Clear all search history |
 | `POST` | `/api/history/clear/<id>` | Clear history for one instance |
 | `POST` | `/api/webhook/trigger` | Trigger an immediate hunt cycle from external automation (e.g. Sonarr/Radarr webhooks) |
+| `GET` | `/api/queue/stalled` | List currently stalled downloads detected across all instances |
 
 ### Webhook trigger example
 
@@ -225,8 +228,18 @@ curl -X POST http://dein-server:7979/api/webhook/trigger \
 - [x] Read-only API mode (no auth required for `/api/state`) *(v6.4.1)*
 - [x] Skip upcoming/unreleased content *(v6.4.3)*
 - [x] Scheduled maintenance windows *(v6.4.4)*
-- [ ] Webhook endpoint to trigger cycle from external automation
+- [x] Per-instance upgrade toggle *(v6.4.6)*
+- [x] Structured logging (DEBUG/INFO/WARN/ERROR) *(v7.0.0)*
+- [x] Separate upgrade daily limit *(v7.0.6)*
+- [x] Tag-based filtering per instance *(v7.0.5)*
+- [x] Separate Discord webhooks for Sonarr/Radarr *(v7.0.5)*
+- [x] Webhook trigger endpoint *(v7.0.5)*
+- [x] Tagging of searched items in Sonarr/Radarr *(v7.0.4)*
+- [x] API key censoring in logs *(v7.1.0)*
+- [x] Stalled download monitor *(v7.1.0)*
 - [ ] Push via Gotify / Apprise (alternative to Discord)
+- [ ] Per-indexer or per-profile stall settings
+- [ ] Import list support
 
 ## 🔒 Why not Huntarr or its forks?
 
@@ -360,8 +373,18 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 - [x] Read-only-API-Modus (kein Auth für `/api/state`) *(v6.4.1)*
 - [x] Upcoming/unveröffentlichte Inhalte überspringen *(v6.4.3)*
 - [x] Wartungsfenster (Pause zu bestimmten Uhrzeiten) *(v6.4.4)*
-- [ ] Webhook-Endpunkt zum Auslösen eines Zyklus von externer Automatisierung
+- [x] Pro-Instanz Upgrade-Toggle *(v6.4.6)*
+- [x] Strukturiertes Logging (DEBUG/INFO/WARN/ERROR) *(v7.0.0)*
+- [x] Separates Upgrade-Tageslimit *(v7.0.6)*
+- [x] Tag-basierter Filter pro Instanz *(v7.0.5)*
+- [x] Separate Discord-Webhooks für Sonarr/Radarr *(v7.0.5)*
+- [x] Webhook-Trigger-Endpunkt *(v7.0.5)*
+- [x] Tagging von durchsuchten Elementen *(v7.0.4)*
+- [x] API-Key-Zensierung in Logs *(v7.1.0)*
+- [x] Stalled-Download-Monitor *(v7.1.0)*
 - [ ] Push via Gotify / Apprise (Alternative zu Discord)
+- [ ] Pro-Indexer oder Pro-Profil Stall-Einstellungen
+- [ ] Import-Listen-Unterstützung
 
 ## 🔒 Warum nicht Huntarr oder seine Forks?
 
