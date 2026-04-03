@@ -676,6 +676,7 @@
                     background:var(--bg2);border:1px solid var(--border);border-radius:0 0 7px 7px;
                     max-height:200px;overflow-y:auto;z-index:50;scrollbar-width:thin">
                   </div>
+            <div class="form-hint" data-i18n="hint_tz_field">Alle Zeiten (Logs, Aktivitätslog, Wartungsfenster) werden in dieser Zeitzone angezeigt. Entspricht der TZ-Umgebungsvariable.</div>
                 </div>
                 <div class="form-hint" id="tz-hint" style="display:flex;align-items:center;gap:6px">
                   <span id="tz-current-display" style="color:var(--accent)">UTC</span>
@@ -2072,6 +2073,10 @@ const T = {
         lbl_missing:'Missing interval (min)', lbl_upgrade:'Upgrade interval (min)',
         lbl_max:'Max searches per run', lbl_daily:'Total daily limit (0 = ∞)',
         lbl_cooldown:'Cooldown (days)', lbl_timeout:'API timeout (s)',
+        hint_timeout:'Maximum wait time for Sonarr/Radarr API calls in seconds (5–300). Increase for slow connections.',
+        hint_sonarr_mode:'Search episode-by-episode, per season, or whole series. Season recommended — fewer API calls, better coverage.',
+        hint_log_level:'DEBUG: everything · INFO: normal operation · WARN: warnings only · ERROR: errors only.',
+        hint_tz_field:'Timezone for logs and maintenance windows. Matches the TZ environment variable.',
         lbl_search_behavior:'Search behavior', lbl_sonarr_mode:'Sonarr search mode',
         lbl_stall_monitor:'Stalled Download Monitor',
         hint_stall_monitor:'Monitors the download queue for stalled downloads and automatically triggers a new search.',
@@ -3022,7 +3027,7 @@ function renderSettingsInstances(type) {
             </div>
           <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:4px">
             <div class="toggle ${inst.search_upgrades?'on':''}" id="tog-upg-${inst.id}"
-              onclick="toggleInstUpgrades('${inst.id}')"></div>
+              onclick="toggleInstUpgrades('${inst.id}')" title="${isDE4?'Upgrades für diese Instanz aktivieren/deaktivieren':'Enable/disable upgrades for this instance'}"></div>
             <span style="font-size:11px;color:var(--muted2)">${isDE4 ? 'Upgrades suchen' : 'Search upgrades'}</span>
             <span style="font-size:10px;color:var(--muted);margin-left:4px">${isDE4 ? '(globales Limit gilt nicht)' : '(global limit ignored)'}</span>
             <span style="font-size:10px;color:var(--muted)" id="tog-upg-lab-${inst.id}">${inst.search_upgrades ? (isDE4?'An':'On') : (isDE4?'Aus':'Off')}</span>

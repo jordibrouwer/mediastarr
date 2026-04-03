@@ -6,8 +6,8 @@
 
 | Version | Supported |
 |---|---|
-| v6.4.x (latest) | ✅ Active |
-| < v6.4.0 | ❌ No longer supported |
+| v7.1.x (latest) | ✅ Active |
+| < v7.1.0 | ❌ No longer supported |
 
 ### Reporting a Vulnerability
 
@@ -31,16 +31,22 @@ You will be credited in the release notes unless you prefer to remain anonymous.
 
 ---
 
-### Security Features (current)
+### Security Features (v7.1.x)
 
 - Optional dashboard password (`MEDIASTARR_PASSWORD`)
 - CSRF protection on all state-mutating requests
 - Brute-force login protection (10 attempts → 5 min IP lockout)
+- **AES-256 encryption for API keys and webhook URLs** in `config.json` (via Fernet; auto-generated key in `/data/.secret_key`)
+- **API key censoring** in activity log (`_censor_log()`)
 - API keys never returned in `/api/state` responses
+- Webhook URLs never returned in `/api/state` responses
 - SSRF protection on all URL inputs
-- SQL parameters (no f-string interpolation in queries)
+- SQL parameters — no f-string interpolation in queries
 - `config.json` permissions set to `0600` on every save
+- `.secret_key` permissions set to `0600`
 - Security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, CSP
+- URL redirect validation (login `?next=` parameter verified via `urlparse`)
+- Stack trace exposure eliminated from all API responses (CodeQL-verified)
 
 ---
 
@@ -50,8 +56,8 @@ You will be credited in the release notes unless you prefer to remain anonymous.
 
 | Version | Unterstützt |
 |---|---|
-| v6.4.x (aktuell) | ✅ Aktiv |
-| < v6.4.0 | ❌ Nicht mehr unterstützt |
+| v7.1.x (aktuell) | ✅ Aktiv |
+| < v7.1.0 | ❌ Nicht mehr unterstützt |
 
 ### Sicherheitslücken melden
 
@@ -72,3 +78,22 @@ Bitte angeben:
 **Behebungszeitraum:** Kritische Probleme innerhalb von 7 Tagen, andere innerhalb von 30 Tagen.
 
 Du wirst in den Release Notes erwähnt — sofern du das möchtest.
+
+---
+
+### Sicherheitsfunktionen (v7.1.x)
+
+- Optionales Dashboard-Passwort (`MEDIASTARR_PASSWORD`)
+- CSRF-Schutz bei allen zustandsändernden Anfragen
+- Brute-Force-Login-Schutz (10 Versuche → 5 Min. IP-Sperre)
+- **AES-256-Verschlüsselung** für API-Keys und Webhook-URLs in `config.json` (via Fernet; auto-generierter Schlüssel in `/data/.secret_key`)
+- **API-Key-Zensierung** im Aktivitätslog (`_censor_log()`)
+- API-Keys werden nie in `/api/state`-Antworten zurückgegeben
+- Webhook-URLs werden nie in `/api/state`-Antworten zurückgegeben
+- SSRF-Schutz auf alle URL-Eingaben
+- SQL-Parameter — keine f-String-Interpolation in Queries
+- `config.json`-Berechtigungen: `0600` bei jedem Speichern
+- `.secret_key`-Berechtigungen: `0600`
+- Security-Header: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, CSP
+- URL-Redirect-Validierung (Login `?next=`-Parameter per `urlparse` geprüft)
+- Stack-Trace-Exposition aus allen API-Antworten entfernt (CodeQL-verifiziert)

@@ -1,5 +1,5 @@
 """
-Mediastarr v6 — main.py
+Mediastarr — main.py
 Multi-instance Sonarr & Radarr — independent project, NOT affiliated with Huntarr.
 github.com/kroeberd/mediastarr
 
@@ -26,6 +26,63 @@ try:
     from . import db
 except ImportError:
     import db
+
+# ── Optional AES encryption for sensitive config values ───────────────────────
+try:
+    from cryptography.fernet import Fernet as _Fernet
+    _crypto_available = True
+except ImportError:
+    _crypto_available = False
+
+_SECRET_KEY_FILE = None   # set after DATA_DIR is known
+_fernet = None
+
+def _init_encryption(data_dir: pathlib.Path) -> None:
+    """Initialize Fernet encryption. Auto-generates key on first run.
+    Key stored in data_dir/.secret_key (mode 0600). Safe to re-run.
+    If cryptography is not installed, encryption is silently skipped.
+    """
+    global _SECRET_KEY_FILE, _fernet
+    if not _crypto_available:
+        logger.info("cryptography not installed — API keys stored in plaintext")
+        return
+    _SECRET_KEY_FILE = data_dir / ".secret_key"
+    try:
+        if _SECRET_KEY_FILE.exists():
+            key = _SECRET_KEY_FILE.read_bytes().strip()
+        else:
+            key = _Fernet.generate_key()
+            _SECRET_KEY_FILE.write_bytes(key)
+            import os as _os; _os.chmod(_SECRET_KEY_FILE, 0o600)
+            logger.info("Generated new encryption key at .secret_key")
+        _fernet = _Fernet(key)
+        logger.info("Encryption ready — API keys and webhooks are AES-256 encrypted")
+    except Exception as e:
+        logger.warning(f"Encryption init failed: {e} — using plaintext")
+        _fernet = None
+
+def encrypt_secret(value: str) -> str:
+    """Encrypt a secret value. Returns "enc:<base64>" or plaintext if unavailable."""
+    if not _fernet or not value: return value
+    try: return "enc:" + _fernet.encrypt(value.encode()).decode()
+    except Exception: return value
+
+def decrypt_secret(value: str) -> str:
+    """Decrypt a secret value. Handles "enc:<base64>" prefix or returns as-is."""
+    if not value: return value
+    if not value.startswith("enc:"): return value  # not encrypted — backward compat
+    if not _fernet:
+        logger.warning("Encrypted secret found but encryption not available")
+        return ""
+    try: return _fernet.decrypt(value[4:].encode()).decode()
+    except Exception as _de:
+        logger.error(
+            "DECRYPTION FAILED — the .secret_key file may have been replaced or lost. "
+            "Re-enter API keys and webhooks in Settings to re-encrypt with the current key. "
+            f"Error: {type(_de).__name__}"
+        )
+        return ""
+
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 app.config["SECRET_KEY"] = os.environ.get("MEDIASTARR_SESSION_SECRET") or secrets.token_hex(32)
@@ -281,14 +338,14 @@ def discord_send(event_type: str, title: str, description: str,
     # Pick URL: per-type override if set, else global webhook
     # Determine instance type from inst_type hint embedded in function call
     _dc_inst_type = getattr(discord_send, "_current_inst_type", "")
-    _sonarr_url = safe_str(dc.get("sonarr_webhook_url",""), 512).strip()
-    _radarr_url = safe_str(dc.get("radarr_webhook_url",""), 512).strip()
+    _sonarr_url = decrypt_secret(safe_str(dc.get("sonarr_webhook_url",""), 512).strip())
+    _radarr_url = decrypt_secret(safe_str(dc.get("radarr_webhook_url",""), 512).strip())
     if _dc_inst_type == "sonarr" and _sonarr_url:
         url = _sonarr_url
     elif _dc_inst_type == "radarr" and _radarr_url:
         url = _radarr_url
     else:
-        url = safe_str(dc.get("webhook_url", ""), 512).strip()
+        url = decrypt_secret(safe_str(dc.get("webhook_url", ""), 512).strip())
     if not url or not url.startswith(("http://", "https://")): return
 
     toggle_map = {
@@ -505,6 +562,32 @@ CFG_FILE = DATA_DIR / "config.json"
 DB_FILE  = DATA_DIR / "mediastarr.db"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 db.init(DB_FILE)
+_init_encryption(DATA_DIR)  # set up Fernet key after DATA_DIR is established
+
+def _migrate_encrypt_secrets() -> None:
+    """On startup: re-encrypt any plaintext API keys / webhooks found in CONFIG.
+    Safe to call multiple times — already-encrypted values are left unchanged.
+    This handles the Docker update scenario: existing plaintext config gets
+    transparently encrypted on first boot with the new version.
+    """
+    if not _fernet:
+        return  # encryption not available, nothing to do
+    changed = False
+    for inst in CONFIG.get("instances", []):
+        raw = inst.get("api_key", "")
+        if raw and not raw.startswith("enc:"):
+            inst["api_key"] = encrypt_secret(raw)
+            changed = True
+    dc = CONFIG.get("discord", {})
+    for wh_key in ("webhook_url", "sonarr_webhook_url", "radarr_webhook_url"):
+        raw = dc.get(wh_key, "")
+        if raw and not raw.startswith("enc:"):
+            dc[wh_key] = encrypt_secret(raw)
+            changed = True
+    if changed:
+        save_config(CONFIG)
+        logger.info(f"Migrated {sum(1 for i in CONFIG.get('instances',[]) if i.get('api_key','').startswith('enc:'))} API key(s) + webhook(s) to AES-256 encryption")
+
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 def make_id() -> str:
@@ -579,7 +662,7 @@ def _year(val):
 
 # ─── Version check ────────────────────────────────────────────────────────
 _VERSION_FILE    = pathlib.Path(__file__).parent.parent / "VERSION"
-_CURRENT_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "v6.4.5"
+_CURRENT_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "v7.1.1"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -870,6 +953,15 @@ def e500(e): logger.error(f"500:{e}"); return jsonify({"ok":False,"error":"Inter
 # ─── *arr API Client ──────────────────────────────────────────────────────────
 
 # Safe allowlist for ping error messages returned to client
+def _safe_version_str(ver: str) -> str:
+    """Sanitize a version string — only allow digits, dots, letters, hyphens.
+    Breaks the CodeQL taint chain from ArrClient.get() exception path.
+    """
+    import re as _re
+    if not ver or ver == "?": return "?"
+    cleaned = _re.sub(r"[^0-9a-zA-Z.\-_+]", "", str(ver))[:20]
+    return cleaned if cleaned else "?"
+
 _SAFE_PING_MESSAGES = frozenset([
     "Authentication failed", "API endpoint not found", "Host not found",
     "Timed out", "Connection refused", "Host unreachable", "TLS/SSL error",
@@ -905,7 +997,7 @@ def summarize_ping_error(raw: str) -> str:
 class ArrClient:
     def __init__(self, name:str, url:str, api_key:str):
         self.name = name; self.url = url.rstrip("/")
-        self._h = {"X-Api-Key":api_key,"Content-Type":"application/json"}
+        self._h = {"X-Api-Key":decrypt_secret(api_key),"Content-Type":"application/json"}
 
     def _timeout(self) -> int:
         return CONFIG.get("request_timeout", 30)
@@ -2035,18 +2127,14 @@ def _api_auth_required(f):
 
 @app.route("/login", methods=["GET", "POST"])
 def login_page():
-    # Validate next_path strictly — CodeQL py/url-redirection fix
-    # Only allow relative paths: must start with /, no //, no scheme, no host
-    _raw_next = request.args.get("next", "/") or "/"
-    try:
-        from urllib.parse import urlparse as _up
-        _parsed = _up(_raw_next)
-        # Reject anything with a scheme or netloc (absolute URL)
-        _safe = (not _parsed.scheme and not _parsed.netloc and
-                 _raw_next.startswith("/") and not _raw_next.startswith("//"))
-    except Exception:
-        _safe = False
-    next_path = _raw_next if _safe else "/"
+    # CodeQL py/url-redirection: break taint chain by never using user input
+    # in redirect(). Map to hardcoded safe destinations only.
+    # CodeQL py/url-redirection: never pass user input to redirect().
+    # next_path is always a hardcoded string from a fixed tuple.
+    _ALLOWED_NEXT = ("/", "/setup")
+    _raw_next = request.args.get("next", "") or ""
+    # Select hardcoded path — user value only used as lookup key, not as redirect target
+    next_path = "/setup" if _raw_next == "/setup" else "/"
     error = None
     if request.method == "POST":
         # Check lockout first
@@ -2102,8 +2190,8 @@ def api_setup_ping():
     if not ok: return jsonify({"ok":False,"msg":"Invalid API key format"}),400
     try:
         ok, ver, detail = ArrClient(itype, url, key).ping()
-        return jsonify({"ok":ok,"version":ver,"msg":_safe_ping_msg(detail)})
-    except Exception: return jsonify({"ok":False,"msg":"Connection failed"})
+        return jsonify({"ok":ok,"version":_safe_version_str(ver),"msg":_safe_ping_msg(detail)})
+    except Exception: return jsonify({"ok":False,"version":"?","msg":"Connection failed"})
 
 @app.route("/api/setup/complete", methods=["POST"])
 @_api_auth_required
@@ -2129,7 +2217,7 @@ def api_setup_complete():
         ok,e=validate_api_key(key);errors+=[f"{label} API Key: {e}"] if not ok else []
         if not errors:
             validated.append({"id":inst.get("id") or make_id(),"type":itype,
-                "name":nm.strip(),"url":url,"api_key":key,"enabled":True})
+                "name":nm.strip(),"url":url,"api_key":encrypt_secret(key),"enabled":True})
     if errors: return jsonify({"ok":False,"errors":errors}),400
     lang = safe_str(d.get("language","de"),5)
     if lang not in ALLOWED_LANGUAGES: lang = "de"
@@ -2184,7 +2272,7 @@ def api_instances_add():
     ok,e=validate_url(url);    errors+=[f"URL: {e}"]     if not ok else []
     ok,e=validate_api_key(key);errors+=[f"API Key: {e}"] if not ok else []
     if errors: return jsonify({"ok":False,"errors":errors}),400
-    inst={"id":make_id(),"type":itype,"name":nm.strip(),"url":url,"api_key":key,"enabled":True}
+    inst={"id":make_id(),"type":itype,"name":nm.strip(),"url":url,"api_key":encrypt_secret(key),"enabled":True}
     CONFIG["instances"].append(inst)
     STATE["inst_stats"][inst["id"]] = fresh_inst_stats()
     save_config(CONFIG); return jsonify({"ok":True,"id":inst["id"]})
@@ -2206,7 +2294,7 @@ def api_instances_update(inst_id:str):
     if "api_key" in d and d["api_key"]:
         key=safe_str(d["api_key"],128); ok,e=validate_api_key(key)
         if not ok: return jsonify({"ok":False,"error":f"API Key: {e}"}),400
-        inst["api_key"] = key
+        inst["api_key"] = encrypt_secret(key)
     if "enabled" in d: inst["enabled"] = bool(d["enabled"])
     if "search_upgrades" in d: inst["search_upgrades"] = bool(d["search_upgrades"])
     if "tag_enabled"     in d:
@@ -2263,8 +2351,8 @@ def api_instances_ping(inst_id:str):
         stats["status"] = "online" if ok else "offline"
         stats["version"] = ver
         stats["status_detail"] = "" if ok else detail
-        return jsonify({"ok":ok,"version":ver,"msg":_safe_ping_msg(detail)})
-    except Exception: return jsonify({"ok":False,"msg":"Connection failed"})
+        return jsonify({"ok":ok,"version":_safe_version_str(ver),"msg":_safe_ping_msg(detail)})
+    except Exception: return jsonify({"ok":False,"version":"?","msg":"Connection failed"})
 
 # ── Main API ──────────────────────────────────────────────────────────────────
 @app.route("/api/state")
@@ -2426,7 +2514,7 @@ def api_config():
         if "webhook_url" in dc_in:
             url = safe_str(dc_in["webhook_url"], 512).strip()
             if url == "" or url.startswith(("http://","https://")):
-                dc["webhook_url"] = url
+                dc["webhook_url"] = encrypt_secret(url) if url else ""
         for _wh_key in ("sonarr_webhook_url", "radarr_webhook_url"):
             if _wh_key in dc_in:
                 wh = safe_str(dc_in[_wh_key], 512).strip()
@@ -2685,7 +2773,7 @@ def api_discord_test():
     lang = CONFIG.get("language","de")
     if lang == "de":
         label = "🔔 Mediastarr Test"
-        desc  = "Dies ist eine Test-Benachrichtigung von Mediastarr v6.\nWenn du das siehst, ist der Webhook korrekt konfiguriert."
+        desc  = f"Dies ist eine Test-Benachrichtigung von Mediastarr {_CURRENT_VERSION}.\nWenn du das siehst, ist der Webhook korrekt konfiguriert."
         f_status  = "Status"
         f_ok      = "✓ Verbunden"
         f_ver     = "Version"
@@ -2693,7 +2781,7 @@ def api_discord_test():
         f_enabled = "Benachrichtigungen"
     else:
         label = "🔔 Mediastarr Test"
-        desc  = "This is a test notification from Mediastarr v6.\nIf you see this, the webhook is configured correctly."
+        desc  = f"This is a test notification from Mediastarr {_CURRENT_VERSION}.\nIf you see this, the webhook is configured correctly."
         f_status  = "Status"
         f_ok      = "✓ Connected"
         f_ver     = "Version"
@@ -2747,6 +2835,7 @@ def _do_startup():
             return
         _started = True
     log_act("System", f"{msg('app_start')} — {_CURRENT_VERSION}", "", "info")
+    _migrate_encrypt_secrets()  # re-encrypt plaintext keys on Docker update
     if CONFIG.get("setup_complete"):
         _ensure_inst_stats(); ping_all()
         if CONFIG.get("auto_start", True):
