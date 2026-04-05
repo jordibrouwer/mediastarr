@@ -1,5 +1,10 @@
 # Changelog
 
+## [v7.1.2 — patch] — 2026-04-05
+
+### Fixed
+- **README language separation** — German API-Endpunkte block (`## 🔌 API-Endpunkte`, `### Webhook-Trigger Beispiel`, DE curl example) was inside the English section; moved to the German section where it belongs. EN section now contains only `## 🔌 API Reference` with English content. Structure verified: no German text in EN section, no English API block in DE section.
+
 ## [v7.1.2] — 2026-04-05
 
 ### Changed

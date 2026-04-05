@@ -187,45 +187,6 @@ curl -X POST http://your-server:7979/api/webhook/trigger \
 
 ---
 
-## 🔌 API-Endpunkte
-
-Alle Endpunkte erfordern Authentifizierung wenn ein Passwort konfiguriert ist (Header `X-Api-Key: <dein-passwort>` oder Session-Cookie). Mit `public_api_state: true` in der Config ist `/api/state` ohne Auth zugänglich.
-
-| Methode | Endpunkt | Beschreibung |
-|---------|----------|--------------|
-| `GET` | `/api/state` | Vollständiger App-State: Laufstatus, Konfiguration, Instanz-Stats, Zyklus-Info |
-| `POST` | `/api/control` | Steuerung — Body: `{"action":"start"}` / `{"action":"stop"}` / `{"action":"run_now"}` |
-| `POST` | `/api/config` | Konfiguration speichern — vollständiges Config-Objekt als JSON |
-| `GET` | `/api/config/export` | Aktuelle Konfiguration als JSON herunterladen |
-| `POST` | `/api/config/import` | Konfiguration aus JSON importieren |
-| `GET` | `/api/instances` | Alle konfigurierten Instanzen auflisten |
-| `POST` | `/api/instances` | Neue Instanz hinzufügen — Body: `{"type":"sonarr","name":"…","url":"…","api_key":"…"}` |
-| `PATCH` | `/api/instances/<id>` | Instanzfelder aktualisieren (name, url, api_key, enabled, daily_limit, upgrade_daily_limit, search_upgrades, tag_enabled, tag_filter_ids, stall_monitor_enabled) |
-| `DELETE` | `/api/instances/<id>` | Instanz entfernen |
-| `GET` | `/api/instances/<id>/ping` | Verbindung zu einer Sonarr/Radarr-Instanz testen |
-| `GET` | `/api/instances/<id>/tags` | Verfügbare Tags der Instanz abrufen (für Tag-Filter) |
-| `GET` | `/api/history` | Suchverlauf (SQLite) — Parameter: `?page=1&per_page=50` |
-| `GET` | `/api/history/stats` | Statistiken: Gesamtsuchen, Jahresaufschlüsselung, Ergebnis-Counts |
-| `POST` | `/api/history/clear` | Gesamten Suchverlauf löschen |
-| `POST` | `/api/history/clear/<id>` | Verlauf einer Instanz löschen |
-| `POST` | `/api/webhook/trigger` | Sofortigen Such-Zyklus auslösen — für externe Automatisierung (z.B. Sonarr/Radarr-Webhooks) |
-| `POST` | `/api/discord/test` | Discord-Test-Nachricht senden |
-| `POST` | `/api/discord/stats` | Discord-Statistik-Bericht jetzt senden |
-| `GET` | `/api/log/status` | Aktuelle Log-Datei-Informationen abrufen |
-| `POST` | `/api/log/rotate` | Log-Rotation manuell auslösen |
-| `GET` | `/api/timezones` | Verfügbare IANA-Zeitzonen auflisten |
-
-### Webhook-Trigger Beispiel
-
-```bash
-curl -X POST http://dein-server:7979/api/webhook/trigger \
-  -H "X-Api-Key: dein-passwort" \
-  -H "Content-Type: application/json" \
-  -d '{"source":"sonarr"}'
-```
-
----
-
 ## 📸 Screenshots
 
 | Dashboard | Settings | Discord | Mobile |
@@ -393,6 +354,45 @@ Oder Template verwenden: [`mediastarr.xml`](mediastarr.xml)
 - SSRF-Schutz auf allen URL-Eingaben
 - `config.json` chmod 0600 bei jedem Speichern
 - Sicherheits-Header: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, CSP
+
+## 🔌 API-Endpunkte
+
+Alle Endpunkte erfordern Authentifizierung wenn ein Passwort konfiguriert ist (Header `X-Api-Key: <dein-passwort>` oder Session-Cookie). Mit `public_api_state: true` in der Config ist `/api/state` ohne Auth zugänglich.
+
+| Methode | Endpunkt | Beschreibung |
+|---------|----------|--------------|
+| `GET` | `/api/state` | Vollständiger App-State: Laufstatus, Konfiguration, Instanz-Stats, Zyklus-Info |
+| `POST` | `/api/control` | Steuerung — Body: `{"action":"start"}` / `{"action":"stop"}` / `{"action":"run_now"}` |
+| `POST` | `/api/config` | Konfiguration speichern — vollständiges Config-Objekt als JSON |
+| `GET` | `/api/config/export` | Aktuelle Konfiguration als JSON herunterladen |
+| `POST` | `/api/config/import` | Konfiguration aus JSON importieren |
+| `GET` | `/api/instances` | Alle konfigurierten Instanzen auflisten |
+| `POST` | `/api/instances` | Neue Instanz hinzufügen — Body: `{"type":"sonarr","name":"…","url":"…","api_key":"…"}` |
+| `PATCH` | `/api/instances/<id>` | Instanzfelder aktualisieren (name, url, api_key, enabled, daily_limit, upgrade_daily_limit, search_upgrades, tag_enabled, tag_filter_ids, stall_monitor_enabled) |
+| `DELETE` | `/api/instances/<id>` | Instanz entfernen |
+| `GET` | `/api/instances/<id>/ping` | Verbindung zu einer Sonarr/Radarr-Instanz testen |
+| `GET` | `/api/instances/<id>/tags` | Verfügbare Tags der Instanz abrufen (für Tag-Filter) |
+| `GET` | `/api/history` | Suchverlauf (SQLite) — Parameter: `?page=1&per_page=50` |
+| `GET` | `/api/history/stats` | Statistiken: Gesamtsuchen, Jahresaufschlüsselung, Ergebnis-Counts |
+| `POST` | `/api/history/clear` | Gesamten Suchverlauf löschen |
+| `POST` | `/api/history/clear/<id>` | Verlauf einer Instanz löschen |
+| `POST` | `/api/webhook/trigger` | Sofortigen Such-Zyklus auslösen — für externe Automatisierung (z.B. Sonarr/Radarr-Webhooks) |
+| `POST` | `/api/discord/test` | Discord-Test-Nachricht senden |
+| `POST` | `/api/discord/stats` | Discord-Statistik-Bericht jetzt senden |
+| `GET` | `/api/log/status` | Aktuelle Log-Datei-Informationen abrufen |
+| `POST` | `/api/log/rotate` | Log-Rotation manuell auslösen |
+| `GET` | `/api/timezones` | Verfügbare IANA-Zeitzonen auflisten |
+
+### Webhook-Trigger Beispiel
+
+```bash
+curl -X POST http://dein-server:7979/api/webhook/trigger \
+  -H "X-Api-Key: dein-passwort" \
+  -H "Content-Type: application/json" \
+  -d '{"source":"sonarr"}'
+```
+
+---
 
 ## 🗺️ Roadmap / Ideen
 
