@@ -607,6 +607,10 @@
         <span id="server-time">—</span> <span id="server-tz" style="color:var(--muted);font-size:9px"></span>
       </div>
       <div class="pill"><div class="pill-dot" id="statusDot"></div><span id="statusLabel">—</span></div>
+      <div class="pill" id="update-pill" style="display:none;background:rgba(255,107,43,0.12);border:1px solid rgba(255,107,43,0.35);cursor:pointer" onclick="window.open('https://github.com/kroeberd/mediastarr/releases','_blank')" title="Click to open releases">
+        <span style="font-size:10px">🆕</span>
+        <span id="update-label" style="font-size:11px;color:var(--accent);font-weight:600"></span>
+      </div>
       <div id="maint-banner" style="display:none;background:rgba(245,200,66,.12);border:1px solid rgba(245,200,66,.35);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--yellow);font-weight:600" data-i18n="lbl_in_maintenance">⏸ Wartungsfenster aktiv</div>
     </div>
     <div id="action-banner" class="action-banner">
@@ -1237,6 +1241,29 @@
                   <div class="dc-msg-line"><span class="dc-msg-lbl">Gesamt</span> 1.284 Suchen</div>
                   <div class="dc-msg-line"><span class="dc-msg-lbl">Heute</span> 14 / 20</div>
                   <div class="dc-msg-line"><span class="dc-msg-lbl">Instanzen</span> 2 online</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Update notification card -->
+            <div class="dc-ev-card">
+              <div class="dc-ev-header">
+                <div class="dc-ev-info">
+                  <span class="dc-ev-icon" style="background:rgba(255,107,43,.1);border-color:rgba(255,107,43,.2)">🆕</span>
+                  <div>
+                    <div class="dc-ev-title" id="dc-ev-update-lbl" style="color:var(--accent)" data-de="Update verfügbar" data-en="Update available">Update verfügbar</div>
+                    <div class="dc-ev-sub" id="dc-ev-update-sub" data-de="Neue Version auf GitHub veröffentlicht" data-en="New version released on GitHub">Neue Version auf GitHub veröffentlicht</div>
+                  </div>
+                </div>
+                <div class="toggle" id="tog-dc-update" onclick="toggleDc('update')"></div>
+              </div>
+              <div class="dc-msg-preview">
+                <div class="dc-msg-bar" style="background:var(--accent)"></div>
+                <div class="dc-msg-body">
+                  <div class="dc-msg-title">🆕 <span data-de="Update verfügbar: v7.2.0" data-en="Update available: v7.2.0">Update verfügbar: v7.2.0</span></div>
+                  <div class="dc-msg-line"><span class="dc-msg-lbl" data-de="Aktuell" data-en="Current">Aktuell</span> v7.1.2</div>
+                  <div class="dc-msg-line"><span class="dc-msg-lbl" data-de="Neu" data-en="New">Neu</span> v7.2.0</div>
+                  <div class="dc-msg-line" style="margin-top:4px"><a href="https://github.com/kroeberd/mediastarr/releases" target="_blank" style="color:var(--accent);font-size:10px">→ GitHub Releases</a></div>
                 </div>
               </div>
             </div>
@@ -2043,7 +2070,7 @@ function _showAutoSaveFeedback(ok) {
 
 
 let _syncingFromServer = false;
-let dcStates = {enabled:false,missing:true,upgrade:true,cooldown:true,limit:true,offline:true,stats:false};
+let dcStates = {enabled:false,missing:true,upgrade:true,cooldown:true,limit:true,offline:true,stats:false,update:true};
 let currentLang = 'de', currentTheme = 'dark', lastLogCount = 0;
 
 // ══ i18n ══
@@ -2635,6 +2662,16 @@ function updateUI() {
     // Theme/lang sync from server (suppress saveConfig to avoid loop)
     _syncingFromServer = true;
     if (c.theme && c.theme !== currentTheme) setTheme(c.theme);
+  // Update availability badge
+  const _upPill = document.getElementById('update-pill');
+  const _upLbl  = document.getElementById('update-label');
+  if (_upPill && c.update_available) {
+    _upPill.style.display = '';
+    if (_upLbl) _upLbl.textContent = c.latest_version ? 
+      (currentLang==='de' ? `Update: ${c.latest_version}` : `Update: ${c.latest_version}`) : 'Update verfügbar';
+  } else if (_upPill) {
+    _upPill.style.display = 'none';
+  }
     if (c.language && c.language !== currentLang) setLang(c.language);
     _syncingFromServer = false;
     if (c.sonarr?.url && el('cfg-sonarr-url')) el('cfg-sonarr-url').placeholder = c.sonarr.url;
@@ -2916,6 +2953,7 @@ async function saveConfig() {
       notify_limit:    dcStates.limit,
       notify_offline:  dcStates.offline,
       notify_stats:    dcStates.stats,
+      notify_update:   dcStates.update,
     },
     // Log settings — included here so all settings save atomically from any tab
     log_min_level: document.getElementById('cfg-log-min-level')?.value || 'INFO',
@@ -3849,6 +3887,23 @@ function togglePublicApi() {
   }).catch(e => MSLog.error('togglePublicApi save failed', e));
 }
 
+async function exportConfig() {
+  try {
+    const r = await fetch('/api/config/export');
+    if (!r.ok) { MSLog.error('exportConfig', r.status); return; }
+    const blob = await r.blob();
+    const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `mediastarr_config_${ts}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    MSLog.info('exportConfig', 'Download triggered');
+  } catch(e) {
+    MSLog.error('exportConfig', e);
+  }
+}
+
 async function importConfig(input) {
   const file = input?.files?.[0];
   const msg  = document.getElementById('cfg-import-msg');
@@ -3862,7 +3917,8 @@ async function importConfig(input) {
   const form = new FormData();
   form.append('file', file);
   try {
-    const r = await fetch('/api/config/import', {method:'POST', body: form});
+    const r = await fetch('/api/config/import', {method:'POST', body: form,
+      headers:{'X-CSRF-Token':_csrf_token_val||''}});
     const d = await r.json();
     if (msg) {
       msg.style.color = d.ok ? 'var(--green)' : 'var(--red)';
@@ -3917,6 +3973,7 @@ async function saveDc() {
       notify_limit:         dcStates.limit,
       notify_offline:       dcStates.offline,
       notify_stats:         dcStates.stats,
+      notify_update:        dcStates.update,
       stats_interval_min:   isNaN(interval)  ? 60 : interval,
       rate_limit_cooldown:  isNaN(ratelimit) ? 5  : ratelimit,
     }

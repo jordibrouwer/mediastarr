@@ -491,16 +491,19 @@ def _stats_loop():
         if time.time() - float(last or 0) >= interval_min * 60:
             discord_send_stats()
             # Notify if update available
-            if is_update_available():
+            if is_update_available() and CONFIG.get("discord",{}).get("notify_update", True):
                 latest = _version_cache.get("latest","")
                 lang = CONFIG.get("language","de")
-                if lang == "de":
-                    _upd_title = f"🆕 Update verfügbar: {latest}"
-                    _upd_desc  = f"Mediastarr {latest} ist auf GitHub verfügbar. Aktuell läuft {_CURRENT_VERSION}."
-                else:
-                    _upd_title = f"🆕 Update available: {latest}"
-                    _upd_desc  = f"Mediastarr {latest} is available on GitHub. Currently running {_CURRENT_VERSION}."
-                discord_send("info", _upd_title, _upd_desc, "System", force=True)
+                is_de = lang == "de"
+                _upd_title = (f"🆕 Update verfügbar: {latest}" if is_de
+                              else f"🆕 Update available: {latest}")
+                _upd_desc  = (f"Mediastarr **{latest}** ist auf GitHub verfügbar.\nAktuell läuft `{_CURRENT_VERSION}`."
+                              if is_de else
+                              f"Mediastarr **{latest}** is available on GitHub.\nCurrently running `{_CURRENT_VERSION}`.")
+                _upd_url   = f"https://github.com/kroeberd/mediastarr/releases/tag/{latest}"
+                _upd_fields = [{"name":"🔗 GitHub Release","value":f"[{latest}]({_upd_url})","inline":True},
+                               {"name":"📦 "+("Aktuell" if is_de else "Current"),"value":f"`{_CURRENT_VERSION}`","inline":True}]
+                discord_send("info", _upd_title, _upd_desc, "System", fields=_upd_fields, force=True)
             CONFIG["discord"]["stats_last_sent_at"] = time.time()
             save_config(CONFIG)
 
@@ -731,6 +734,7 @@ DEFAULT_CONFIG = {
         "notify_limit":        True,   # daily limit reached
         "notify_offline":      True,   # instance went offline
         "notify_stats":        False,  # periodic stats report
+        "notify_update":       True,   # new version available on GitHub
         "stats_interval_min":  60,     # minutes between stats reports
         "stats_last_sent_at":  0.0,    # unix timestamp
         "rate_limit_cooldown": 5,      # seconds between same-type messages
@@ -2500,7 +2504,7 @@ def api_config():
         dc_in = d["discord"]
         dc    = CONFIG.setdefault("discord", {})
         for bool_key in ("enabled","notify_missing","notify_upgrade",
-                         "notify_cooldown","notify_limit","notify_offline","notify_stats"):
+                         "notify_cooldown","notify_limit","notify_offline","notify_stats","notify_update"):
             if bool_key in dc_in: dc[bool_key] = bool(dc_in[bool_key])
         for url_key in ("webhook_url_sonarr","webhook_url_radarr"):
             if url_key in dc_in:

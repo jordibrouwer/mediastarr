@@ -8,6 +8,15 @@
 - **Light theme fixed** — sidebar and topbar now render with correct white background; logo text readable in both themes
 - **Screenshots updated** — all 9 Playwright screenshots regenerated with redesigned UI
 
+### Fixed
+- **Export config** — `exportConfig()` was never defined in the frontend; added as proper `async function` with Blob URL download trigger
+- **Import config** — `importConfig()` used `await` but lacked `async` keyword, silently failing in strict JS contexts; fixed. Also added missing `X-CSRF-Token` header so import works when password protection is active
+- **Import into fresh instance** — tested and verified: export from running instance → import into brand-new instance with no config restores all instances and `setup_complete` flag correctly
+
+### Added
+- **Dashboard update badge** — orange pill next to status indicator shows available version when GitHub has a newer release; click opens GitHub Releases page
+- **Discord: update notification toggle** — new "🆕 Update available" card in Discord settings; sends rich embed (current vs. new version, GitHub release link) when a new version is detected; configurable on/off via `notify_update`; gated so no notification fires if toggle is disabled
+
 ## [v7.1.1] — 2026-04-03
 
 ### Fixed
