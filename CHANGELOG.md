@@ -1,5 +1,11 @@
 # Changelog
 
+## [v7.1.3] — 2026-04-05
+
+### Fixed
+- **Bug #50 — Webhook URL vanishes instantly** — root cause: `oninput="_autosaveDc()"` on the `dc-url` field triggered `saveDc()` on every keystroke, which called `fetchState()`, which called `updateUI()`. After save, `urlEl.value = ''` also explicitly wiped the field. Fixed by: removing `oninput` from `dc-url` (URL only saves on explicit Save button click), removing the `urlEl.value = ''` clear after save, and replacing `fetchState()` with `setTimeout(fetchState, 1000)` in `saveDc()` so the field is not wiped while the user is still interacting with the Discord tab
+- **Bug #49 — Save button in wrong position in Discord update card** — the update notification card used `class="dc-ev-header"` instead of `class="dc-ev-top"` like all other event cards; the `dc-ev-header` class is not defined in CSS, causing the toggle and button to render outside the card flex layout. Fixed by changing to `dc-ev-top`.
+
 ## [v7.1.2 — patch] — 2026-04-05
 
 ### Fixed
