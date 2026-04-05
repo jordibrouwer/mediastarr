@@ -578,12 +578,6 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en"><span class="flag-en">EN</span></div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div style="text-align:center;padding:4px 0 2px">
-        <a href="https://demo.mediastarr.de" target="_blank" rel="noopener"
-           style="font-size:10px;color:var(--muted2);text-decoration:none;transition:color .15s"
-           onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted2)'"
-        >🎮 demo.mediastarr.de</a>
-      </div>
       <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">{{ version }}</span></a></div>
     </div>
   </aside>
@@ -1257,12 +1251,12 @@
                 </div>
                 <div class="toggle" id="tog-dc-update" onclick="toggleDc('update')"></div>
               </div>
-              <div class="dc-msg-preview">
+              <div class="dc-msg-preview" id="dc-update-preview">
                 <div class="dc-msg-bar" style="background:var(--accent)"></div>
-                <div class="dc-msg-body">
-                  <div class="dc-msg-title">🆕 <span data-de="Update verfügbar: v7.2.0" data-en="Update available: v7.2.0">Update verfügbar: v7.2.0</span></div>
-                  <div class="dc-msg-line"><span class="dc-msg-lbl" data-de="Aktuell" data-en="Current">Aktuell</span> v7.1.2</div>
-                  <div class="dc-msg-line"><span class="dc-msg-lbl" data-de="Neu" data-en="New">Neu</span> v7.2.0</div>
+                <div class="dc-msg-body" id="dc-update-preview-body">
+                  <div class="dc-msg-title">🆕 <span id="dc-update-preview-title"></span></div>
+                  <div class="dc-msg-line"><span class="dc-msg-lbl" data-de="Aktuell" data-en="Current">Aktuell</span> <span id="dc-update-current">—</span></div>
+                  <div class="dc-msg-line"><span class="dc-msg-lbl" data-de="Neu" data-en="New">Neu</span> <span id="dc-update-new">—</span></div>
                   <div class="dc-msg-line" style="margin-top:4px"><a href="https://github.com/kroeberd/mediastarr/releases" target="_blank" style="color:var(--accent);font-size:10px">→ GitHub Releases</a></div>
                 </div>
               </div>
@@ -2667,11 +2661,22 @@ function updateUI() {
   const _upLbl  = document.getElementById('update-label');
   if (_upPill && c.update_available) {
     _upPill.style.display = '';
-    if (_upLbl) _upLbl.textContent = c.latest_version ? 
-      (currentLang==='de' ? `Update: ${c.latest_version}` : `Update: ${c.latest_version}`) : 'Update verfügbar';
+    if (_upLbl) _upLbl.textContent = c.latest_version ? `Update: ${c.latest_version}` : 'Update';
   } else if (_upPill) {
     _upPill.style.display = 'none';
   }
+  // Update Discord preview card with real values
+  const _upCur  = document.getElementById('dc-update-current');
+  const _upNew  = document.getElementById('dc-update-new');
+  const _upTtl  = document.getElementById('dc-update-preview-title');
+  const _latest = c.latest_version || '—';
+  const _curVer = document.getElementById('version-display')?.textContent?.trim() || _CURRENT_VERSION || '—';
+  if (_upCur)  _upCur.textContent  = _curVer;
+  if (_upNew)  _upNew.textContent  = _latest;
+  if (_upTtl)  _upTtl.textContent  = currentLang === 'de' ? `Update verfügbar: ${_latest}` : `Update available: ${_latest}`;
+  // Show/dim preview depending on whether update is actually available
+  const _upPrev = document.getElementById('dc-update-preview');
+  if (_upPrev) _upPrev.style.opacity = c.update_available ? '1' : '0.45';
     if (c.language && c.language !== currentLang) setLang(c.language);
     _syncingFromServer = false;
     if (c.sonarr?.url && el('cfg-sonarr-url')) el('cfg-sonarr-url').placeholder = c.sonarr.url;
