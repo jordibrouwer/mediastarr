@@ -2670,7 +2670,8 @@ function updateUI() {
   const _upNew  = document.getElementById('dc-update-new');
   const _upTtl  = document.getElementById('dc-update-preview-title');
   const _latest = c.latest_version || '—';
-  const _curVer = document.getElementById('version-display')?.textContent?.trim() || _CURRENT_VERSION || '—';
+  const _versionEl = document.getElementById('version-display');
+  const _curVer = (_versionEl?.textContent?.trim()) || '—';
   if (_upCur)  _upCur.textContent  = _curVer;
   if (_upNew)  _upNew.textContent  = _latest;
   if (_upTtl)  _upTtl.textContent  = currentLang === 'de' ? `Update verfügbar: ${_latest}` : `Update available: ${_latest}`;
