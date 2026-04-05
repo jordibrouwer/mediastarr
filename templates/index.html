@@ -533,6 +533,9 @@
         <div>
           <div class="logo-name">Mediastarr</div>
           <div class="logo-sub">Hunt Engine <span style="color:var(--accent);font-weight:700">{{ version }}</span></div>
+        <div id="sidebar-update-badge" style="display:none;margin-top:5px">
+          <span style="font-size:9px;background:rgba(255,107,43,0.18);border:1px solid rgba(255,107,43,0.4);border-radius:4px;padding:2px 7px;color:var(--accent);cursor:pointer;font-weight:600" onclick="window.open('https://github.com/kroeberd/mediastarr/releases','_blank')" id="sidebar-update-text">🆕 Update</span>
+        </div>
         </div>
       </div>
     </div>
@@ -578,7 +581,7 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en"><span class="flag-en">EN</span></div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
-      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">{{ version }}</span></a></div>
+      <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600" id="version-display">{{ version }}</span></a></div>
     </div>
   </aside>
 
@@ -1473,6 +1476,8 @@
               <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, Discord embed fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Huntarr comparison text, homepage badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console dual-output fix, startup version fix, per-instance upgrade toggle, improved logging, mobile language selector, help page redesign, stats layout fix</li>
+              <li>✅ <strong>v7.1.2</strong> — UI redesign (settings sections, light theme), export/import fix, dashboard update badge, Discord update toggle, sidebar update indicator</li>
+              <li>✅ <strong>v7.1.1</strong> — Bug #47 Discord v6 fix, AES-256 encryption, tooltips (#48), Docker-update-safe migration</li>
               <li>✅ <strong>v7.1.0</strong> — Stalled download monitor (#46), API key censoring (#41), CodeQL security fixes #7/#8/#9</li>
               <li>✅ <strong>v7.0.5</strong> — Tag chips persist (no re-render on poll), tag filter per instance (#37), separate Discord webhooks (#38), webhook trigger endpoint, log spam fix, Chrome flag emoji fix</li>
               <li>✅ <strong>v7.0.4</strong> — Feature #36: tagging (global + per-instance), page size 500→2000</li>
@@ -1503,6 +1508,8 @@
               <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Discord-Embed-Fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Huntarr-Vergleichstext, Homepage-Badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console-Dual-Output-Fix, Startup-Version-Fix, Upgrades pro Instanz, verbessertes Logging, Mobile Sprachauswahl, Hilfe-Seiten-Redesign, Statistik-Layout-Fix</li>
+              <li>✅ <strong>v7.1.2</strong> — UI-Redesign (Settings-Sektionen, Light-Theme), Export/Import-Fix, Dashboard-Update-Badge, Discord-Update-Toggle, Sidebar-Update-Indikator</li>
+              <li>✅ <strong>v7.1.1</strong> — Bug #47 Discord-v6-Fix, AES-256-Verschlüsselung, Tooltips (#48), Docker-Update-Safe-Migration</li>
               <li>✅ <strong>v7.1.0</strong> — Stalled-Download-Monitor (#46), API-Key-Zensierung (#41), CodeQL-Sicherheitsfixes #7/#8/#9</li>
               <li>✅ <strong>v7.0.5</strong> — Tag-Chips bleiben beim Poll erhalten, Tag-Filter pro Instanz (#37), separate Discord-Webhooks (#38), Webhook-Trigger, Log-Spam-Fix, Chrome Flag-Emoji-Fix</li>
               <li>✅ <strong>v7.0.4</strong> — Feature #36: Tagging (global + pro Instanz), Seitengröße 500→2000</li>
@@ -1577,6 +1584,18 @@
         <div class="help-section">
 <h3>📋 Changelog</h3>
           <div class="help-en">
+
+            <h4>v7.1.2 — 2026-04-05</h4>
+            <ul>
+              <li><strong>Changed</strong> — Settings redesign: tabs now use named sections with icon badges; form labels readable (no all-caps); inputs taller with focus ring; light theme sidebar/topbar white background fixed</li>
+              <li><strong>Add</strong> — Dashboard update badge; sidebar version indicator; Discord "Update available" card with <code>notify_update</code> toggle; <code>/api/state</code> now includes <code>version</code> field</li>
+              <li><strong>Fix</strong> — <code>exportConfig()</code> missing; <code>importConfig()</code> missing <code>async</code> + CSRF header; cards blank due to <code>_CURRENT_VERSION</code> JS reference; Discord update toggle not persisting; update preview dummy versions; demo link removed from sidebar</li>
+            </ul>
+
+            <h4>v7.1.1 — 2026-04-01</h4>
+            <ul>
+              <li><strong>Fix</strong> — Bug #47: Discord test showed "v6"; AES-256 encryption for API keys/webhooks (#41); tooltips for all settings fields (#48); SECURITY.md updated</li>
+            </ul>
 
             <h4>v7.1.0 — 2026-04-01</h4>
             <ul>
@@ -2659,19 +2678,23 @@ function updateUI() {
   // Update availability badge
   const _upPill = document.getElementById('update-pill');
   const _upLbl  = document.getElementById('update-label');
-  if (_upPill && c.update_available) {
-    _upPill.style.display = '';
-    if (_upLbl) _upLbl.textContent = c.latest_version ? `Update: ${c.latest_version}` : 'Update';
-  } else if (_upPill) {
-    _upPill.style.display = 'none';
+  const _sbBadge = document.getElementById('sidebar-update-badge');
+  const _sbText  = document.getElementById('sidebar-update-text');
+  if (c.update_available && c.latest_version) {
+    if (_upPill) _upPill.style.display = '';
+    if (_upLbl)  _upLbl.textContent = `Update: ${c.latest_version}`;
+    if (_sbBadge) _sbBadge.style.display = '';
+    if (_sbText)  _sbText.textContent = `🆕 ${c.latest_version}`;
+  } else {
+    if (_upPill)  _upPill.style.display = 'none';
+    if (_sbBadge) _sbBadge.style.display = 'none';
   }
   // Update Discord preview card with real values
   const _upCur  = document.getElementById('dc-update-current');
   const _upNew  = document.getElementById('dc-update-new');
   const _upTtl  = document.getElementById('dc-update-preview-title');
   const _latest = c.latest_version || '—';
-  const _versionEl = document.getElementById('version-display');
-  const _curVer = (_versionEl?.textContent?.trim()) || '—';
+  const _curVer = appState?.version || '—';
   if (_upCur)  _upCur.textContent  = _curVer;
   if (_upNew)  _upNew.textContent  = _latest;
   if (_upTtl)  _upTtl.textContent  = currentLang === 'de' ? `Update verfügbar: ${_latest}` : `Update available: ${_latest}`;
@@ -2725,7 +2748,7 @@ function updateUI() {
       const dcKeyMap = {
         enabled:'enabled', missing:'notify_missing', upgrade:'notify_upgrade',
         cooldown:'notify_cooldown', limit:'notify_limit', offline:'notify_offline',
-        stats:'notify_stats'
+        stats:'notify_stats', update:'notify_update'
       };
       Object.entries(dcKeyMap).forEach(([key, dcKey]) => {
         const val = c_always.discord[dcKey] !== undefined ? c_always.discord[dcKey] : dcStates[key];

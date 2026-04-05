@@ -67,6 +67,8 @@ The live demo runs a fully interactive mock of the Mediastarr UI — dashboard, 
 | 🔖 Tag-based filtering | Per-instance: only search items that carry specific tags (e.g. seasonal collections) |
 | 🔔 Separate Discord webhooks | Different webhook URL for Sonarr vs Radarr notifications |
 | 🔗 Webhook trigger | `POST /api/webhook/trigger` — trigger a cycle from external automation |
+| 💾 Config export/import | Download config as JSON backup, restore on fresh instance |
+| 🆕 Update notifications | Dashboard badge + sidebar indicator + Discord webhook when new version available |
 
 ---
 

@@ -7,7 +7,7 @@
 | Version | Supported |
 |---|---|
 | v7.1.x (latest) | ✅ Active |
-| < v7.1.0 | ❌ No longer supported |
+| < v7.1.0        | ❌ No longer supported |
 
 ### Reporting a Vulnerability
 
@@ -57,7 +57,7 @@ You will be credited in the release notes unless you prefer to remain anonymous.
 | Version | Unterstützt |
 |---|---|
 | v7.1.x (aktuell) | ✅ Aktiv |
-| < v7.1.0 | ❌ Nicht mehr unterstützt |
+| < v7.1.0         | ❌ Nicht mehr unterstützt |
 
 ### Sicherheitslücken melden
 

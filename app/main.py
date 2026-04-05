@@ -2370,7 +2370,7 @@ def api_state():
     for inst_s in instances_safe:
         inst_s["today_count"] = db.count_today_for_instance(inst_s["id"])
     return jsonify({
-        "running":STATE["running"],"last_run":STATE["last_run"],
+        "version":_CURRENT_VERSION,"running":STATE["running"],"last_run":STATE["last_run"],
         "next_run":STATE["next_run"],"cycle_count":STATE["cycle_count"],
         "total_searches":db.total_count(),"daily_count":today_n,
         "daily_limit":limit,"daily_remaining":max(0,limit-today_n) if limit>0 else None,

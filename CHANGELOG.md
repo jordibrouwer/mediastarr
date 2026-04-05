@@ -12,10 +12,17 @@
 - **Export config** — `exportConfig()` was never defined in the frontend; added as proper `async function` with Blob URL download trigger
 - **Import config** — `importConfig()` used `await` but lacked `async` keyword, silently failing in strict JS contexts; fixed. Also added missing `X-CSRF-Token` header so import works when password protection is active
 - **Import into fresh instance** — tested and verified: export from running instance → import into brand-new instance with no config restores all instances and `setup_complete` flag correctly
+- **Dashboard cards blank** — `updateUI()` referenced undefined JS variable `_CURRENT_VERSION` (Python-only), causing a `ReferenceError` that aborted rendering before `renderInstanceCards()` was called; removed invalid reference
+- **Discord update toggle not persisting** — `dcKeyMap` in `updateUI()` was missing `update: 'notify_update'` entry, so the toggle was never synced from server state and always reset to default on load; added
+- **Discord update preview showing wrong version** — preview card used hardcoded `v7.1.2` / `v7.2.0` dummy values; now dynamically populated from `appState.version` (current) and `appState.config.latest_version` (new); opacity dimmed when no update is available
+- **Update preview current version always "—"** — `version-display` ID did not exist in HTML; `_curVer` fell back to undefined `_CURRENT_VERSION` JS variable; fixed: `/api/state` now returns `version: _CURRENT_VERSION`, preview reads from `appState.version`
+- **Demo link in sidebar** — `🎮 demo.mediastarr.de` link was inadvertently added to the app sidebar during design work; removed
 
 ### Added
 - **Dashboard update badge** — orange pill next to status indicator shows available version when GitHub has a newer release; click opens GitHub Releases page
+- **Sidebar update badge** — small `🆕 vX.Y.Z` badge below the logo in the sidebar, visible only when an update is available; links to GitHub Releases
 - **Discord: update notification toggle** — new "🆕 Update available" card in Discord settings; sends rich embed (current vs. new version, GitHub release link) when a new version is detected; configurable on/off via `notify_update`; gated so no notification fires if toggle is disabled
+- **`/api/state` exposes `version`** — the app's own running version (`_CURRENT_VERSION`) is now included in every `/api/state` response, enabling the frontend to display it without DOM scraping
 
 ## [v7.1.1] — 2026-04-03
 
