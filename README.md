@@ -11,6 +11,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/kroeberd/mediastarr?color=ff6b2b&label=Version)](https://github.com/kroeberd/mediastarr/releases)
 [![License](https://img.shields.io/badge/License-MIT-3de68b)](LICENSE)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865f2?logo=discord&logoColor=white)](https://discord.gg/8Vb9cj4ksv)
+[![Live Demo](https://img.shields.io/badge/🎮%20Live%20Demo-demo.mediastarr.de-ff6b2b?style=flat-square)](https://demo.mediastarr.de)
 
 </div>
 
@@ -23,6 +24,14 @@
 Runs on a configurable schedule, keeps a SQLite history, sends rich Discord embeds, and has a first-run browser wizard. No config file editing required.
 
 > **Note:** Independent project, built from scratch. Not affiliated with Huntarr.
+
+---
+
+## 🎮 Live Demo
+
+**Try it without installing anything:** → [demo.mediastarr.de](https://demo.mediastarr.de)
+
+The live demo runs a fully interactive mock of the Mediastarr UI — dashboard, settings, history, Discord preview, and stats. No Sonarr/Radarr connection needed.
 
 ---
 
@@ -287,6 +296,14 @@ Mediastarr was built independently from scratch — with security as a foundatio
 Läuft nach einem konfigurierbaren Zeitplan, führt eine SQLite-Historie, sendet reiche Discord-Embeds und hat einen Browser-Einrichtungsassistenten. Kein Bearbeiten von Config-Dateien erforderlich.
 
 > **Hinweis:** Eigenständiges Projekt, von Grund auf neu entwickelt. Keine Verbindung zu Huntarr.
+
+---
+
+## 🎮 Live-Demo
+
+**Ohne Installation ausprobieren:** → [demo.mediastarr.de](https://demo.mediastarr.de)
+
+Die Live-Demo läuft als vollständig interaktive Simulation der Mediastarr-Oberfläche — Dashboard, Einstellungen, History, Discord-Vorschau und Statistiken. Keine Sonarr/Radarr-Verbindung nötig.
 
 ---
 

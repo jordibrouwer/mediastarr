@@ -1,5 +1,13 @@
 # Changelog
 
+## [v7.1.2] — 2026-04-05
+
+### Changed
+- **UI redesign** — Settings tabs restructured into named sections (⏱ Intervals, 📊 Limits, ⚙ Behavior, 🌐 Global Filters, 🖥 System, 🏷 Tagging, ⚡ Stalled Monitor, 📝 Log, 🕐 Maintenance, 💾 Backup); each section has icon badge + title + subtitle for immediate orientation without reading field labels
+- **Form system rebuilt** — labels now readable weight (not all-caps), inputs taller with focus ring, hints 11px with line-height; grid uses `auto-fill` columns adapting to content
+- **Light theme fixed** — sidebar and topbar now render with correct white background; logo text readable in both themes
+- **Screenshots updated** — all 9 Playwright screenshots regenerated with redesigned UI
+
 ## [v7.1.1] — 2026-04-03
 
 ### Fixed

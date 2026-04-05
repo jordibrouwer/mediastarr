@@ -47,6 +47,13 @@
       font-family: 'DM Mono', monospace; font-size: 13px;
       min-height: 100vh; overflow-x: hidden; transition: background 0.25s, color 0.25s;
     }
+
+    /* ── Noise texture overlay (from homepage design) ── */
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.35;
+    }
     body::after {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
       background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--scanline) 2px, var(--scanline) 4px);
@@ -66,10 +73,16 @@
       width: 220px; flex-shrink: 0; background: var(--bg2);
       border-right: 1px solid var(--border); display: flex;
       flex-direction: column; position: sticky; top: 0; height: 100vh;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     }
     .logo-wrap { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
     .logo { display: flex; align-items: center; gap: 11px; }
-    .logo-mark { width: 36px; height: 36px; flex-shrink: 0; }
+    .logo-mark {
+      width: 36px; height: 36px; flex-shrink: 0;
+      filter: drop-shadow(0 0 8px rgba(255,107,43,0.35));
+      transition: filter 0.2s;
+    }
+    .logo:hover .logo-mark { filter: drop-shadow(0 0 14px rgba(255,107,43,0.55)); }
     .logo-name { font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
     .logo-name span { color: var(--accent); }
     .logo-sub { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted2); margin-top: 2px; }
@@ -80,7 +93,11 @@
       transition: all 0.15s; margin-bottom: 2px;
     }
     .nav-item:hover { background: var(--surface); color: var(--text); }
-    .nav-item.active { background: rgba(255,107,43,0.12); color: var(--accent); }
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(255,107,43,0.18) 0%, rgba(255,107,43,0.06) 100%);
+      color: var(--accent);
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
     .nav-icon { font-size: 14px; width: 18px; text-align: center; }
     .nav-label { flex: 1; }
     .nav-badge { background: var(--accent); color: #fff; font-size: 9px; padding: 1px 6px; border-radius: 100px; display: none; }
@@ -88,9 +105,13 @@
 
     /* ── Page visibility (class-based) ── */
     .content-page { display: none !important; }
+    .content-page.page-visible { animation: fadeUp 0.18s ease both; }
     .content-page.page-visible { display: grid !important; }
     .content.content-page { display: none !important; }
-    .content.content-page.page-visible { display: grid !important; }
+    .content.content-page.page-visible {
+      display: grid !important;
+      animation: fadeUp 0.18s ease both;
+    }
     /* ── Theme Switcher ── */
     .sidebar-bottom { padding: 14px 12px; border-top: 1px solid var(--border); }
     .theme-row { display: flex; gap: 4px; margin-bottom: 8px; }
@@ -111,12 +132,24 @@
     /* ══════════ MAIN ══════════ */
     .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .topbar {
-      padding: 14px 26px; border-bottom: 1px solid var(--border); background: var(--bg2);
+      padding: 14px 26px; border-bottom: 1px solid var(--border);
+      background: var(--bg2);
       display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 50;
     }
     .page-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; font-weight: 700; flex: 1; }
     .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 100px; font-size: 11px; border: 1px solid var(--border2); background: var(--surface); }
-    .pill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: 0.3s; }
+    .pill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); transition: 0.3s; position: relative; }
+    .pill-dot.running::after {
+      content: ''; position: absolute; inset: -3px; border-radius: 50%;
+      background: var(--green); opacity: 0.3; animation: pulse-ring 1.5s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1); opacity: 0.35; }
+      70%  { transform: scale(2.4); opacity: 0; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
     .pill-dot.running { background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 1.8s infinite; }
     .pill-dot.stopped { background: var(--red); }
     @keyframes blink { 0%,100%{opacity:1}50%{opacity:.4} }
@@ -133,7 +166,9 @@
       display: inline-flex; align-items: center; gap: 6px;
     }
     .btn:hover { border-color: var(--muted2); transform: translateY(-1px); }
-    .btn-start { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500; }
+    .btn-start { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 500;
+      box-shadow: 0 0 16px rgba(255,107,43,0.2); }
+    .btn-start:hover { box-shadow: 0 0 28px rgba(255,107,43,0.4) !important; }
     .btn-start:hover { box-shadow: 0 0 18px rgba(255,107,43,0.35); }
     .btn-stop { border-color: var(--red); color: var(--red); }
     .btn-stop:hover { background: rgba(255,77,77,0.1); }
@@ -144,7 +179,13 @@
 
     /* ══════════ CONTENT GRID ══════════ */
     .content { flex: 1; padding: 20px 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .card:hover { border-color: var(--border2); box-shadow: 0 4px 28px rgba(0,0,0,0.35); }
     .card-header { padding: 14px 18px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
     .card-title { font-family: 'Bricolage Grotesque', sans-serif; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted2); }
     .card-body { padding: 16px 18px; }
@@ -211,31 +252,53 @@
     .log-item { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* ── Settings ── */
-    .settings-card { display: flex; flex-direction: column; }
-    .tabs-row { display: flex; padding: 0 18px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+    .settings-card { background: transparent; border: none; box-shadow: none; border-radius: 0; }
+    .settings-card .card-header { display: none; }
+    .tabs-row {
+      display: flex; padding: 0 20px; gap: 2px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; scrollbar-width: none;
+      background: var(--bg2);
+    }
     .tabs-row::-webkit-scrollbar { display: none; }
-    .tab-btn { padding: 11px 14px; font-size: 12px; color: var(--muted2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .tab-btn {
+      padding: 13px 16px; font-size: 12px; font-weight: 500;
+      color: var(--muted2); cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
     .stat-tab-btn { padding: 11px 14px; font-size: 12px; color: var(--muted2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background:none;border-top:none;border-left:none;border-right:none; }
     .stat-tab-btn:hover { color: var(--text); }
     .stat-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-    .tab-pane { display: none; padding: 16px 18px; }
+    .tab-pane { display: none; padding: 24px 28px; max-width: 960px; }
+    .tab-pane.active { display: block; animation: fadeUp 0.15s ease both; }
     .tab-pane.active { display: block; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px 20px; }
+    .form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group.full { grid-column: 1/-1; }
-    .form-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted2); }
+    .form-label { font-size: 11px; font-weight: 500; color: var(--text); }
     .form-input {
-      padding: 8px 10px; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 7px; color: var(--text); font-family: 'DM Mono', monospace;
-      font-size: 12px; outline: none; transition: border-color 0.15s;
+      padding: 9px 12px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: 'DM Mono', monospace;
+      font-size: 13px; outline: none; width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
+    .form-input:hover { border-color: var(--border2); }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,43,0.1); }
+    .form-input[type=number] { max-width: 140px; }
+    select.form-input, textarea.form-input { max-width: 100%; }
     .form-input:focus { border-color: var(--accent); }
-    .form-hint { font-size: 10px; color: var(--muted); margin-top: 3px; }
+    .form-hint { font-size: 11px; color: var(--muted2); margin-top: 2px; line-height: 1.5; }
     .toggle-row { display: flex; align-items: center; gap: 9px; margin-top: 4px; }
     .toggle { width: 34px; height: 18px; background: var(--border2); border-radius: 100px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
-    .toggle.on { background: var(--accent); }
+    .toggle.on { background: var(--accent); box-shadow: 0 0 12px rgba(255,107,43,0.3); }
     .toggle::after { content: ''; position: absolute; width: 12px; height: 12px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .toggle.on::after { transform: translateX(16px); }
     .toggle-label { font-size: 11px; color: var(--muted2); }
@@ -414,7 +477,36 @@
     .action-banner.error { border-color: rgba(255,77,77,.3); background: rgba(255,77,77,.07); color: var(--red); }
     .action-banner.warning { border-color: rgba(245,200,66,.3); background: rgba(245,200,66,.07); color: var(--yellow); }
     .action-banner.info { border-color: rgba(77,156,255,.3); background: rgba(77,156,255,.07); color: var(--blue); }
-  </style>
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .page-anim {
+      animation: fadeUp 0.22s ease both;
+    }
+
+    /* ════ Settings redesign ════════════════════════════════════════════════ */
+    .s-section { margin: 24px 0 14px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .s-section:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+    .s-section-title {
+      font-family: 'Bricolage Grotesque', sans-serif; font-size: 13px; font-weight: 700;
+      color: var(--text); margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .s-icon {
+      width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+      background: rgba(255,107,43,0.12); border: 1px solid rgba(255,107,43,0.25);
+      display: flex; align-items: center; justify-content: center; font-size: 11px;
+    }
+    .s-section-sub { font-size: 11px; color: var(--muted2); margin-bottom: 14px; line-height: 1.5; }
+    .s-toggle-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+    .s-toggle-label { font-size: 12px; color: var(--muted2); }
+    .s-actions { display: flex; gap: 10px; align-items: center; padding: 14px 0 0; flex-wrap: wrap; }
+    .form-group.full { grid-column: 1 / -1; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    [data-theme="light"] .form-input { background: #fff; }
+
+</style>
 </head>
 <body>
 
@@ -486,6 +578,12 @@
         <div class="lang-btn" onclick="setLang('en')" id="lang-en"><span class="flag-en">EN</span></div>
       </div>
       <button class="btn" style="width:100%;font-size:10px;padding:5px;margin-bottom:6px;color:var(--muted2)" onclick="resetSetup()" data-i18n="btn_reset_setup">⚙ Setup zurücksetzen</button>
+      <div style="text-align:center;padding:4px 0 2px">
+        <a href="https://demo.mediastarr.de" target="_blank" rel="noopener"
+           style="font-size:10px;color:var(--muted2);text-decoration:none;transition:color .15s"
+           onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted2)'"
+        >🎮 demo.mediastarr.de</a>
+      </div>
       <div class="version-tag"><a href="https://github.com/kroeberd/mediastarr" target="_blank" style="text-decoration:none"><span style="background:rgba(255,107,43,.15);border:1px solid rgba(255,107,43,.4);border-radius:4px;padding:2px 8px;color:#ff6b2b;font-size:10px;font-weight:600">{{ version }}</span></a></div>
     </div>
   </aside>
@@ -581,65 +679,83 @@
 
         <!-- ── TAB: GENERAL ── -->
         <div class="tab-pane active" id="tab-general">
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_missing">Missing-Intervall (Min.)</label>
-              <input class="form-input" id="cfg-missing" type="number" min="15" max="1440" value="30" oninput="_autosaveConfig()">
-              <div class="form-hint" data-i18n="hint_missing">Min. 15 Min. zwischen Suchzyklen.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_upgrade">Upgrade-Intervall (Min.)</label>
-              <input class="form-input" id="cfg-upgrade" type="number" min="15" max="1440" value="60" oninput="_autosaveConfig()">
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_max">Max. Searches pro Lauf</label>
-              <input class="form-input" id="cfg-max" type="number" min="1" max="500" value="10" oninput="_autosaveConfig()">
-              <div class="form-hint" data-i18n="hint_max">Pro Zyklus, pro Service.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_daily">Tageslimit (0 = unbegrenzt)</label>
-              <input class="form-input" id="cfg-daily" type="number" min="0" max="9999" value="20" style="border-color:rgba(61,230,139,0.3)" oninput="_autosaveConfig()">
-              <div class="form-hint" data-i18n="hint_daily">Gesamt pro Tag, alle Services.</div>
-            </div>
-            <div class="form-group">
+
+          <div class="s-section" style="border-top:none;padding-top:0;margin-top:0">
+            <div class="s-section-title"><span class="s-icon">⏱</span><span data-de="Suchintervalle" data-en="Search Intervals">Suchintervalle</span></div>
+            <div class="s-section-sub" data-de="Wie oft Mediastarr nach fehlendem oder upgradefähigem Content sucht." data-en="How often Mediastarr searches for missing or upgradeable content.">Wie oft Mediastarr nach fehlendem oder upgradefähigem Content sucht.</div>
+            <div class="form-grid cols-3">
               <div class="form-group">
-              <label class="form-label" data-i18n="lbl_upgrade_daily">Upgrade-Tageslimit (0 = ∞)</label>
-              <input class="form-input" id="cfg-upgrade-daily" type="number" min="0" max="9999" value="0">
-              <div class="form-hint" data-i18n="hint_upgrade_daily">Max. Upgrades/Tag über alle Instanzen. Zählt separat vom Suchslimit.</div>
-            </div>
-            <label class="form-label" data-i18n="lbl_cooldown">Cooldown (Tage)</label>
-              <input class="form-input" id="cfg-cooldown" type="number" min="1" max="365" value="7" style="border-color:rgba(77,156,255,0.3)" oninput="_autosaveConfig()">
-              <div class="form-hint" data-i18n="hint_cooldown_range">Standard: 7 Tage. Bereich: 1–365.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_upgrades">Upgrades suchen</label>
-              <div class="toggle-row">
-                <div class="toggle on" id="tog-upgrades" onclick="toggleCfg2('upgrades', true)"></div>
-                <span class="toggle-label" id="lab-upgrades">An</span>
+                <label class="form-label" data-i18n="lbl_missing">Missing-Intervall (Min.)</label>
+                <input class="form-input" id="cfg-missing" type="number" min="15" max="1440" value="30" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_missing">Min. 15 Min. zwischen Suchzyklen.</div>
               </div>
-              <div class="form-hint" data-i18n="hint_upgrades">Wird sofort gespeichert.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_dryrun">Dry Run</label>
-              <div class="toggle-row">
-                <div class="toggle" id="tog-dry" onclick="toggleCfg('dry', true)"></div>
-                <span class="toggle-label" id="lab-dry">Aus</span>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_upgrade">Upgrade-Intervall (Min.)</label>
+                <input class="form-input" id="cfg-upgrade" type="number" min="15" max="1440" value="60" oninput="_autosaveConfig()">
               </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_jitter">Jitter Max (Sekunden)</label>
-              <input class="form-input" id="cfg-jitter" type="number" min="0" max="60" value="5" oninput="_autosaveConfig()">
-              <div class="form-hint" data-i18n="hint_jitter">0 = kein Jitter.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" data-i18n="lbl_timeout">API Timeout (Sek.)</label>
-              <input class="form-input" id="cfg-timeout" type="number" min="5" max="300" value="30" oninput="_autosaveConfig()">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_jitter">Jitter Max (Min.)</label>
+                <input class="form-input" id="cfg-jitter" type="number" min="0" max="60" value="5" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_jitter">0 = kein Jitter.</div>
+              </div>
             </div>
           </div>
-          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:10px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:10px" data-i18n="lbl_filter">🌐 Globale Filter</div>
-            <div style="font-size:11px;color:var(--muted2);margin-bottom:10px" data-i18n="hint_filter_global">Fallback — Sonarr/Radarr-Tabs überschreiben diese Werte.</div>
-            <div class="form-grid">
+
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">📊</span><span data-de="Limits" data-en="Limits">Limits</span></div>
+            <div class="form-grid cols-3">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_max">Max. Searches / Lauf</label>
+                <input class="form-input" id="cfg-max" type="number" min="1" max="500" value="10" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_max">Pro Zyklus, pro Service.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_daily">Tageslimit (0 = ∞)</label>
+                <input class="form-input" id="cfg-daily" type="number" min="0" max="9999" value="20" style="border-color:rgba(61,230,139,0.3)" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_daily">Gesamt pro Tag, alle Services.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_upgrade_daily">Upgrade-Limit/Tag (0 = ∞)</label>
+                <input class="form-input" id="cfg-upgrade-daily" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_upgrade_daily">Separat vom Suchlimit.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_cooldown">Cooldown (Tage)</label>
+                <input class="form-input" id="cfg-cooldown" type="number" min="1" max="365" value="7" style="border-color:rgba(77,156,255,0.3)" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_cooldown_range">1–365 Tage. Standard: 7.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">⚙</span><span data-de="Verhalten" data-en="Behavior">Verhalten</span></div>
+            <div class="form-grid cols-3">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_upgrades">Upgrades suchen</label>
+                <div class="s-toggle-row">
+                  <div class="toggle on" id="tog-upgrades" onclick="toggleCfg2('upgrades', true)"></div>
+                  <span class="toggle-label s-toggle-label" id="lab-upgrades">An</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_dryrun">Dry Run</label>
+                <div class="s-toggle-row">
+                  <div class="toggle" id="tog-dry" onclick="toggleCfg('dry', true)"></div>
+                  <span class="toggle-label s-toggle-label" id="lab-dry">Aus</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_timeout">API Timeout (Sek.)</label>
+                <input class="form-input" id="cfg-timeout" type="number" min="5" max="300" value="30" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_timeout">5–300 Sekunden.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">🌐</span><span data-de="Globale Filter" data-en="Global Filters">Globale Filter</span></div>
+            <div class="s-section-sub" data-de="Fallback — Sonarr/Radarr-Tabs können diese überschreiben." data-en="Fallback values — overridden per-type in Sonarr/Radarr tabs.">Fallback — Sonarr/Radarr-Tabs können diese überschreiben.</div>
+            <div class="form-grid cols-2">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_imdb">IMDb Mindestbewertung</label>
                 <input class="form-input" id="cfg-imdb" type="number" min="0" max="10" step="0.1" value="0" placeholder="0 = aus" oninput="_autosaveConfig()">
@@ -659,9 +775,10 @@
               </div>
             </div>
           </div>
-          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:10px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:10px" data-i18n="lbl_system">System</div>
-            <div class="form-grid">
+
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">🖥</span><span data-de="System" data-en="System">System</span></div>
+            <div class="form-grid cols-2">
               <div class="form-group full">
                 <label class="form-label" data-i18n="lbl_timezone">Zeitzone</label>
                 <div style="position:relative">
@@ -670,164 +787,160 @@
                     oninput="filterTimezones(this.value)"
                     onfocus="showTzDropdown()"
                     onblur="setTimeout(hideTzDropdown,200)"
-                    style="width:100%" oninput="_autosaveConfig()">
+                    style="width:100%">
                   <input type="hidden" id="cfg-timezone" value="UTC">
                   <div id="tz-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
-                    background:var(--bg2);border:1px solid var(--border);border-radius:0 0 7px 7px;
-                    max-height:200px;overflow-y:auto;z-index:50;scrollbar-width:thin">
-                  </div>
-            <div class="form-hint" data-i18n="hint_tz_field">Alle Zeiten (Logs, Aktivitätslog, Wartungsfenster) werden in dieser Zeitzone angezeigt. Entspricht der TZ-Umgebungsvariable.</div>
+                    background:var(--bg2);border:1px solid var(--border);
+                    border-radius:8px;max-height:200px;overflow-y:auto;z-index:100;
+                    box-shadow:0 8px 32px rgba(0,0,0,0.3)"></div>
                 </div>
-                <div class="form-hint" id="tz-hint" style="display:flex;align-items:center;gap:6px">
-                  <span id="tz-current-display" style="color:var(--accent)">UTC</span>
-                  <span style="color:var(--muted)" id="tz-env-hint"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_theme">Theme</label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn" onclick="setTheme('dark')" id="theme-dark" data-i18n="opt_dark">Dark</button>
+                  <button class="btn" onclick="setTheme('light')" id="theme-light" data-i18n="opt_light">Light</button>
+                  <button class="btn" onclick="setTheme('oled')" id="theme-oled" data-i18n="opt_oled">OLED</button>
+                  <button class="btn" onclick="setTheme('system')" id="theme-system" data-i18n="opt_system">System</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_language">Sprache / Language</label>
+                <div style="display:flex;gap:6px">
+                  <button class="btn flag-de" onclick="setLang('de')" id="lang-de">🇩🇪 DE</button>
+                  <button class="btn flag-en" onclick="setLang('en')" id="lang-en">🇬🇧 EN</button>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Auto-save indicator — shows brief confirmation after any change -->
-          <div id="autosave-indicator" style="margin-top:8px;font-size:11px;color:var(--green);min-height:18px;transition:opacity .3s"></div>
 
-          <!-- ── Tagging ── -->
-          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_tagging">Tagging</div>
-            <div style="font-size:11px;color:var(--muted2);margin-bottom:10px" data-i18n="hint_tagging">Fügt verarbeiteten Serien/Filmen einen Tag hinzu, damit du in Sonarr/Radarr sehen kannst, welche Einträge Mediastarr bereits durchsucht hat.</div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <div class="toggle" id="tog-tag-global" onclick="toggleTagGlobal()"></div>
-              <span class="toggle-label" id="lab-tag-global">Aus</span>
-              <span style="font-size:11px;color:var(--muted2)" data-i18n="lbl_tag_enabled">Tags aktivieren (global)</span>
-            </div>
-            <div class="form-group" style="max-width:300px">
-              <label class="form-label" data-i18n="lbl_tag_label">Tag-Name</label>
-              <input class="form-input" id="cfg-tag-label" type="text" maxlength="50" value="mediastarr" placeholder="mediastarr">
-              <div class="form-hint" data-i18n="hint_tag_label">Wird in Sonarr/Radarr angelegt falls nicht vorhanden. Standard: mediastarr</div>
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">🏷</span><span data-de="Tagging" data-en="Tagging">Tagging</span></div>
+            <div class="s-section-sub" data-de="Durchsuchten Elementen automatisch einen Tag hinzufügen." data-en="Automatically add a tag to searched items in Sonarr/Radarr.">Durchsuchten Elementen automatisch einen Tag hinzufügen.</div>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_tag_enabled">Tagging global</label>
+                <div class="s-toggle-row">
+                  <div class="toggle" id="tog-tag-global" onclick="toggleTagGlobal()"></div>
+                  <span class="toggle-label s-toggle-label" id="lab-tag-global">Aus</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_tag_label">Tag-Name</label>
+                <input class="form-input" id="cfg-tag-label" type="text" maxlength="50" value="mediastarr" oninput="_autosaveConfig()">
+              </div>
             </div>
           </div>
 
-          <!-- ── Stalled Download Monitor ── -->
-          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_stall_monitor">Stalled Download Monitor</div>
-            <div style="font-size:11px;color:var(--muted2);margin-bottom:10px" data-i18n="hint_stall_monitor">Überwacht die Download-Queue auf steckengebliebene Downloads und löst automatisch eine neue Suche aus.</div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-              <div class="toggle" id="tog-stall-enabled" onclick="toggleStall()"></div>
-              <span class="toggle-label" id="lab-stall-enabled">Aus</span>
-              <span style="font-size:11px;color:var(--muted2)" data-i18n="lbl_stall_enabled">Aktivieren</span>
-            </div>
-            <div class="form-grid" id="stall-settings" style="display:none">
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">⚡</span><span data-de="Stalled-Download-Monitor" data-en="Stalled Download Monitor">Stalled-Download-Monitor</span></div>
+            <div class="s-section-sub" data-de="Erkennt feststeckende Downloads und löst automatisch eine neue Suche aus." data-en="Detects stuck downloads and triggers a new search automatically.">Erkennt feststeckende Downloads und löst automatisch eine neue Suche aus.</div>
+            <div class="form-grid cols-3">
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_stall_threshold">Schwellenwert (Minuten)</label>
+                <label class="form-label" data-i18n="lbl_stall_enabled">Aktivieren</label>
+                <div class="s-toggle-row">
+                  <div class="toggle" id="tog-stall-enabled" onclick="toggleStall()"></div>
+                  <span class="toggle-label s-toggle-label" id="lab-stall-enabled">Aus</span>
+                </div>
+              </div>
+              <div class="form-group" id="stall-settings">
+                <label class="form-label" data-i18n="lbl_stall_threshold">Schwellenwert (Min.)</label>
                 <input class="form-input" id="cfg-stall-threshold" type="number" min="5" max="10080" value="60">
-                <div class="form-hint" data-i18n="hint_stall_threshold">Downloads, die länger als N Minuten nicht aktiv sind, werden neu gesucht.</div>
+                <div class="form-hint" data-i18n="hint_stall_threshold">Min. 5 Minuten inaktiv.</div>
               </div>
-              <div class="form-group">
+              <div class="form-group" id="stall-settings-action">
                 <label class="form-label" data-i18n="lbl_stall_action">Aktion</label>
                 <select class="form-input" id="cfg-stall-action">
                   <option value="search" data-i18n="opt_stall_search">Neue Suche starten</option>
                   <option value="warn" data-i18n="opt_stall_warn">Nur Discord-Warnung</option>
                 </select>
-                <div class="form-hint" data-i18n="hint_stall_action">Was passiert wenn ein steckengebliebener Download erkannt wird.</div>
               </div>
             </div>
           </div>
 
-          <!-- ── Log Rotation ── -->
-          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_log_rotation">Log-Rotation</div>
-            <div style="font-size:11px;color:var(--muted2);margin-bottom:12px" data-i18n="hint_log_rotation">Logdatei unter /data/logs/mediastarr.log. Rotation erfolgt automatisch.</div>
-            <!-- Log Level -->
-            <div class="form-group" style="margin-bottom:12px">
-              <label class="form-label" data-i18n="lbl_log_level">Log-Level (Docker &amp; Datei)</label>
-              <select class="form-input" id="cfg-log-min-level" style="max-width:220px" onchange="saveLogLevel()">
-                <option value="DEBUG" data-i18n="opt_log_debug">DEBUG — alles</option>
-                <option value="INFO" selected data-i18n="opt_log_info">INFO — Standard</option>
-                <option value="WARN" data-i18n="opt_log_warn">WARN — nur Warnungen + Fehler</option>
-                <option value="ERROR" data-i18n="opt_log_error">ERROR — nur Fehler</option>
-              </select>
-              <div class="form-hint" data-i18n="hint_log_level">Format: <code>[2026-03-26 14:32:10] [INFO] Nachricht</code> · Gilt für Docker-Console &amp; Logdatei.</div>
-            </div>
-            <div class="form-grid" style="margin-bottom:10px">
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">📝</span><span data-de="Log-Rotation" data-en="Log Rotation">Log-Rotation</span></div>
+            <div class="form-grid cols-3">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_log_level">Log-Level</label>
+                <select class="form-input" id="cfg-log-min-level" onchange="_autosaveConfig()">
+                  <option value="DEBUG">DEBUG</option>
+                  <option value="INFO" selected>INFO</option>
+                  <option value="WARN">WARN</option>
+                  <option value="ERROR">ERROR</option>
+                </select>
+                <div class="form-hint" data-i18n="hint_log_level">DEBUG: alles · INFO: normal.</div>
+              </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_log_max_mb">Max. Dateigröße (MB)</label>
-                <input class="form-input" id="cfg-log-max-mb" type="number" min="1" max="100" value="5" oninput="_autosaveLog()">
-                <div class="form-hint" data-i18n="hint_log_max_mb">1–100 MB. Standard: 5 MB.</div>
+                <input class="form-input" id="cfg-log-max-mb" type="number" min="1" max="100" value="5" oninput="_autosaveConfig()">
               </div>
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_log_backups">Anzahl Backup-Dateien</label>
-                <input class="form-input" id="cfg-log-backups" type="number" min="0" max="10" value="2" oninput="_autosaveLog()">
-                <div class="form-hint" data-i18n="hint_log_backups">0–10 Backups. Standard: 2 (= 3 Dateien gesamt).</div>
+                <label class="form-label" data-i18n="lbl_log_backups">Backup-Dateien</label>
+                <input class="form-input" id="cfg-log-backups" type="number" min="0" max="10" value="2" oninput="_autosaveConfig()">
               </div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button class="btn btn-start" onclick="saveLogConfig()" data-i18n="btn_save">Speichern</button>
-              <button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="testLogRotation()" data-i18n="btn_log_rotate">🔄 Jetzt rotieren</button>
-              <button class="btn" style="border-color:var(--muted2);color:var(--muted2)" onclick="loadLogStatus()" data-i18n="btn_log_status">📋 Status</button>
-              <span id="log-action-msg" style="font-size:11px;display:none"></span>
-            </div>
-            <!-- Log status panel -->
-            <div id="log-status-panel" style="display:none;margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px;font-family:var(--mono)">
-              <div id="log-status-content" style="color:var(--muted2)">—</div>
+            <div class="s-actions">
+              <button class="btn" onclick="rotateLog()">↻ <span data-i18n="btn_rotate_log">Log rotieren</span></button>
+              <button class="btn" id="cfg-log-status-btn" onclick="showLogStatus()">📊 <span data-i18n="btn_log_status">Log-Status</span></button>
             </div>
           </div>
 
-          <!-- ── Maintenance Windows ── -->
-          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_maintenance">Wartungsfenster</div>
-            <div style="font-size:11px;color:var(--muted2);margin-bottom:10px" data-i18n="hint_maintenance">Suche pausiert automatisch innerhalb dieser Zeitfenster (lokale Zeit). Bis zu 10 Fenster. Nacht-Fenster werden unterstützt (z.B. 22:00–06:00).</div>
-            <div id="maint-windows-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
-            <button class="btn" style="font-size:11px;border-color:var(--green);color:var(--green)" onclick="addMaintenanceWindow()" data-i18n="btn_add_window">+ Fenster hinzufügen</button>
-            <button class="btn" style="font-size:11px;margin-left:6px" onclick="saveMaintenanceWindows()" data-i18n="btn_save">Speichern</button>
-            <span id="maint-save-msg" style="font-size:11px;display:none;margin-left:8px"></span>
-          </div>
-
-          <!-- ── Export / Import ── -->
-          <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:6px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin-bottom:4px" data-i18n="lbl_backup">Backup & Restore</div>
-            <div style="font-size:11px;color:var(--muted2);margin-bottom:12px" data-i18n="hint_backup">Exportiert alle Einstellungen inkl. API-Keys als JSON-Datei. Sicher aufbewahren.</div>
-
-            <!-- Public API state toggle -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-              <div>
-                <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px" data-i18n="lbl_public_api">Öffentlicher API-State</div>
-                <div style="font-size:10px;color:var(--muted2)" data-i18n="hint_public_api">/api/state ohne Login erreichbar — kein API-Key in der Antwort. Für externe Tools.</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
-                <div class="toggle" id="tog-public-api" onclick="togglePublicApi()"></div>
-                <span class="toggle-label" id="lab-public-api">Aus</span>
-              </div>
-            </div>
-
-            <!-- Export / Import buttons -->
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              <a id="cfg-export-btn" href="/api/config/export" class="btn" style="border-color:var(--blue);color:var(--blue);text-decoration:none" data-i18n="btn_export">
-                ⬇ Exportieren
-              </a>
-              <label class="btn" style="border-color:var(--green);color:var(--green);cursor:pointer;margin:0" data-i18n="btn_import">
-                ⬆ Importieren
-                <input type="file" accept=".json" id="cfg-import-file" style="display:none" onchange="importConfig(this)">
-              </label>
-              <span id="cfg-import-msg" style="font-size:11px;display:none"></span>
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">🕐</span><span data-de="Wartungsfenster" data-en="Maintenance Windows">Wartungsfenster</span></div>
+            <div class="s-section-sub" data-de="Suchen werden in diesen Zeitfenstern pausiert (Ortszeit)." data-en="Searches paused during these windows (local time).">Suchen werden in diesen Zeitfenstern pausiert (Ortszeit).</div>
+            <div id="maint-list"></div>
+            <div class="s-actions">
+              <button class="btn btn-start" onclick="addMaintenanceWindow()">+ <span data-i18n="btn_add_maint">Fenster hinzufügen</span></button>
             </div>
           </div>
+
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon">💾</span><span data-de="Backup &amp; Erweitert" data-en="Backup &amp; Advanced">Backup &amp; Erweitert</span></div>
+            <div class="form-grid cols-2">
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_backup">Konfiguration</label>
+                <div class="s-actions" style="padding-top:0">
+                  <button class="btn" id="cfg-export-btn" onclick="exportConfig()">⬇ <span data-i18n="btn_export">Export</span></button>
+                  <label class="btn" style="cursor:pointer">⬆ <span data-i18n="btn_import">Import</span><input type="file" accept=".json" id="cfg-import-file" style="display:none" onchange="importConfig(this)"></label>
+                  <span id="cfg-import-msg" style="font-size:11px;color:var(--green)"></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" data-i18n="lbl_public">Öffentlicher API-State</label>
+                <div class="s-toggle-row">
+                  <div class="toggle" id="tog-public" onclick="toggleCfg('public')"></div>
+                  <span class="toggle-label s-toggle-label" id="lab-public">Aus</span>
+                </div>
+                <div class="form-hint" data-i18n="hint_public">/api/state ohne Auth zugänglich.</div>
+              </div>
+            </div>
+            <div class="s-actions">
+              <button class="btn btn-danger" id="btn_setup" onclick="confirmReset()" data-i18n="btn_setup">⚠ Setup zurücksetzen</button>
+            </div>
+          </div>
+
         </div>
-        <div class="tab-pane" id="tab-sonarr">
-          <div style="background:rgba(77,156,255,.06);border:1px solid rgba(77,156,255,.2);border-radius:9px;padding:14px 16px;margin-bottom:16px">
-            <div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px" data-i18n="lbl_sonarr_behavior">📺 Sonarr — Suchverhalten</div>
-            <div class="form-grid">
+<div class="tab-pane" id="tab-sonarr">
+          <div class="s-section" style="border-top:none;padding-top:0;margin-top:0">
+            <div class="s-section-title"><span class="s-icon" style="border-color:rgba(77,156,255,.3);background:rgba(77,156,255,.1)">📺</span><span data-de="Suchverhalten" data-en="Search Behavior">Suchverhalten</span></div>
+            <div class="form-grid cols-3">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_mode">Suchmodus</label>
                 <select class="form-input" id="cfg-sonarr-mode" onchange="_autosaveConfig()">
-                  <option value="episode" data-i18n="opt_episode">Episode (Standard)</option>
-                  <option value="season" data-i18n="opt_season">Staffel</option>
+                  <option value="episode" data-i18n="opt_episode">Episode</option>
+                  <option value="season" data-i18n="opt_season">Staffel (empfohlen)</option>
                   <option value="series" data-i18n="opt_series">Ganze Serie</option>
                 </select>
+                <div class="form-hint" data-i18n="hint_sonarr_mode">Staffel = weniger API-Calls.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-sonarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global" oninput="_autosaveConfig()">
-                <div class="form-hint" data-i18n="hint_sonarr_imdb">Leer = globalen Wert verwenden.</div>
+                <input class="form-input" id="cfg-sonarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="= global" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_sonarr_imdb">Leer = globalen Wert.</div>
               </div>
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_sonarr_res">Zielauflösung Upgrades</label>
+                <label class="form-label" data-i18n="lbl_sonarr_res">Zielauflösung</label>
                 <select class="form-input" id="cfg-sonarr-target-res" onchange="_autosaveConfig()">
                   <option value="" data-i18n="opt_same_global">Wie global</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
@@ -839,47 +952,39 @@
                 </select>
               </div>
             </div>
+          </div>
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon" style="border-color:rgba(77,156,255,.3);background:rgba(77,156,255,.1)">📊</span><span data-de="Limits" data-en="Limits">Limits</span></div>
+            <div class="form-grid cols-2">
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_sonarr_global_limit">Sonarr Tageslimit gesamt (0 = ∞)</label>
+                <label class="form-label" data-i18n="lbl_sonarr_global_limit">Sonarr Tageslimit (0 = ∞)</label>
                 <input class="form-input" id="cfg-sonarr-daily-limit" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
-                <div class="form-hint" data-i18n="hint_sonarr_global_limit">Max. Suchen/Tag über alle Sonarr-Instanzen. Instanz-Limits gelten zusätzlich.</div>
+                <div class="form-hint" data-i18n="hint_sonarr_global_limit">Max. Suchen/Tag über alle Sonarr-Instanzen.</div>
               </div>
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_sonarr_upgrade_daily">Sonarr Upgrade-Tageslimit (0 = ∞)</label>
+                <label class="form-label" data-i18n="lbl_sonarr_upgrade_daily">Upgrade-Limit/Tag (0 = ∞)</label>
                 <input class="form-input" id="cfg-sonarr-upgrade-daily" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
-                <div class="form-hint" data-i18n="hint_sonarr_upgrade_daily">Max. Sonarr-Upgrades/Tag. Leer = globales Upgrade-Limit.</div>
               </div>
-          </div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;font-weight:600" data-i18n="lbl_sonarr_instances">📺 Sonarr Instanzen</div>
-          <div id="settings-inst-list-sonarr" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
-            <div style="text-align:center;color:var(--muted2);font-size:12px;padding:12px">Lade...</div>
-          </div>
-          <div style="background:var(--surface);border:2px dashed rgba(77,156,255,.3);border-radius:9px;padding:12px 14px;margin-top:4px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:10px;font-weight:600" data-i18n="lbl_new_sonarr">+ Neue Sonarr Instanz</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-              <div class="form-group" style="grid-column:1/-1"><label class="form-label">Name</label><input class="form-input" id="new-sonarr-name" type="text" value="Sonarr" placeholder="z.B. Sonarr 4K" value="Sonarr"></div>
-              <div class="form-group" style="grid-column:1/-1"><label class="form-label">URL</label><input class="form-input" id="new-sonarr-url" type="text" placeholder="http://127.0.0.1:8989"></div>
-              <div class="form-group" style="grid-column:1/-1"><label class="form-label">API Key</label><input class="form-input" id="new-sonarr-key" type="password" placeholder="32-stelliger API Key"></div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button class="btn" style="border-color:var(--blue);color:var(--blue)" onclick="addInstByType('sonarr')">+ Hinzufügen</button>
-              <span id="new-sonarr-msg" style="font-size:11px;display:none"></span>
-            </div>
+          </div>
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon" style="border-color:rgba(77,156,255,.3);background:rgba(77,156,255,.1)">🖥</span><span data-de="Sonarr Instanzen" data-en="Sonarr Instances" data-i18n="lbl_sonarr_instances">Sonarr Instanzen</span></div>
+            <div id="settings-inst-list-sonarr" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+            <div id="add-sonarr-form" style="display:none"></div>
+            <button class="btn btn-start" onclick="showAddForm('sonarr')" data-i18n="lbl_new_sonarr">+ Sonarr hinzufügen</button>
           </div>
         </div>
-
-        <!-- ── TAB: RADARR ── -->
         <div class="tab-pane" id="tab-radarr">
-          <div style="background:rgba(255,107,43,.06);border:1px solid rgba(255,107,43,.2);border-radius:9px;padding:14px 16px;margin-bottom:16px">
-            <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:12px" data-i18n="lbl_radarr_behavior">🎬 Radarr — Suchverhalten</div>
-            <div class="form-grid">
+          <div class="s-section" style="border-top:none;padding-top:0;margin-top:0">
+            <div class="s-section-title"><span class="s-icon" style="border-color:rgba(255,107,43,.3);background:rgba(255,107,43,.1)">🎬</span><span data-de="Suchverhalten" data-en="Search Behavior">Suchverhalten</span></div>
+            <div class="form-grid cols-2">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-radarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="Wie global" oninput="_autosaveConfig()">
-                <div class="form-hint" data-i18n="hint_radarr_imdb">Leer = globalen Wert verwenden.</div>
+                <input class="form-input" id="cfg-radarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="= global" oninput="_autosaveConfig()">
+                <div class="form-hint" data-i18n="hint_radarr_imdb">Leer = globalen Wert.</div>
               </div>
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_radarr_res">Zielauflösung Upgrades</label>
+                <label class="form-label" data-i18n="lbl_radarr_res">Zielauflösung</label>
                 <select class="form-input" id="cfg-radarr-target-res" onchange="_autosaveConfig()">
                   <option value="" data-i18n="opt_same_global">Wie global</option>
                   <option value="WEBDL-720p">WEB-DL 720p</option>
@@ -891,37 +996,29 @@
                 </select>
               </div>
             </div>
+          </div>
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon" style="border-color:rgba(255,107,43,.3);background:rgba(255,107,43,.1)">📊</span><span data-de="Limits" data-en="Limits">Limits</span></div>
+            <div class="form-grid cols-2">
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_radarr_global_limit">Radarr Tageslimit gesamt (0 = ∞)</label>
+                <label class="form-label" data-i18n="lbl_radarr_global_limit">Radarr Tageslimit (0 = ∞)</label>
                 <input class="form-input" id="cfg-radarr-daily-limit" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
-                <div class="form-hint" data-i18n="hint_radarr_global_limit">Max. Suchen/Tag über alle Radarr-Instanzen. Instanz-Limits gelten zusätzlich.</div>
+                <div class="form-hint" data-i18n="hint_radarr_global_limit">Max. Suchen/Tag über alle Radarr-Instanzen.</div>
               </div>
               <div class="form-group">
-                <label class="form-label" data-i18n="lbl_radarr_upgrade_daily">Radarr Upgrade-Tageslimit (0 = ∞)</label>
+                <label class="form-label" data-i18n="lbl_radarr_upgrade_daily">Upgrade-Limit/Tag (0 = ∞)</label>
                 <input class="form-input" id="cfg-radarr-upgrade-daily" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
-                <div class="form-hint" data-i18n="hint_radarr_upgrade_daily">Max. Radarr-Upgrades/Tag. Leer = globales Upgrade-Limit.</div>
               </div>
-          </div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;font-weight:600" data-i18n="lbl_radarr_instances">🎬 Radarr Instanzen</div>
-          <div id="settings-inst-list-radarr" style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
-            <div style="text-align:center;color:var(--muted2);font-size:12px;padding:12px">Lade...</div>
-          </div>
-          <div style="background:var(--surface);border:2px dashed rgba(255,107,43,.3);border-radius:9px;padding:12px 14px;margin-top:4px">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:10px;font-weight:600" data-i18n="lbl_new_radarr">+ Neue Radarr Instanz</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-              <div class="form-group" style="grid-column:1/-1"><label class="form-label">Name</label><input class="form-input" id="new-radarr-name" type="text" value="Radarr" placeholder="z.B. Radarr HD" value="Radarr"></div>
-              <div class="form-group" style="grid-column:1/-1"><label class="form-label">URL</label><input class="form-input" id="new-radarr-url" type="text" placeholder="http://127.0.0.1:7878"></div>
-              <div class="form-group" style="grid-column:1/-1"><label class="form-label">API Key</label><input class="form-input" id="new-radarr-key" type="password" placeholder="32-stelliger API Key"></div>
             </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button class="btn btn-start" onclick="addInstByType('radarr')">+ Hinzufügen</button>
-              <span id="new-radarr-msg" style="font-size:11px;display:none"></span>
-            </div>
+          </div>
+          <div class="s-section">
+            <div class="s-section-title"><span class="s-icon" style="border-color:rgba(255,107,43,.3);background:rgba(255,107,43,.1)">🖥</span><span data-de="Radarr Instanzen" data-en="Radarr Instances" data-i18n="lbl_radarr_instances">Radarr Instanzen</span></div>
+            <div id="settings-inst-list-radarr" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+            <div id="add-radarr-form" style="display:none"></div>
+            <button class="btn btn-start" onclick="showAddForm('radarr')" data-i18n="lbl_new_radarr">+ Radarr hinzufügen</button>
           </div>
         </div>
-
-        <!-- ── DISCORD TAB ── -->
-        <div class="tab-pane" id="tab-discord">
+<div class="tab-pane" id="tab-discord">
 
           <!-- ① Header strip: logo + status + master toggle -->
           <div class="dc-header-strip">
