@@ -665,7 +665,7 @@ def _year(val):
 
 # ─── Version check ────────────────────────────────────────────────────────
 _VERSION_FILE    = pathlib.Path(__file__).parent.parent / "VERSION"
-_CURRENT_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "v7.1.3"
+_CURRENT_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "v7.1.4"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -1436,6 +1436,9 @@ def hunt_sonarr_instance(inst: dict):
     iid   = inst["id"]; name = inst["name"]
     client = ArrClient(name, inst["url"], inst["api_key"])
     stats  = STATE["inst_stats"][iid]
+    # Reset per-cycle counters here (not in run_cycle) to avoid dashboard showing zeros
+    for _k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily","missing_found","upgrades_found"):
+        stats[_k] = 0
     mode   = CONFIG.get("sonarr_search_mode", "season")
     lang   = CONFIG.get("language", "en")
     do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
@@ -1679,6 +1682,9 @@ def hunt_radarr_instance(inst: dict):
     iid   = inst["id"]; name = inst["name"]
     client = ArrClient(name, inst["url"], inst["api_key"])
     stats  = STATE["inst_stats"][iid]
+    # Reset per-cycle counters here (not in run_cycle) to avoid dashboard showing zeros
+    for _k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily","missing_found","upgrades_found"):
+        stats[_k] = 0
     do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
     logger.debug(f"🎬 [{name}] hunt start — upgrades={do_upgrades}")
 
@@ -1956,10 +1962,8 @@ def run_cycle():
         log_act("System", msg("cycle_start", n=STATE["cycle_count"],
                 active=len(active), today=db.count_today(), limit=limit or "∞"), "", "info")
         _ensure_inst_stats()
-        for inst in CONFIG["instances"]:
-            s = STATE["inst_stats"].get(inst["id"], fresh_inst_stats())
-            for k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily"):
-                s[k] = 0
+        # NOTE: per-cycle counters are reset inside each hunt function,
+        # NOT here — so the dashboard never shows a brief zero between cycles.
         ping_all()
         # ── Stalled download check ────────────────────────────────────────────
         if CONFIG.get("stall_monitor_enabled", False):
@@ -2192,10 +2196,15 @@ def api_setup_ping():
     key = safe_str(d.get("api_key",""), 128)
     ok, err = validate_api_key(key)
     if not ok: return jsonify({"ok":False,"msg":"Invalid API key format"}),400
+    # CodeQL py/stack-trace-exposure: exception never flows to response.
+    _sping_ok, _sping_ver, _sping_detail = False, "?", "Connection failed"
     try:
-        ok, ver, detail = ArrClient(itype, url, key).ping()
-        return jsonify({"ok":ok,"version":_safe_version_str(ver),"msg":_safe_ping_msg(detail)})
-    except Exception: return jsonify({"ok":False,"version":"?","msg":"Connection failed"})
+        _sping_ok, _sping_ver, _sping_detail = ArrClient(itype, url, key).ping()
+    except Exception as _spe:
+        logger.debug(f"Setup ping exception: {type(_spe).__name__}")
+    return jsonify({"ok": _sping_ok,
+                    "version": _safe_version_str(_sping_ver),
+                    "msg":     _safe_ping_msg(_sping_detail)})
 
 @app.route("/api/setup/complete", methods=["POST"])
 @_api_auth_required
@@ -2349,14 +2358,20 @@ def api_instances_ping(inst_id:str):
     inst = next((i for i in CONFIG["instances"] if i["id"]==inst_id), None)
     if not inst: return jsonify({"ok":False,"error":"Nicht gefunden"}),404
     if not inst.get("api_key"): return jsonify({"ok":False,"msg":"Kein API Key"})
+    # CodeQL py/stack-trace-exposure: exception data never flows to response.
+    # _ping_result holds only safe allowlisted values.
+    _ping_ok, _ping_ver, _ping_detail = False, "?", "Connection failed"
     try:
-        ok, ver, detail = ArrClient(inst["name"],inst["url"],inst["api_key"]).ping()
-        stats = STATE["inst_stats"].setdefault(inst_id,fresh_inst_stats())
-        stats["status"] = "online" if ok else "offline"
-        stats["version"] = ver
-        stats["status_detail"] = "" if ok else detail
-        return jsonify({"ok":ok,"version":_safe_version_str(ver),"msg":_safe_ping_msg(detail)})
-    except Exception: return jsonify({"ok":False,"version":"?","msg":"Connection failed"})
+        _ping_ok, _ping_ver, _ping_detail = ArrClient(inst["name"],inst["url"],inst["api_key"]).ping()
+    except Exception as _pe:
+        logger.debug(f"Ping exception for {inst_id}: {type(_pe).__name__}")
+    stats = STATE["inst_stats"].setdefault(inst_id, fresh_inst_stats())
+    stats["status"]        = "online" if _ping_ok else "offline"
+    stats["version"]       = _ping_ver
+    stats["status_detail"] = "" if _ping_ok else _ping_detail
+    return jsonify({"ok": _ping_ok,
+                    "version": _safe_version_str(_ping_ver),
+                    "msg":     _safe_ping_msg(_ping_detail)})
 
 # ── Main API ──────────────────────────────────────────────────────────────────
 @app.route("/api/state")

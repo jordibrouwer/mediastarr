@@ -615,9 +615,9 @@
       <div id="action-banner-actions" style="display:flex;gap:6px;flex-shrink:0"></div>
     </div>
     <div class="controls-bar">
-      <button class="btn btn-start" onclick="control('start')">▶ <span id="lbl-start">Start</span></button>
-      <button class="btn btn-stop"  onclick="control('stop')">■ <span id="lbl-stop">Stop</span></button>
-      <button class="btn btn-now"   onclick="control('run_now')">⚡ <span id="lbl-now">Jetzt</span></button>
+      <button class="btn btn-start" onclick="control('start')" title="Start the automated search loop">▶ <span id="lbl-start">Start</span></button>
+      <button class="btn btn-stop"  onclick="control('stop')" title="Stop the search loop after the current cycle completes">■ <span id="lbl-stop">Stop</span></button>
+      <button class="btn btn-now"   onclick="control('run_now')" title="Trigger an immediate search cycle without waiting for the next scheduled run">⚡ <span id="lbl-now">Jetzt</span></button>
       <div class="meta-strip">
         <span id="lbl-cycle">Zyklus</span> <b id="cycleCount">0</b> &nbsp;·&nbsp;
         <span id="lbl-total">Gesamt</span> <b id="totalSearches">0</b> &nbsp;·&nbsp;
@@ -687,16 +687,16 @@
             <div class="form-grid cols-3">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_missing">Missing-Intervall (Min.)</label>
-                <input class="form-input" id="cfg-missing" type="number" min="15" max="1440" value="30" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-missing" title="Min. 15 min between hunt cycles. Lower = more API calls." type="number" min="15" max="1440" value="30" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_missing">Min. 15 Min. zwischen Suchzyklen.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_upgrade">Upgrade-Intervall (Min.)</label>
-                <input class="form-input" id="cfg-upgrade" type="number" min="15" max="1440" value="60" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-upgrade" title="Min. 15 min between upgrade cycles. Set higher than missing interval." type="number" min="15" max="1440" value="60" oninput="_autosaveConfig()">
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_jitter">Jitter Max (Min.)</label>
-                <input class="form-input" id="cfg-jitter" type="number" min="0" max="60" value="5" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-jitter" title="Random delay (0–N min) added to each cycle. Helps avoid patterns. 0 = off." type="number" min="0" max="60" value="5" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_jitter">0 = kein Jitter.</div>
               </div>
             </div>
@@ -707,22 +707,22 @@
             <div class="form-grid cols-3">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_max">Max. Searches / Lauf</label>
-                <input class="form-input" id="cfg-max" type="number" min="1" max="500" value="10" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-max" title="Max items searched per cycle per instance (1–500). Start low." type="number" min="1" max="500" value="10" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_max">Pro Zyklus, pro Service.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_daily">Tageslimit (0 = ∞)</label>
-                <input class="form-input" id="cfg-daily" type="number" min="0" max="9999" value="20" style="border-color:rgba(61,230,139,0.3)" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-daily" title="Global daily search cap across all instances. 0 = unlimited." type="number" min="0" max="9999" value="20" style="border-color:rgba(61,230,139,0.3)" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_daily">Gesamt pro Tag, alle Services.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_upgrade_daily">Upgrade-Limit/Tag (0 = ∞)</label>
-                <input class="form-input" id="cfg-upgrade-daily" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-upgrade-daily" title="Max upgrades per day across all instances. Counted separately from search limit. 0 = unlimited." type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_upgrade_daily">Separat vom Suchlimit.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_cooldown">Cooldown (Tage)</label>
-                <input class="form-input" id="cfg-cooldown" type="number" min="1" max="365" value="7" style="border-color:rgba(77,156,255,0.3)" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-cooldown" title="Days before Mediastarr searches the same item again (1–365). Prevents hammering." type="number" min="1" max="365" value="7" style="border-color:rgba(77,156,255,0.3)" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_cooldown_range">1–365 Tage. Standard: 7.</div>
               </div>
             </div>
@@ -747,7 +747,7 @@
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_timeout">API Timeout (Sek.)</label>
-                <input class="form-input" id="cfg-timeout" type="number" min="5" max="300" value="30" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-timeout" title="Max wait for Sonarr/Radarr API responses in seconds (5–300). Increase for slow setups." type="number" min="5" max="300" value="30" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_timeout">5–300 Sekunden.</div>
               </div>
             </div>
@@ -759,7 +759,7 @@
             <div class="form-grid cols-2">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-imdb" type="number" min="0" max="10" step="0.1" value="0" placeholder="0 = aus" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-imdb" title="Only search content with IMDb rating ≥ this value. 0 = no filter." type="number" min="0" max="10" step="0.1" value="0" placeholder="0 = aus" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_imdb">0 = kein Filter.</div>
               </div>
               <div class="form-group">
@@ -828,7 +828,7 @@
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_tag_label">Tag-Name</label>
-                <input class="form-input" id="cfg-tag-label" type="text" maxlength="50" value="mediastarr" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-tag-label" title="Tag name created/used in Sonarr/Radarr to mark searched items." type="text" maxlength="50" value="mediastarr" oninput="_autosaveConfig()">
               </div>
             </div>
           </div>
@@ -846,7 +846,7 @@
               </div>
               <div class="form-group" id="stall-settings">
                 <label class="form-label" data-i18n="lbl_stall_threshold">Schwellenwert (Min.)</label>
-                <input class="form-input" id="cfg-stall-threshold" type="number" min="5" max="10080" value="60">
+                <input class="form-input" id="cfg-stall-threshold" title="Minutes a download must be inactive before action is taken (min. 5)." type="number" min="5" max="10080" value="60">
                 <div class="form-hint" data-i18n="hint_stall_threshold">Min. 5 Minuten inaktiv.</div>
               </div>
               <div class="form-group" id="stall-settings-action">
@@ -874,11 +874,11 @@
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_log_max_mb">Max. Dateigröße (MB)</label>
-                <input class="form-input" id="cfg-log-max-mb" type="number" min="1" max="100" value="5" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-log-max-mb" title="Log file rotates when it reaches this size (1–100 MB)." type="number" min="1" max="100" value="5" oninput="_autosaveConfig()">
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_log_backups">Backup-Dateien</label>
-                <input class="form-input" id="cfg-log-backups" type="number" min="0" max="10" value="2" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-log-backups" title="Number of rotated backup files to keep (0–10). 2 = 3 files total." type="number" min="0" max="10" value="2" oninput="_autosaveConfig()">
               </div>
             </div>
             <div class="s-actions">
@@ -937,7 +937,7 @@
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-sonarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="= global" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-sonarr-imdb" title="IMDb threshold for Sonarr only. Empty = use global setting." type="number" min="0" max="10" step="0.1" placeholder="= global" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_sonarr_imdb">Leer = globalen Wert.</div>
               </div>
               <div class="form-group">
@@ -959,12 +959,12 @@
             <div class="form-grid cols-2">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_global_limit">Sonarr Tageslimit (0 = ∞)</label>
-                <input class="form-input" id="cfg-sonarr-daily-limit" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-sonarr-daily-limit" title="Max Sonarr searches/day across all Sonarr instances. 0 = unlimited." type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_sonarr_global_limit">Max. Suchen/Tag über alle Sonarr-Instanzen.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_sonarr_upgrade_daily">Upgrade-Limit/Tag (0 = ∞)</label>
-                <input class="form-input" id="cfg-sonarr-upgrade-daily" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-sonarr-upgrade-daily" title="Max Sonarr upgrades/day. 0 = use global upgrade limit." type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
               </div>
             </div>
           </div>
@@ -981,7 +981,7 @@
             <div class="form-grid cols-2">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_imdb">IMDb Mindestbewertung</label>
-                <input class="form-input" id="cfg-radarr-imdb" type="number" min="0" max="10" step="0.1" placeholder="= global" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-radarr-imdb" title="IMDb threshold for Radarr only. Empty = use global setting." type="number" min="0" max="10" step="0.1" placeholder="= global" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_radarr_imdb">Leer = globalen Wert.</div>
               </div>
               <div class="form-group">
@@ -1003,12 +1003,12 @@
             <div class="form-grid cols-2">
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_global_limit">Radarr Tageslimit (0 = ∞)</label>
-                <input class="form-input" id="cfg-radarr-daily-limit" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-radarr-daily-limit" title="Max Radarr searches/day across all Radarr instances. 0 = unlimited." type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_radarr_global_limit">Max. Suchen/Tag über alle Radarr-Instanzen.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_radarr_upgrade_daily">Upgrade-Limit/Tag (0 = ∞)</label>
-                <input class="form-input" id="cfg-radarr-upgrade-daily" type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-radarr-upgrade-daily" title="Max Radarr upgrades/day. 0 = use global upgrade limit." type="number" min="0" max="9999" value="0" oninput="_autosaveConfig()">
               </div>
             </div>
           </div>
@@ -1273,13 +1273,13 @@
             <div class="form-grid">
               <div class="form-group">
                 <label class="form-label" id="dc-lbl-interval">Statistik-Intervall (Min.)</label>
-                <input class="form-input" id="dc-stats-interval" type="number" min="1" max="10080" value="60"
+                <input class="form-input" id="dc-stats-interval" title="Minutes between periodic stats reports (1–10080, max 7 days). Only active when Statistics report is enabled." type="number" min="1" max="10080" value="60"
                   style="border-color:rgba(255,107,43,.3)" oninput="_autosaveDc()">
                 <div class="form-hint" id="dc-hint-interval">1–10080 Min. (max. 7 Tage). Nur aktiv wenn Statistik-Bericht aktiviert.</div>
               </div>
               <div class="form-group">
                 <label class="form-label" id="dc-lbl-ratelimit">Rate-Limit Cooldown (Sek.)</label>
-                <input class="form-input" id="dc-ratelimit" type="number" min="1" max="300" value="5"
+                <input class="form-input" id="dc-ratelimit" title="Minimum seconds between same-type notifications. Prevents Discord HTTP 429 rate-limit errors." type="number" min="1" max="300" value="5"
                   style="border-color:rgba(77,156,255,.3)" oninput="_autosaveDc()">
                 <div class="form-hint" id="dc-hint-ratelimit">Mindestabstand zwischen gleichartigen Events — schützt vor Discord HTTP 429.</div>
               </div>
@@ -1476,6 +1476,7 @@
               <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, Discord embed fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Huntarr comparison text, homepage badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console dual-output fix, startup version fix, per-instance upgrade toggle, improved logging, mobile language selector, help page redesign, stats layout fix</li>
+              <li>✅ <strong>v7.1.4</strong> — Bug #51 (EN translation), dashboard stats freeze, CodeQL #12+#13, tooltips</li>
               <li>✅ <strong>v7.1.3</strong> — Bug #50 (webhook URL vanishes), Bug #49 (Discord update card button misplaced)</li>
               <li>✅ <strong>v7.1.2</strong> — UI redesign (settings sections, light theme), export/import fix, dashboard update badge, Discord update toggle, sidebar update indicator</li>
               <li>✅ <strong>v7.1.1</strong> — Bug #47 Discord v6 fix, AES-256 encryption, tooltips (#48), Docker-update-safe migration</li>
@@ -1509,7 +1510,8 @@
               <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Discord-Embed-Fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Huntarr-Vergleichstext, Homepage-Badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console-Dual-Output-Fix, Startup-Version-Fix, Upgrades pro Instanz, verbessertes Logging, Mobile Sprachauswahl, Hilfe-Seiten-Redesign, Statistik-Layout-Fix</li>
-              <li>✅ <strong>v7.1.3</strong> — Bug #50 (Webhook-URL verschwindet), Bug #49 (Discord-Update-Karte Button falsch positioniert)</li>
+              <li>✅ <strong>v7.1.4</strong> — Bug #51 (EN-Übersetzung), Dashboard-Stats-Reset, CodeQL #12+#13, Tooltips</li>
+              <li>✅ <strong>v7.1.3</strong> — Bug #50 (Webhook-URL verschwindet), Bug #49 (Discord-Update-Karte Button falsch)</li>
               <li>✅ <strong>v7.1.2</strong> — UI-Redesign (Settings-Sektionen, Light-Theme), Export/Import-Fix, Dashboard-Update-Badge, Discord-Update-Toggle, Sidebar-Update-Indikator</li>
               <li>✅ <strong>v7.1.1</strong> — Bug #47 Discord-v6-Fix, AES-256-Verschlüsselung, Tooltips (#48), Docker-Update-Safe-Migration</li>
               <li>✅ <strong>v7.1.0</strong> — Stalled-Download-Monitor (#46), API-Key-Zensierung (#41), CodeQL-Sicherheitsfixes #7/#8/#9</li>
@@ -1587,7 +1589,7 @@
 <h3>📋 Changelog</h3>
           <div class="help-en">
 
-            <h4>v7.1.3 — 2026-04-05</h4>
+            <h4>v7.1.4 — 2026-04-05</h4>
             <ul>
               <li><strong>Changed</strong> — Settings redesign: tabs now use named sections with icon badges; form labels readable (no all-caps); inputs taller with focus ring; light theme sidebar/topbar white background fixed</li>
               <li><strong>Add</strong> — Dashboard update badge; sidebar version indicator; Discord "Update available" card with <code>notify_update</code> toggle; <code>/api/state</code> now includes <code>version</code> field</li>
@@ -2411,6 +2413,11 @@ function applyLang() {
     const key = el.dataset.i18n;
     const val = t(key);
     if (val && val !== key) el.textContent = val;
+  });
+  // Translate data-de / data-en inline text spans (used in s-section-title etc.)
+  document.querySelectorAll('[data-de][data-en]').forEach(el => {
+    const txt = isDE ? el.dataset.de : el.dataset.en;
+    if (txt) el.textContent = txt;
   });
   // Update placeholders
   const sonarrImdb = document.getElementById('cfg-sonarr-imdb');

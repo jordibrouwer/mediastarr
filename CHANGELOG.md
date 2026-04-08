@@ -1,5 +1,16 @@
 # Changelog
 
+## [v7.1.4] — 2026-04-08
+
+### Fixed
+- **Bug #51 — English translation broken** — `data-de`/`data-en` inline spans (used in Settings section titles like "Verhalten", "Globale Filter") were never applied by `applyLang()`. Only `[data-i18n]` was handled. Added a second pass in `applyLang()` to translate all `[data-de][data-en]` elements when the language switches.
+- **Dashboard stats reset to 0 during searches** — per-cycle counters (`missing_searched`, `upgrades_searched`, `skipped_cooldown`, `skipped_daily`, `missing_found`, `upgrades_found`) were zeroed in `run_cycle()` before `ping_all()`, so the dashboard showed all-zero instance cards for several seconds at the start of every cycle. Counters are now reset at the start of each individual hunt function (`hunt_sonarr_instance`, `hunt_radarr_instance`) instead, so the previous cycle's values are visible until the new hunt actually begins.
+- **CodeQL #12 — Stack trace exposure in `/api/setup/ping`** — exception-derived `detail` variable could taint the JSON response. Fixed by isolating the exception handler: ping result stored in clean local variables; exception only logs `type(e).__name__`, never flows to response.
+- **CodeQL #13 — Stack trace exposure in `/api/instances/<id>/ping`** — same pattern. Fixed identically.
+
+### Added
+- **Tooltips throughout Settings UI** — `title` attributes added to all number inputs, selects, and action buttons in General, Sonarr, Radarr, and Discord settings. Hovering shows a concise description in the browser's native tooltip. CSS highlight on hover added.
+
 ## [v7.1.3] — 2026-04-05
 
 ### Fixed
