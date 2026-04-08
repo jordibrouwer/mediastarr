@@ -10,6 +10,36 @@
 
 ### Added
 - **Tooltips throughout Settings UI** — `title` attributes added to all number inputs, selects, and action buttons in General, Sonarr, Radarr, and Discord settings. Hovering shows a concise description in the browser's native tooltip. CSS highlight on hover added.
+- **i18n completeness audit** — Found 16 `data-i18n` keys used in HTML that had no entry in `T.de` or `T.en`: `btn_rotate_log`, `btn_add_maint`, `btn_setup`, `lbl_public`, `hint_public`, `lbl_theme`, `lbl_language`, `opt_dark/light/oled/system`, `console_title/waiting/live/autoscroll`, `stat_tab_all`. All 16 added to both language objects. Settings now fully translates in EN mode: "Log rotieren"→"Rotate log", "+ Fenster hinzufügen"→"+ Add window", "Öffentlicher API-State"→"Public API state", "Setup zurücksetzen"→"Reset setup", etc.
+
+### Security Audit (v7.1.4)
+| Check | Status |
+|---|---|
+| CSRF protection on all mutating API routes | ✅ |
+| API keys never in `/api/state` response | ✅ |
+| Stack trace not in ping responses (CodeQL #12+#13) | ✅ |
+| SSRF protection on all URL inputs | ✅ |
+| Input validation (API key regex, name, URL length) | ✅ |
+| Brute-force lockout (10 attempts → 5 min block) | ✅ |
+| Security headers (X-Frame-Options, CSP, COEP) | ✅ |
+| Open redirect prevention (allowlist only) | ✅ |
+| AES-256 encryption for secrets at rest | ✅ |
+| config.json chmod 0600 | ✅ |
+
+### Functional Tests (v7.1.4)
+| Test | Status |
+|---|---|
+| Server starts and `/api/state` returns 200 | ✅ |
+| `api_key` NOT present in `/api/state` response | ✅ |
+| `version` field correct (`v7.1.4`) in state | ✅ |
+| `POST /api/config` updates and persists config | ✅ |
+| `GET /api/config/export` returns valid JSON | ✅ |
+| `GET /api/history` and `/api/history/stats` respond | ✅ |
+| `GET /api/timezones` returns timezone list | ✅ |
+| `GET /api/log/status` responds | ✅ |
+| `X-Frame-Options: DENY` in all responses | ✅ |
+| `Cache-Control: no-store` on API routes | ✅ |
+| Non-existent instance ping returns 404 | ✅ |
 
 ## [v7.1.3] — 2026-04-05
 
