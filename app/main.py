@@ -1436,8 +1436,9 @@ def hunt_sonarr_instance(inst: dict):
     iid   = inst["id"]; name = inst["name"]
     client = ArrClient(name, inst["url"], inst["api_key"])
     stats  = STATE["inst_stats"][iid]
-    # Reset per-cycle counters here (not in run_cycle) to avoid dashboard showing zeros
-    for _k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily","missing_found","upgrades_found"):
+    # Reset per-cycle action counters — keep found-counts from last cycle
+    # so the dashboard never shows zeros while the API call is in flight.
+    for _k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily"):
         stats[_k] = 0
     mode   = CONFIG.get("sonarr_search_mode", "season")
     lang   = CONFIG.get("language", "en")
@@ -1682,8 +1683,9 @@ def hunt_radarr_instance(inst: dict):
     iid   = inst["id"]; name = inst["name"]
     client = ArrClient(name, inst["url"], inst["api_key"])
     stats  = STATE["inst_stats"][iid]
-    # Reset per-cycle counters here (not in run_cycle) to avoid dashboard showing zeros
-    for _k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily","missing_found","upgrades_found"):
+    # Reset per-cycle action counters — keep found-counts from last cycle
+    # so the dashboard never shows zeros while the API call is in flight.
+    for _k in ("missing_searched","upgrades_searched","skipped_cooldown","skipped_daily"):
         stats[_k] = 0
     do_upgrades = CONFIG.get("search_upgrades", True) and inst.get("search_upgrades", False)
     logger.debug(f"🎬 [{name}] hunt start — upgrades={do_upgrades}")
