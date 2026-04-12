@@ -506,6 +506,144 @@
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     [data-theme="light"] .form-input { background: #fff; }
 
+
+    /* ══ FAQ redesign ═══════════════════════════════════════════════════════ */
+    .faq-category {
+      margin: 28px 0 10px;
+    }
+    .faq-category:first-child { margin-top: 0; }
+    .faq-category-title {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--muted2);
+      display: flex; align-items: center; gap: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .faq-category-title span {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 5px;
+      background: rgba(255,107,43,0.12); border: 1px solid rgba(255,107,43,0.25);
+      font-size: 10px;
+    }
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .faq-item:hover { border-color: var(--border2); }
+    .faq-item.open {
+      border-color: rgba(255,107,43,0.35);
+      box-shadow: 0 2px 12px rgba(255,107,43,0.06);
+    }
+    .faq-q {
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      user-select: none;
+      line-height: 1.4;
+    }
+    .faq-q-icon {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+      color: var(--accent);
+      transition: background 0.15s, transform 0.2s;
+    }
+    .faq-item.open .faq-q-icon {
+      background: rgba(255,107,43,0.12);
+      border-color: rgba(255,107,43,0.3);
+      transform: rotate(45deg);
+    }
+    .faq-a {
+      display: none;
+      padding: 0 16px 14px 16px;
+      font-size: 12px; line-height: 1.8;
+      color: var(--muted2);
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.15s ease both;
+    }
+    .faq-a-inner { padding-top: 12px; }
+    .faq-item.open .faq-a { display: block; }
+    .faq-a p { margin-bottom: 8px; }
+    .faq-a p:last-child { margin-bottom: 0; }
+    .faq-a ul, .faq-a ol { padding-left: 18px; margin: 6px 0 8px; }
+    .faq-a li { margin-bottom: 3px; }
+    .faq-a strong { color: var(--text); font-weight: 600; }
+    .faq-a a { color: var(--accent); text-decoration: none; }
+    .faq-a a:hover { text-decoration: underline; }
+    .faq-a code {
+      font-family: 'DM Mono', monospace; font-size: 11px;
+      background: var(--surface); padding: 1px 6px;
+      border-radius: 4px; border: 1px solid var(--border);
+      color: var(--accent);
+    }
+    .faq-example {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 14px;
+      margin: 8px 0;
+    }
+    .faq-example + .faq-example { margin-top: 6px; }
+    .faq-example-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.8px; color: var(--accent); margin-bottom: 5px;
+    }
+    .faq-security-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0;
+    }
+    .faq-security-item {
+      display: flex; align-items: flex-start; gap: 7px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 10px;
+      font-size: 11px; color: var(--muted2);
+    }
+    .faq-security-item::before { content: "✓"; color: var(--green); flex-shrink: 0; font-weight: 700; }
+    .faq-tech-row {
+      display: flex; gap: 8px; align-items: baseline;
+      padding: 5px 0; border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .faq-tech-row:last-child { border-bottom: none; }
+    .faq-tech-label { font-weight: 600; color: var(--text); min-width: 90px; flex-shrink: 0; }
+    .faq-steps { counter-reset: faq-step; list-style: none !important; padding: 0 !important; }
+    .faq-steps li {
+      counter-increment: faq-step;
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 6px 0; border-bottom: 1px solid var(--border);
+    }
+    .faq-steps li:last-child { border-bottom: none; }
+    .faq-steps li::before {
+      content: counter(faq-step);
+      min-width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(255,107,43,0.12); border: 1px solid rgba(255,107,43,0.3);
+      color: var(--accent); font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .faq-warn {
+      background: rgba(245,200,66,0.08);
+      border: 1px solid rgba(245,200,66,0.25);
+      border-radius: 6px; padding: 8px 12px;
+      font-size: 11px; color: var(--muted2); margin-top: 10px;
+    }
+    .faq-warn::before { content: "⚠ "; color: var(--yellow); }
+
+    [data-theme="light"] .faq-item.open {
+      box-shadow: 0 2px 12px rgba(255,107,43,0.08);
+    }
+    [data-theme="light"] .faq-security-item { background: #fff; }
+    [data-theme="light"] .faq-example { background: #f8f9fc; }
+    /* ══════════════════════════════════════════════════════════════════════ */
 </style>
 </head>
 <body>
@@ -547,6 +685,7 @@
       <div class="nav-item" onclick="navClick('log')" data-page="log"><span class="nav-icon">≡</span><span class="nav-label">Aktivitätslog</span><span class="nav-badge" id="logBadge">0</span></div>
       <div class="nav-item" onclick="navClick('stats')" data-page="stats"><span class="nav-icon">📊</span><span class="nav-label">Statistiken</span></div>
       <div class="nav-item" onclick="navClick('help')" data-page="help"><span class="nav-icon">❓</span><span class="nav-label" data-i18n="help_nav">Hilfe</span></div>
+      <div class="nav-item" onclick="navClick('faq')" data-page="faq"><span class="nav-icon">💬</span><span class="nav-label" data-i18n="faq_nav">FAQ</span></div>
       <a href="https://mediastarr.de/" target="_blank" style="text-decoration:none">
         <div class="nav-item" style="margin-top:4px;border-top:1px solid var(--border);padding-top:10px">
           <span class="nav-icon">🌐</span><span class="nav-label" style="font-size:11px">mediastarr.de</span>
@@ -1476,6 +1615,7 @@
               <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, Discord embed fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Huntarr comparison text, homepage badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console dual-output fix, startup version fix, per-instance upgrade toggle, improved logging, mobile language selector, help page redesign, stats layout fix</li>
+              <li>✅ <strong>v7.1.5</strong> — FAQ page (DE+EN, accordion, 11 Q&amp;As, language-aware)</li>
               <li>✅ <strong>v7.1.4</strong> — Bug #51 (EN translation), dashboard stats freeze, CodeQL #12+#13, tooltips</li>
               <li>✅ <strong>v7.1.3</strong> — Bug #50 (webhook URL vanishes), Bug #49 (Discord update card button misplaced)</li>
               <li>✅ <strong>v7.1.2</strong> — UI redesign (settings sections, light theme), export/import fix, dashboard update badge, Discord update toggle, sidebar update indicator</li>
@@ -1510,6 +1650,7 @@
               <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Discord-Embed-Fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Huntarr-Vergleichstext, Homepage-Badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console-Dual-Output-Fix, Startup-Version-Fix, Upgrades pro Instanz, verbessertes Logging, Mobile Sprachauswahl, Hilfe-Seiten-Redesign, Statistik-Layout-Fix</li>
+              <li>✅ <strong>v7.1.5</strong> — FAQ-Seite (DE+EN, Accordion, 11 Fragen, sprachabhängig)</li>
               <li>✅ <strong>v7.1.4</strong> — Bug #51 (EN-Übersetzung), Dashboard-Stats-Reset, CodeQL #12+#13, Tooltips</li>
               <li>✅ <strong>v7.1.3</strong> — Bug #50 (Webhook-URL verschwindet), Bug #49 (Discord-Update-Karte Button falsch)</li>
               <li>✅ <strong>v7.1.2</strong> — UI-Redesign (Settings-Sektionen, Light-Theme), Export/Import-Fix, Dashboard-Update-Badge, Discord-Update-Toggle, Sidebar-Update-Indikator</li>
@@ -1589,7 +1730,7 @@
 <h3>📋 Changelog</h3>
           <div class="help-en">
 
-            <h4>v7.1.4 — 2026-04-05</h4>
+            <h4>v7.1.5 — 2026-04-05</h4>
             <ul>
               <li><strong>Changed</strong> — Settings redesign: tabs now use named sections with icon badges; form labels readable (no all-caps); inputs taller with focus ring; light theme sidebar/topbar white background fixed</li>
               <li><strong>Add</strong> — Dashboard update badge; sidebar version indicator; Discord "Update available" card with <code>notify_update</code> toggle; <code>/api/state</code> now includes <code>version</code> field</li>
@@ -1884,6 +2025,325 @@ curl -X POST http://huntarr:9705/api/settings/general   -H "Content-Type: applic
 
 
 
+
+  <!-- ══ FAQ PAGE ══ -->
+  <div id="page-faq" class="content content-page">
+    <div class="card" style="grid-column:1/-1;padding:0">
+
+      <!-- Header -->
+      <div class="card-header" style="flex-wrap:wrap;gap:8px;align-items:center">
+        <div>
+          <div class="card-title">💬 FAQ</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px" id="faq-subtitle-en">Frequently asked questions about Mediastarr</div>
+          <div style="font-size:11px;color:var(--muted2);margin-top:2px;display:none" id="faq-subtitle-de">Häufig gestellte Fragen zu Mediastarr</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="help-lang-btn active" id="faq-btn-en" onclick="setFaqLang('en')">EN</button>
+          <button class="help-lang-btn" id="faq-btn-de" onclick="setFaqLang('de')">DE</button>
+        </div>
+      </div>
+
+      <div style="padding:20px 24px 28px">
+
+        <!-- ══ ENGLISH ══ -->
+        <div class="faq-en">
+
+          <!-- Category: Background -->
+          <div class="faq-category">
+            <div class="faq-category-title"><span>📖</span> Background</div>
+
+            <div class="faq-item">
+              <div class="faq-q">Is Huntarr the predecessor of Mediastarr?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>No. Mediastarr is an <strong>independent project, built from scratch</strong> — no shared codebase, no shared code history, no affiliation with Huntarr or its forks. The only common ground is the goal: automating searches in Sonarr and Radarr.</p>
+                <p>Mediastarr was written entirely new after a public audit in February 2026 found <strong>21 vulnerabilities in Huntarr v9.4.2</strong>, including an unauthenticated endpoint returning all API keys in cleartext with a single HTTP request.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Is the Huntarr developer also behind Mediastarr?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>No. Mediastarr is developed by <strong>kroeberd</strong>, an independent developer with no connection to the Huntarr project or its original authors.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Is Mediastarr free and open source?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Yes — <strong>free and open source</strong> under the MIT license. Source code: <a href="https://github.com/kroeberd/mediastarr" target="_blank" rel="noopener">github.com/kroeberd/mediastarr</a></p>
+                <p>If you find it useful, support development via <a href="https://buymeacoffee.com/kroeberd" target="_blank" rel="noopener">Buy me a coffee ☕</a></p>
+              </div></div>
+            </div>
+          </div>
+
+          <!-- Category: Security -->
+          <div class="faq-category">
+            <div class="faq-category-title"><span>🔒</span> Security</div>
+
+            <div class="faq-item">
+              <div class="faq-q">How secure is Mediastarr?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Security is the <strong>core design principle</strong>, not an afterthought. Every feature was built with it in mind:</p>
+                <div class="faq-security-grid">
+                  <div class="faq-security-item">CSRF tokens on every POST/PATCH/DELETE</div>
+                  <div class="faq-security-item">API keys stripped from all <code>/api/state</code> responses</div>
+                  <div class="faq-security-item">AES-256 encryption for secrets at rest</div>
+                  <div class="faq-security-item">SSRF protection on all URL inputs</div>
+                  <div class="faq-security-item">Regex + length validation on all inputs</div>
+                  <div class="faq-security-item">Brute-force lockout (10 attempts → 5 min)</div>
+                  <div class="faq-security-item">Security headers on every response</div>
+                  <div class="faq-security-item">Open redirect prevention (hardcoded targets)</div>
+                  <div class="faq-security-item">config.json chmod 0600 on every save</div>
+                  <div class="faq-security-item">CodeQL hardened — no stack trace in responses</div>
+                </div>
+                <div class="faq-warn">Mediastarr is designed for a trusted LAN or behind a VPN/reverse proxy. Do not expose port 7979 to the public internet.</div>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">What technology is Mediastarr built on?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <div class="faq-tech-row"><span class="faq-tech-label">Backend</span><span>Python 3.11+ · Flask · Gunicorn · SQLite · tini</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Frontend</span><span>Vanilla JS · Jinja2 templates · zero external dependencies</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Fonts</span><span>Bricolage Grotesque · Geist · DM Mono</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Distribution</span><span>Docker · Unraid Community Application</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Source</span><span><a href="https://github.com/kroeberd/mediastarr" target="_blank" rel="noopener">github.com/kroeberd/mediastarr</a></span></div>
+              </div></div>
+            </div>
+          </div>
+
+          <!-- Category: How it works -->
+          <div class="faq-category">
+            <div class="faq-category-title"><span>⚙</span> How it works</div>
+
+            <div class="faq-item">
+              <div class="faq-q">How does the search work exactly?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Each cycle, Mediastarr runs these steps for every enabled instance:</p>
+                <ul class="faq-steps">
+                  <li><strong>Ping all instances</strong> — offline instances are skipped; Discord notified on first failure</li>
+                  <li><strong>Purge expired cooldown</strong> — items older than <code>cooldown_days</code> become searchable again</li>
+                  <li><strong>Fetch missing content</strong> — calls <code>GET /wanted/missing</code> (up to 2,000 items)</li>
+                  <li><strong>Shuffle randomly</strong> — items randomised for even library coverage</li>
+                  <li><strong>Apply filters</strong> — upcoming/unreleased, IMDb threshold, tag filter, cooldown, daily limits</li>
+                  <li><strong>Send search command</strong> — <code>EpisodeSearch</code>, <code>SeasonSearch</code>, or <code>SeriesSearch</code></li>
+                  <li><strong>Record to SQLite</strong> — logged with timestamp for cooldown tracking</li>
+                  <li><strong>Wait with jitter</strong> — interval ± random delay before next cycle</li>
+                </ul>
+                <p><strong>Season mode</strong> is recommended for Sonarr — one command per season instead of per episode dramatically reduces API calls on large libraries.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">What does "upgrade" mean? (with examples)<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>An <strong>upgrade search</strong> targets content you already have but at lower quality than your profile's cutoff demands. Mediastarr checks <code>/wanted/cutoff</code> for these items.</p>
+                <div class="faq-example">
+                  <div class="faq-example-label">Example 1 — Resolution upgrade</div>
+                  You have <em>Breaking Bad S01E01</em> as <code>HDTV-720p</code>. Profile cutoff: <code>Bluray-1080p</code>. Mediastarr searches for the Blu-ray version to replace it.
+                </div>
+                <div class="faq-example">
+                  <div class="faq-example-label">Example 2 — Source upgrade</div>
+                  You have <em>Oppenheimer</em> as <code>WEB-DL-1080p</code>. Profile cutoff: <code>Bluray-1080p</code>. Mediastarr searches once the Blu-ray becomes available.
+                </div>
+                <div class="faq-example">
+                  <div class="faq-example-label">Example 3 — Target resolution filter</div>
+                  You set "Target resolution: WEB-DL-1080p" in Settings. Items already at ≥1080p WEB-DL are <em>skipped</em> — no unnecessary searches.
+                </div>
+                <p style="margin-top:8px">Upgrades are off per-instance by default. Enable: Settings → Sonarr/Radarr → instance card → "Search upgrades".</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">What is the cooldown for?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>The <strong>cooldown</strong> prevents repeated searches for unavailable content. After searching an item, it's logged in SQLite. For the next <code>cooldown_days</code> (default: 7), it's skipped.</p>
+                <p>Without it, Mediastarr would hammer Sonarr/Radarr with futile searches every cycle for content that simply isn't on any indexer yet.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Why does "FEHLEND" show 175,000+?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>That's the total <em>missing</em> episode or movie count in your library — monitored items without a file. 175,038 just means a large monitored library.</p>
+                <p>Mediastarr searches up to <code>max_searches_per_run</code> items per cycle (default: 10), randomly selected, gradually working through the entire list.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">What does "Dry Run" do?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Dry Run runs the full search pipeline — fetching, filtering, cooldown checks — but <strong>never sends the actual command</strong> to Sonarr or Radarr. Items are still recorded in the database.</p>
+                <p>Use it to test filter settings (IMDb, tag filter, cooldown days) without triggering real downloads.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Can I run multiple Sonarr or Radarr instances?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Yes — up to 20 instances. Each can have its own:</p>
+                <ul>
+                  <li>Daily search limit · Upgrade search toggle</li>
+                  <li>Tag filter (only items with specific tags) · Tagging (add tag after search)</li>
+                  <li>Stalled download monitor override · Separate Discord webhook</li>
+                </ul>
+              </div></div>
+            </div>
+          </div>
+
+        </div><!-- /.faq-en -->
+
+        <!-- ══ DEUTSCH ══ -->
+        <div class="faq-de" style="display:none">
+
+          <!-- Kategorie: Hintergrund -->
+          <div class="faq-category">
+            <div class="faq-category-title"><span>📖</span> Hintergrund</div>
+
+            <div class="faq-item">
+              <div class="faq-q">Ist Huntarr der Vorgänger von Mediastarr?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Nein. Mediastarr ist ein <strong>unabhängiges Projekt, von Grund auf neu geschrieben</strong> — keine gemeinsame Codebasis, keine gemeinsame Code-Historie, keine Verbindung zu Huntarr oder dessen Forks. Das Einzige, was sie gemeinsam haben, ist das Ziel: Suchen in Sonarr und Radarr automatisieren.</p>
+                <p>Mediastarr entstand neu, nachdem ein öffentliches Audit im Februar 2026 <strong>21 Schwachstellen in Huntarr v9.4.2</strong> aufdeckte — darunter ein unauthentifizierter Endpunkt, der alle API-Keys per einfacher HTTP-Anfrage im Klartext zurückgab.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Ist der Huntarr-Entwickler auch der von Mediastarr?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Nein. Mediastarr wird von <strong>kroeberd</strong> entwickelt — ein unabhängiger Entwickler ohne Verbindung zum Huntarr-Projekt oder dessen ursprünglichen Autoren.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Ist Mediastarr kostenlos und Open Source?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Ja — <strong>kostenlos und Open Source</strong> unter der MIT-Lizenz. Quellcode: <a href="https://github.com/kroeberd/mediastarr" target="_blank" rel="noopener">github.com/kroeberd/mediastarr</a></p>
+                <p>Wenn es nützlich ist, kannst du die Entwicklung unterstützen: <a href="https://buymeacoffee.com/kroeberd" target="_blank" rel="noopener">Buy me a coffee ☕</a></p>
+              </div></div>
+            </div>
+          </div>
+
+          <!-- Kategorie: Sicherheit -->
+          <div class="faq-category">
+            <div class="faq-category-title"><span>🔒</span> Sicherheit</div>
+
+            <div class="faq-item">
+              <div class="faq-q">Wie sicher ist Mediastarr?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Sicherheit ist das <strong>zentrale Designprinzip</strong> — kein Nachgedanke:</p>
+                <div class="faq-security-grid">
+                  <div class="faq-security-item">CSRF-Token auf jedem POST/PATCH/DELETE</div>
+                  <div class="faq-security-item">API-Keys nie in <code>/api/state</code>-Antworten</div>
+                  <div class="faq-security-item">AES-256-Verschlüsselung at rest</div>
+                  <div class="faq-security-item">SSRF-Schutz auf allen URL-Eingaben</div>
+                  <div class="faq-security-item">Regex + Längenlimit auf allen Eingaben</div>
+                  <div class="faq-security-item">Brute-Force-Sperre (10 Versuche → 5 min)</div>
+                  <div class="faq-security-item">Sicherheits-Header auf jeder Antwort</div>
+                  <div class="faq-security-item">Open-Redirect-Schutz (hardcodierte Ziele)</div>
+                  <div class="faq-security-item">config.json chmod 0600 bei jedem Speichern</div>
+                  <div class="faq-security-item">CodeQL-gehärtet — kein Stack-Trace in Antworten</div>
+                </div>
+                <div class="faq-warn">Mediastarr ist für das lokale Netzwerk oder hinter VPN/Reverse-Proxy konzipiert. Port 7979 nie direkt ins öffentliche Internet exponieren.</div>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Auf welcher technischen Basis läuft Mediastarr?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <div class="faq-tech-row"><span class="faq-tech-label">Backend</span><span>Python 3.11+ · Flask · Gunicorn · SQLite · tini</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Frontend</span><span>Vanilla JS · Jinja2-Templates · keine externen Abhängigkeiten</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Schriften</span><span>Bricolage Grotesque · Geist · DM Mono</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Verteilung</span><span>Docker · Unraid Community Application</span></div>
+                <div class="faq-tech-row"><span class="faq-tech-label">Quellcode</span><span><a href="https://github.com/kroeberd/mediastarr" target="_blank" rel="noopener">github.com/kroeberd/mediastarr</a></span></div>
+              </div></div>
+            </div>
+          </div>
+
+          <!-- Kategorie: Funktionsweise -->
+          <div class="faq-category">
+            <div class="faq-category-title"><span>⚙</span> Funktionsweise</div>
+
+            <div class="faq-item">
+              <div class="faq-q">Wie funktioniert die Suche genau?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Pro Zyklus läuft für jede aktive Instanz:</p>
+                <ul class="faq-steps">
+                  <li><strong>Alle Instanzen anpingen</strong> — Offline-Instanzen werden übersprungen; Discord-Benachrichtigung beim ersten Ausfall</li>
+                  <li><strong>Cooldown bereinigen</strong> — Items älter als <code>cooldown_days</code> werden wieder suchbar</li>
+                  <li><strong>Fehlende Inhalte abrufen</strong> — ruft <code>GET /wanted/missing</code> ab (bis zu 2.000 Items)</li>
+                  <li><strong>Zufällig mischen</strong> — für gleichmäßige Bibliotheksabdeckung</li>
+                  <li><strong>Filter anwenden</strong> — Upcoming, IMDb-Schwellenwert, Tag-Filter, Cooldown, Tageslimits</li>
+                  <li><strong>Suchbefehl senden</strong> — <code>EpisodeSearch</code>, <code>SeasonSearch</code> oder <code>SeriesSearch</code></li>
+                  <li><strong>In SQLite speichern</strong> — mit Zeitstempel für Cooldown-Tracking</li>
+                  <li><strong>Mit Jitter warten</strong> — Intervall ± zufällige Verzögerung vor dem nächsten Zyklus</li>
+                </ul>
+                <p><strong>Staffel-Modus</strong> empfohlen für Sonarr — ein Befehl pro Staffel statt pro Episode reduziert API-Calls bei großen Bibliotheken drastisch.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Was bedeutet "Upgrade" suchen? (mit Beispielen)<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Eine <strong>Upgrade-Suche</strong> gilt für Inhalte, die du bereits hast, aber in zu niedriger Qualität. Mediastarr prüft <code>/wanted/cutoff</code> auf solche Items.</p>
+                <div class="faq-example">
+                  <div class="faq-example-label">Beispiel 1 — Auflösungs-Upgrade</div>
+                  Du hast <em>Breaking Bad S01E01</em> als <code>HDTV-720p</code>. Profil-Cutoff: <code>Bluray-1080p</code>. Mediastarr sucht die Blu-ray-Version.
+                </div>
+                <div class="faq-example">
+                  <div class="faq-example-label">Beispiel 2 — Quellen-Upgrade</div>
+                  Du hast <em>Oppenheimer</em> als <code>WEB-DL-1080p</code>. Profil-Cutoff: <code>Bluray-1080p</code>. Mediastarr sucht sobald die Blu-ray verfügbar ist.
+                </div>
+                <div class="faq-example">
+                  <div class="faq-example-label">Beispiel 3 — Zielauflösung-Filter</div>
+                  Du setzt "Zielauflösung: WEB-DL-1080p". Items bereits auf ≥1080p WEB-DL werden <em>übersprungen</em>.
+                </div>
+                <p style="margin-top:8px">Upgrades standardmäßig deaktiviert. Aktivieren: Einstellungen → Sonarr/Radarr → Instanzkarte → "Upgrades suchen".</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Wozu dient der Cooldown?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Der <strong>Cooldown</strong> verhindert wiederholte Suchen für nicht verfügbare Inhalte. Nach einer Suche wird das Item mit Zeitstempel in SQLite gespeichert. Für die nächsten <code>cooldown_days</code> (Standard: 7) wird es übersprungen.</p>
+                <p>Ohne Cooldown würde Mediastarr bei jedem Zyklus dieselben erfolglosen Suchen senden für Inhalte, die auf keinem Indexer verfügbar sind.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Warum zeigt "FEHLEND" eine Zahl wie 175.000?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Das ist die Gesamtzahl fehlender Episoden/Filme in der Bibliothek — überwachte Items ohne Datei. 175.038 bedeutet einfach: große überwachte Bibliothek.</p>
+                <p>Mediastarr sucht pro Zyklus maximal <code>max_searches_per_run</code> Items (Standard: 10), zufällig ausgewählt, und arbeitet sich so durch die Liste.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Was macht der "Dry Run"-Modus?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Dry Run durchläuft die komplette Pipeline — abrufen, filtern, Cooldown-Checks — sendet aber <strong>den eigentlichen Befehl nie</strong> an Sonarr oder Radarr. Items werden trotzdem in der DB gespeichert.</p>
+                <p>Ideal zum Testen von Filtereinstellungen ohne echte Downloads auszulösen.</p>
+              </div></div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-q">Kann ich mehrere Sonarr- oder Radarr-Instanzen betreiben?<div class="faq-q-icon">+</div></div>
+              <div class="faq-a"><div class="faq-a-inner">
+                <p>Ja — bis zu 20 Instanzen. Jede kann haben:</p>
+                <ul>
+                  <li>Eigenes Tageslimit · Upgrade-Suche Toggle</li>
+                  <li>Tag-Filter (nur bestimmte Tags) · Tagging (Tag nach Suche hinzufügen)</li>
+                  <li>Stalled-Monitor-Override · Separater Discord-Webhook</li>
+                </ul>
+              </div></div>
+            </div>
+          </div>
+
+        </div><!-- /.faq-de -->
+
+      </div><!-- /padding -->
+    </div><!-- /card -->
+  </div><!-- /page-faq -->
 
   <div id="page-stats" class="content content-page">
 
@@ -2190,6 +2650,7 @@ const T = {
         lbl_log_rotation:'Log-Rotation',
         tab_console:'🖥 Console',
         help_nav:'Hilfe',
+        faq_nav:'FAQ',
         help_title:'Hilfe & Dokumentation',
         lbl_maintenance:'Wartungsfenster',
         hint_maintenance:'Suche pausiert innerhalb dieser Zeitfenster (lokale Zeit). Nacht-Fenster unterstützt.',
@@ -2321,6 +2782,7 @@ const T = {
         lbl_log_rotation:'Log Rotation',
         tab_console:'🖥 Console',
         help_nav:'Help',
+        faq_nav:'FAQ',
         help_title:'Help & Docs',
         lbl_maintenance:'Maintenance windows',
         hint_maintenance:'Search pauses during these time windows (local time). Overnight windows supported.',
@@ -2364,6 +2826,17 @@ function setTheme(theme) {
 }
 
 // ══ Lang ══
+let _faqLang = null;
+function setFaqLang(lang) {
+  _faqLang = lang;
+  const btnEn = document.getElementById('faq-btn-en');
+  const btnDe = document.getElementById('faq-btn-de');
+  if (btnEn) btnEn.className = 'help-lang-btn' + (lang==='en'?' active':'');
+  if (btnDe) btnDe.className = 'help-lang-btn' + (lang==='de'?' active':'');
+  document.querySelectorAll('.faq-en').forEach(el => el.style.display = lang==='en'?'':'none');
+  document.querySelectorAll('.faq-de').forEach(el => el.style.display = lang==='de'?'':'none');
+}
+
 function setLang(lang) {
   currentLang = lang;
   document.getElementById('lang-de').className = 'lang-btn' + (lang==='de' ? ' active' : '');
@@ -2378,6 +2851,7 @@ function setLang(lang) {
   });
   if (appState.instances) renderInstanceCards(appState.instances, appState.inst_stats || {});
   if (typeof applyDcLang === 'function') applyDcLang();
+  if (typeof setFaqLang  === 'function') setFaqLang(lang);
   if (!_syncingFromServer) saveConfig();
 }
 function applyLang() {
@@ -2515,6 +2989,7 @@ function showPage(name) {
   if (name === 'stats') loadStats();
   if (name === 'settings') fetchState();
   if (name === 'help') { setTimeout(() => setHelpLang(_helpLang || currentLang || 'en'), 50); }
+  if (name === 'faq')  { setTimeout(() => setFaqLang(_faqLang || currentLang || 'en'), 50); }
   if (name === 'settings') {
     // Render whichever tab is currently active
     const activeTab = document.querySelector('.tab-btn.active');
@@ -4582,6 +5057,15 @@ MSLog.info('Mediastarr {{ version }} — UI init');
 setHelpLang(currentLang || 'en');
 fetchState();
 syncNewInstUrlHint();
+// FAQ accordion
+document.addEventListener('click', e => {
+  const q = e.target.closest('.faq-q');
+  if (!q) return;
+  const item = q.closest('.faq-item');
+  if (!item) return;
+  item.classList.toggle('open');
+});
+
 setInterval(fetchState, 4000);
 setInterval(() => { if (document.getElementById('page-stats')?.classList.contains('page-visible')) loadStats(); }, 30000);
 </script>

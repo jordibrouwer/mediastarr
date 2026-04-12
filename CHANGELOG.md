@@ -1,5 +1,27 @@
 # Changelog
 
+## [v7.1.5] — 2026-04-12
+
+### Added
+- **FAQ page** — new sidebar entry "💬 FAQ" with accordion-style Q&A, 11 questions per language (DE + EN). Language switches with the app language or independently via EN/DE toggle in the page header. Questions include:
+  - Is Huntarr the predecessor of Mediastarr?
+  - Is the developer of Huntarr also the developer of Mediastarr?
+  - How secure is Mediastarr? (full security feature list)
+  - What technology is Mediastarr built on?
+  - How does the search work exactly? (step-by-step)
+  - What does "upgrade" mean? (with 3 worked examples)
+  - What is the cooldown for?
+  - Why does "FEHLEND" show a large number like 175,000?
+  - What does "Dry Run" do?
+  - Can I run multiple Sonarr/Radarr instances?
+  - Is Mediastarr free and open source?
+
+### Changed
+- **FAQ visual redesign** — questions grouped into three named categories (📖 Background, 🔒 Security, ⚙ How it works) with icon badges; security features displayed as 2-column grid; tech stack as structured rows; search steps as numbered CSS counters; upgrade examples with orange left-border accent cards; animated `+`→`×` accordion icon with orange glow on open; subtitle under page title switches with language
+
+### Security & Functional Test (v7.1.5)
+- FAQ page tested: accordion open/close ✓, DE/EN language switch via button ✓, setLang() sync ✓, no JS errors ✓, nav item visible ✓, dashboard/settings still work after FAQ navigation ✓
+
 ## [v7.1.4] — 2026-04-08
 
 ### Fixed
