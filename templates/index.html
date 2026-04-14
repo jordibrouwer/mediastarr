@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='icon.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bricolage+Grotesque:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&family=Bricolage+Grotesque:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     /* ══════════ THEMES ══════════ */
     :root,[data-theme="dark"] {
@@ -44,7 +44,7 @@
     html { scroll-behavior: smooth; }
     body {
       background: var(--bg); color: var(--text);
-      font-family: 'DM Mono', monospace; font-size: 13px;
+      font-family: 'Inter', -apple-system, system-ui, sans-serif; font-size: 13px;
       min-height: 100vh; overflow-x: hidden; transition: background 0.25s, color 0.25s;
     }
 
@@ -783,7 +783,7 @@
         <!-- Daily limit bar -->
         <div class="limit-bar-wrap">
           <div class="limit-bar-header">
-            <span class="limit-bar-label">Tageslimit</span>
+            <span class="limit-bar-label" data-i18n="lbl_daily_limit">Tageslimit</span>
             <span class="limit-bar-count" id="daily-counter">0 / —</span>
           </div>
           <div class="limit-bar-track"><div class="limit-bar-fill" id="daily-bar"></div></div>
@@ -799,8 +799,8 @@
             <div class="ov-row"><span class="ov-label" data-i18n="ov_total_lbl">Gesamt Searches</span><span class="ov-val" style="color:var(--accent)" id="ov-total">0</span></div>
           </div>
           <div style="display:flex;gap:6px;margin-top:10px">
-            <button class="btn btn-now" style="flex:1;justify-content:center;font-size:11px" onclick="showPage('history')">📋 Verlauf</button>
-            <button class="btn btn-stop" style="flex:1;justify-content:center;font-size:11px" onclick="confirmClear('all')">🗑 Reset DB</button>
+            <button class="btn btn-now" style="flex:1;justify-content:center;font-size:11px" onclick="showPage('history')">📋 <span data-i18n="history">Verlauf</span></button>
+            <button class="btn btn-stop" style="flex:1;justify-content:center;font-size:11px" onclick="confirmClear('all')">🗑 <span data-i18n="btn_reset_db">Reset DB</span></button>
           </div>
         </div>
       </div>
@@ -1615,6 +1615,7 @@
               <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, Discord embed fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Huntarr comparison text, homepage badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console dual-output fix, startup version fix, per-instance upgrade toggle, improved logging, mobile language selector, help page redesign, stats layout fix</li>
+              <li>✅ <strong>v7.1.6</strong> — Bug #52 (dashboard mixed language: Tageslimit/Verlauf), font readability (Inter), Codex handover</li>
               <li>✅ <strong>v7.1.5</strong> — FAQ page (DE+EN, accordion, 11 Q&amp;As, language-aware)</li>
               <li>✅ <strong>v7.1.4</strong> — Bug #51 (EN translation), dashboard stats freeze, CodeQL #12+#13, tooltips</li>
               <li>✅ <strong>v7.1.3</strong> — Bug #50 (webhook URL vanishes), Bug #49 (Discord update card button misplaced)</li>
@@ -1650,6 +1651,7 @@
               <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Discord-Embed-Fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Huntarr-Vergleichstext, Homepage-Badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console-Dual-Output-Fix, Startup-Version-Fix, Upgrades pro Instanz, verbessertes Logging, Mobile Sprachauswahl, Hilfe-Seiten-Redesign, Statistik-Layout-Fix</li>
+              <li>✅ <strong>v7.1.6</strong> — Bug #52 (Dashboard Sprach-Mix: Tageslimit/Verlauf), Schriftlesbarkeit (Inter), Codex-Handover</li>
               <li>✅ <strong>v7.1.5</strong> — FAQ-Seite (DE+EN, Accordion, 11 Fragen, sprachabhängig)</li>
               <li>✅ <strong>v7.1.4</strong> — Bug #51 (EN-Übersetzung), Dashboard-Stats-Reset, CodeQL #12+#13, Tooltips</li>
               <li>✅ <strong>v7.1.3</strong> — Bug #50 (Webhook-URL verschwindet), Bug #49 (Discord-Update-Karte Button falsch)</li>
@@ -1730,7 +1732,7 @@
 <h3>📋 Changelog</h3>
           <div class="help-en">
 
-            <h4>v7.1.5 — 2026-04-05</h4>
+            <h4>v7.1.6 — 2026-04-05</h4>
             <ul>
               <li><strong>Changed</strong> — Settings redesign: tabs now use named sections with icon badges; form labels readable (no all-caps); inputs taller with focus ring; light theme sidebar/topbar white background fixed</li>
               <li><strong>Add</strong> — Dashboard update badge; sidebar version indicator; Discord "Update available" card with <code>notify_update</code> toggle; <code>/api/state</code> now includes <code>version</code> field</li>
@@ -2679,6 +2681,8 @@ const T = {
         console_live:'Live',
         console_autoscroll:'Auto-scroll',
         stat_tab_all:'Alle',
+        lbl_daily_limit:'Tageslimit',
+        btn_reset_db:'Reset DB',
   },
   en: { dashboard:'Dashboard', settings:'Settings', history:'History', log:'Activity Log',
         running:'Running', stopped:'Stopped', online:'Online', offline:'Offline', disabled:'Disabled',
@@ -2811,6 +2815,8 @@ const T = {
         console_live:'Live',
         console_autoscroll:'Auto-scroll',
         stat_tab_all:'All',
+        lbl_daily_limit:'Daily limit',
+        btn_reset_db:'Reset DB',
   }
 };
 const t = k => T[currentLang]?.[k] || k;
