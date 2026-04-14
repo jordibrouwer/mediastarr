@@ -8,9 +8,6 @@
 ### Changed
 - **Font: body text** — changed from `DM Mono` (monospace) to `Inter` for body text. DM Mono was incorrectly set as the `font-family` on `<body>`, making all body copy render in a monospace font — hard to read, especially in dark mode. DM Mono is now used only for code, console output, and mono-specific UI elements (unchanged). Inter is loaded from Google Fonts alongside the existing Bricolage Grotesque and DM Mono.
 
-### Added
-- **CODEX_HANDOVER.md** — comprehensive handover document covering: architecture overview, release checklist, backend patterns (hunt flow, stats reset location, logging, security model), frontend patterns (i18n system, CSS variables, state polling), full API reference (28 endpoints), common development tasks, testing protocol, environment variables, Docker setup, and open issues.
-
 ## [v7.1.5] — 2026-04-12
 
 ### Added
