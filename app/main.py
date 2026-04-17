@@ -665,7 +665,7 @@ def _year(val):
 
 # ─── Version check ────────────────────────────────────────────────────────
 _VERSION_FILE    = pathlib.Path(__file__).parent.parent / "VERSION"
-_CURRENT_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "v7.1.7"
+_CURRENT_VERSION = _VERSION_FILE.read_text().strip() if _VERSION_FILE.exists() else "v7.1.8"
 _version_cache   = {"latest": None, "checked_at": 0.0}
 
 def check_latest_version() -> str | None:
@@ -717,7 +717,7 @@ DEFAULT_CONFIG = {
     "radarr_daily_limit":      0,    # global max searches/day across ALL Radarr instances (0 = unlimited)
     "cooldown_days":           7,
     "request_timeout":        30,   # seconds for arr API calls
-    "jitter_max":            300,   # max random seconds added to interval (0=off)
+    "jitter_max":            300,   # max random seconds added to interval (0=off, max 86400s = 24h)
     "dry_run":    False,
     "auto_start": True,
     # Sonarr search granularity: "episode" | "season" | "series"
@@ -1258,9 +1258,27 @@ def do_search(client: ArrClient, iid: str, item_type: str, item_id: int,
               title: str, command: dict, changed=None, year=None,
               item_data: dict | None = None):
     """Execute search command, record to DB, and fire rich Discord notification."""
+    import time as _time
     result = "dry_run" if CONFIG["dry_run"] else "triggered"
+    _t0 = _time.monotonic()
     if not CONFIG["dry_run"]: client.post("command", command)
-    db.upsert_search(iid, item_type, item_id, title, result, changed, year)
+    _duration_ms = int((_time.monotonic() - _t0) * 1000)
+    # Build deep link URL to arr instance
+    inst_cfg  = next((i for i in CONFIG["instances"] if i["id"] == iid), {})
+    _inst_url = inst_cfg.get("url", "").rstrip("/")
+    _inst_type = inst_cfg.get("type", "sonarr")
+    _is_movie  = item_type in ("movie", "movie_upgrade")
+    _item      = item_data or {}
+    # arr_id: native Sonarr/Radarr integer id for deep linking
+    if _is_movie:
+        _arr_id  = _item.get("id") or item_id
+        _arr_url = f"{_inst_url}/movie/{_arr_id}" if _inst_url and _arr_id else None
+    else:
+        _series  = _item.get("series") or {}
+        _arr_id  = _series.get("id") or _item.get("seriesId") or item_id
+        _arr_url = f"{_inst_url}/series/{_arr_id}" if _inst_url and _arr_id else None
+    db.upsert_search(iid, item_type, item_id, title, result, changed, year,
+                     arr_id=_arr_id, arr_url=_arr_url, duration_ms=_duration_ms)
     # ── Tagging ──────────────────────────────────────────────────────────────
     if not CONFIG.get("dry_run"):
         inst_cfg  = next((i for i in CONFIG["instances"] if i["id"] == iid), {})
@@ -2484,7 +2502,7 @@ def api_config():
     if "radarr_daily_limit" in d: CONFIG["radarr_daily_limit"] = clamp_int(int(d.get("radarr_daily_limit",0) or 0),0,9999,0)
     CONFIG["cooldown_days"]        = clamp_int(d.get("cooldown_days",        CONFIG.get("cooldown_days",7)),  1, 365, CONFIG.get("cooldown_days",7))
     CONFIG["request_timeout"]      = clamp_int(d.get("request_timeout",      CONFIG.get("request_timeout",30)),5, 300, 30)
-    raw_jitter_min = clamp_int(d.get("jitter_max", CONFIG.get("jitter_max",300)//60), 0, 60, 5)
+    raw_jitter_min = clamp_int(d.get("jitter_max", CONFIG.get("jitter_max",300)//60), 0, 1440, 5)
     CONFIG["jitter_max"] = raw_jitter_min * 60  # store seconds internally
     if "dry_run"         in d: CONFIG["dry_run"]         = bool(d["dry_run"])
     if "auto_start"      in d: CONFIG["auto_start"]      = bool(d["auto_start"])
@@ -2680,7 +2698,21 @@ def api_history():
         ts=datetime.fromisoformat(r["searched_at"]); ago=now-ts; mins=int(ago.total_seconds()/60)
         r["ago_label"]=(f"vor {mins}min" if mins<60 else f"vor {mins//60}h" if mins<1440 else f"vor {mins//1440}d")
         r["expires_label"]=(ts+timedelta(days=cd_days)).strftime("%d.%m. %H:%M")
-        r["instance_name"]=next((i["name"] for i in CONFIG["instances"] if i["id"]==r["service"]),r["service"])
+        inst = next((i for i in CONFIG["instances"] if i["id"]==r["service"]), {})
+        r["instance_name"] = inst.get("name", r["service"])
+        r["inst_type"]     = inst.get("type", "sonarr")
+        # Format duration
+        if r.get("duration_ms") is not None:
+            ms = r["duration_ms"]
+            r["duration_label"] = f"{ms/1000:.1f}s" if ms >= 1000 else f"{ms}ms"
+        else:
+            r["duration_label"] = None
+        # Deep link: prefer stored arr_url, fallback to construct from instance URL
+        if not r.get("arr_url") and inst.get("url") and r.get("arr_id"):
+            base = inst["url"].rstrip("/")
+            is_movie = r.get("item_type","") in ("movie","movie_upgrade")
+            seg = "movie" if is_movie else "series"
+            r["arr_url"] = f"{base}/{seg}/{r['arr_id']}"
     return jsonify({"ok":True,"count":len(rows),"history":rows})
 
 @app.route("/api/history/stats")

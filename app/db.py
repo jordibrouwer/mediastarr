@@ -71,6 +71,18 @@ def _migrate():
             _conn.execute(
                 "ALTER TABLE search_history ADD COLUMN release_year INTEGER")
             _conn.commit()
+        if "arr_id" not in existing_cols:
+            _conn.execute(
+                "ALTER TABLE search_history ADD COLUMN arr_id INTEGER")
+            _conn.commit()
+        if "arr_url" not in existing_cols:
+            _conn.execute(
+                "ALTER TABLE search_history ADD COLUMN arr_url TEXT")
+            _conn.commit()
+        if "duration_ms" not in existing_cols:
+            _conn.execute(
+                "ALTER TABLE search_history ADD COLUMN duration_ms INTEGER")
+            _conn.commit()
 
         # Step 3: indexes — individual execute() calls (not executescript) to avoid
         # the implicit COMMIT that executescript() performs, which can confuse
@@ -90,7 +102,10 @@ def _migrate():
 def upsert_search(service: str, item_type: str, item_id: int,
                   title: str, result: str = "triggered",
                   last_changed_at: str = None,
-                  release_year: int = None):
+                  release_year: int = None,
+                  arr_id: int = None,
+                  arr_url: str = None,
+                  duration_ms: int = None):
     """Insert or update a search record. Increments search_count on conflict."""
     _require_init()
     now = datetime.utcnow().isoformat()
@@ -98,17 +113,21 @@ def upsert_search(service: str, item_type: str, item_id: int,
         _conn.execute("""
             INSERT INTO search_history
                 (service, item_type, item_id, title, release_year,
-                 searched_at, result, search_count, last_changed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+                 searched_at, result, search_count, last_changed_at,
+                 arr_id, arr_url, duration_ms)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
             ON CONFLICT(service, item_type, item_id) DO UPDATE SET
                 searched_at     = excluded.searched_at,
                 title           = excluded.title,
                 release_year    = COALESCE(excluded.release_year, release_year),
                 result          = excluded.result,
                 search_count    = search_count + 1,
-                last_changed_at = COALESCE(excluded.last_changed_at, last_changed_at)
+                last_changed_at = COALESCE(excluded.last_changed_at, last_changed_at),
+                arr_id          = COALESCE(excluded.arr_id, arr_id),
+                arr_url         = COALESCE(excluded.arr_url, arr_url),
+                duration_ms     = excluded.duration_ms
         """, (service, item_type, item_id, title, release_year,
-              now, result, last_changed_at))
+              now, result, last_changed_at, arr_id, arr_url, duration_ms))
         _conn.commit()
 
 

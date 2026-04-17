@@ -1,5 +1,20 @@
 # Changelog
 
+## [v7.1.8] — 2026-04-17
+
+### Added
+- **History log: expandable rows** — clicking any row expands a detail panel showing: full timestamp, search duration, instance name, total search count, result status. All rows collapse automatically when another is opened.
+- **History log: Deep-link to Sonarr/Radarr** — each history entry now stores the native arr item ID and constructs a direct link (`/movie/<id>` or `/series/<id>`) to the corresponding Sonarr/Radarr item. "Open in Radarr" / "Open in Sonarr" button appears in the expanded row when the instance URL is known.
+- **History log: search duration** — `do_search()` now measures the time of the API command call in milliseconds and stores it in the DB. Displayed as `1.8s` or `342ms` in the detail panel.
+- **History log: status icons** — each row now shows a type icon: 📺 episode, 🎬 movie, ⬆️ upgrades. Service chip shows instance name (truncated) instead of raw instance ID.
+- **Jitter: extended to 24 hours** — jitter max increased from 60 min to 1440 min (24h) in the UI input and backend clamp. Useful for very low-frequency background automation scenarios.
+
+### Changed
+- **DB schema** — three new columns added via non-destructive `ALTER TABLE` migration (backward-compatible with existing databases):
+  - `arr_id INTEGER` — native Sonarr/Radarr item ID for deep linking
+  - `arr_url TEXT` — pre-built deep link URL (`<instance_url>/movie/<id>` or `/series/<id>`)
+  - `duration_ms INTEGER` — command call duration in milliseconds
+
 ## [v7.1.7] — 2026-04-14
 
 ### Added

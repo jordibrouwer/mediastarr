@@ -506,6 +506,42 @@
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
     [data-theme="light"] .form-input { background: #fff; }
 
+    /* ── History expandable rows ──────────────────────────────────────────── */
+    .hist-row {
+      cursor: pointer;
+      transition: background 0.1s;
+      border-radius: 4px;
+    }
+    .hist-row:hover { background: var(--surface); }
+    .hist-row.open { background: var(--surface); }
+    .hist-detail {
+      display: none;
+      padding: 8px 10px 10px;
+      margin: 0 0 4px;
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+      background: var(--bg);
+      font-size: 11px;
+      color: var(--muted2);
+      animation: fadeUp 0.12s ease both;
+    }
+    .hist-detail.open { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: flex-start; }
+    .hist-detail-field { display: flex; flex-direction: column; gap: 2px; min-width: 100px; }
+    .hist-detail-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted2); }
+    .hist-detail-value { font-size: 11px; color: var(--text); font-weight: 500; }
+    .hist-arr-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 5px; font-size: 10px;
+      font-weight: 600; text-decoration: none; cursor: pointer;
+      border: 1px solid; transition: opacity 0.15s;
+    }
+    .hist-arr-btn:hover { opacity: 0.8; }
+    .hist-arr-btn.sonarr { color: #4d9cff; border-color: rgba(77,156,255,0.4); background: rgba(77,156,255,0.08); }
+    .hist-arr-btn.radarr { color: var(--accent); border-color: rgba(255,107,43,0.4); background: rgba(255,107,43,0.08); }
+    .hist-status-icon { font-size: 13px; }
+    [data-theme="light"] .hist-detail { background: #f8f9fc; }
+
+
 
     /* ══ FAQ redesign ═══════════════════════════════════════════════════════ */
     .faq-category {
@@ -835,7 +871,7 @@
               </div>
               <div class="form-group">
                 <label class="form-label" data-i18n="lbl_jitter">Jitter Max (Min.)</label>
-                <input class="form-input" id="cfg-jitter" title="Random delay (0–N min) added to each cycle. Helps avoid patterns. 0 = off." type="number" min="0" max="60" value="5" oninput="_autosaveConfig()">
+                <input class="form-input" id="cfg-jitter" title="Random delay (0–N min) added to each cycle. Helps avoid patterns. 0 = off. Max 1440 min = 24h." type="number" min="0" max="1440" value="5" oninput="_autosaveConfig()">
                 <div class="form-hint" data-i18n="hint_jitter">0 = kein Jitter.</div>
               </div>
             </div>
@@ -1615,6 +1651,7 @@
               <li>✅ <strong>v6.4.4</strong> — Maintenance windows, rich series embeds, Discord embed fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Central VERSION file, Huntarr comparison text, homepage badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console dual-output fix, startup version fix, per-instance upgrade toggle, improved logging, mobile language selector, help page redesign, stats layout fix</li>
+              <li>✅ <strong>v7.1.8</strong> — History: expandable rows, Deep-link Sonarr/Radarr, search duration, status icons; Jitter up to 24h</li>
               <li>✅ <strong>v7.1.7</strong> — Kubernetes deployment manifests (Deployment, Service, PVC, Ingress, kustomize)</li>
               <li>✅ <strong>v7.1.6</strong> — Bug #52 (dashboard mixed language: Tageslimit/Verlauf), font readability (Inter), Codex handover</li>
               <li>✅ <strong>v7.1.5</strong> — FAQ page (DE+EN, accordion, 11 Q&amp;As, language-aware)</li>
@@ -1652,6 +1689,7 @@
               <li>✅ <strong>v6.4.4</strong> — Wartungsfenster, reiche Serien-Embeds, Discord-Embed-Fixes</li>
               <li>✅ <strong>v6.4.5</strong> — Zentrale VERSION-Datei, Huntarr-Vergleichstext, Homepage-Badge</li>
               <li>✅ <strong>v6.4.6</strong> — Console-Dual-Output-Fix, Startup-Version-Fix, Upgrades pro Instanz, verbessertes Logging, Mobile Sprachauswahl, Hilfe-Seiten-Redesign, Statistik-Layout-Fix</li>
+              <li>✅ <strong>v7.1.8</strong> — History: aufklappbare Zeilen, Deep-Link Sonarr/Radarr, Suchdauer, Status-Icons; Jitter bis 24h</li>
               <li>✅ <strong>v7.1.7</strong> — Kubernetes-Deployment-Manifeste (Deployment, Service, PVC, Ingress, kustomize)</li>
               <li>✅ <strong>v7.1.6</strong> — Bug #52 (Dashboard Sprach-Mix: Tageslimit/Verlauf), Schriftlesbarkeit (Inter), Codex-Handover</li>
               <li>✅ <strong>v7.1.5</strong> — FAQ-Seite (DE+EN, Accordion, 11 Fragen, sprachabhängig)</li>
@@ -1734,7 +1772,7 @@
 <h3>📋 Changelog</h3>
           <div class="help-en">
 
-            <h4>v7.1.7 — 2026-04-05</h4>
+            <h4>v7.1.8 — 2026-04-05</h4>
             <ul>
               <li><strong>Changed</strong> — Settings redesign: tabs now use named sections with icon badges; form labels readable (no all-caps); inputs taller with focus ring; light theme sidebar/topbar white background fixed</li>
               <li><strong>Add</strong> — Dashboard update badge; sidebar version indicator; Discord "Update available" card with <code>notify_update</code> toggle; <code>/api/state</code> now includes <code>version</code> field</li>
@@ -2611,7 +2649,7 @@ const T = {
         lbl_interval_adv:'Intervall & Jitter', lbl_system:'System', lbl_timezone:'Zeitzone', hint_timezone:'Aktuelle Zeitzone. Alle IANA-Zeitzonen verfügbar — tippe zum Suchen.',
         lbl_manage_instances:'Instanzen verwalten', btn_add_instance:'+ Hinzufügen',
         opt_episode:'Episode (Standard)', opt_season:'Staffel', opt_series:'Ganze Serie',
-        hint_jitter:'0 = kein Jitter. Min. 5 Min. Zufällig 0–N Min. addiert.',
+        hint_jitter:'0 = kein Jitter. Zufällig 0–N Min. addiert. Max. 1440 Min. (24h).',
         hint_cooldown:'Tage bevor ein Item erneut gesucht wird.',
         hint_daily:'Gesamt pro Tag, alle Instanzen.',
         lbl_dryrun:'Dry Run', btn_save:'Speichern', btn_save_manual:'Manuell speichern', lbl_new_instance:'Neue Instanz',
@@ -2745,7 +2783,7 @@ const T = {
         lbl_interval_adv:'Interval & jitter', lbl_system:'System', lbl_timezone:'Timezone', hint_timezone:'Current timezone. All IANA timezones available — type to search.',
         lbl_manage_instances:'Manage instances', btn_add_instance:'+ Add instance',
         opt_episode:'Episode (default)', opt_season:'Season', opt_series:'Full series',
-        hint_jitter:'0 = no jitter. Random 0–N sec added to interval.',
+        hint_jitter:'0 = no jitter. Random 0–N min added to interval. Max 1440 min (24h).',
         hint_cooldown:'Days before re-searching same item.',
         hint_daily:'Total per day across all instances.',
         lbl_dryrun:'Dry Run', btn_save:'Save', btn_save_manual:'Save manually', lbl_new_instance:'New instance',
@@ -3576,6 +3614,7 @@ function renderHistory() {
   const el = document.getElementById('hist-table');
   if (!filtered.length) { el.innerHTML = `<div class="log-empty">${t('no_entries')}</div>`; return; }
   const isDE_h = currentLang === 'de';
+
   const fmtDt = raw => {
     if (!raw) return '—';
     try {
@@ -3583,22 +3622,109 @@ function renderHistory() {
       return d.toLocaleString(isDE_h ? 'de-DE' : 'en-GB', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
     } catch { return raw.slice(0,16).replace('T',' '); }
   };
+
+  // Status icon mapping
+  const statusIcon = type => {
+    if (!type) return '🔍';
+    if (type.includes('upgrade')) return '⬆️';
+    if (type.includes('movie'))   return '🎬';
+    return '📺';
+  };
+
+  const typeLabel = (type, isDE) => {
+    const m = {
+      'episode':         isDE ? 'Episode'          : 'Episode',
+      'episode_upgrade': isDE ? 'Upgrade (Episode)': 'Upgrade (episode)',
+      'movie':           isDE ? 'Film'              : 'Movie',
+      'movie_upgrade':   isDE ? 'Film-Upgrade'      : 'Movie upgrade',
+      'season':          isDE ? 'Staffel'           : 'Season',
+      'series':          isDE ? 'Serie'             : 'Series',
+      'season_upgrade':  isDE ? 'Upgrade (Staffel)' : 'Upgrade (season)',
+      'series_upgrade':  isDE ? 'Upgrade (Serie)'   : 'Upgrade (series)',
+    };
+    return m[type] || type || '—';
+  };
+
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:90px 58px 90px 44px 1fr 110px 52px;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;background:var(--bg2);z-index:1">
-      <span>${isDE_h?'Datum/Zeit':'Date/Time'}</span><span>Service</span><span>${isDE_h?'Typ':'Type'}</span><span>${isDE_h?'Jahr':'Year'}</span><span>${isDE_h?'Titel':'Title'}</span><span>Status</span><span style="text-align:center">${isDE_h?'Versuche':'Tries'}</span>
+    <div style="display:grid;grid-template-columns:22px 80px 55px 80px 40px 1fr 100px 46px;gap:6px;padding:5px 6px;border-bottom:1px solid var(--border);font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;background:var(--bg2);z-index:1">
+      <span></span>
+      <span>${isDE_h?'Datum/Zeit':'Date/Time'}</span>
+      <span>Service</span>
+      <span>${isDE_h?'Typ':'Type'}</span>
+      <span>${isDE_h?'Jahr':'Year'}</span>
+      <span>${isDE_h?'Titel':'Title'}</span>
+      <span>Status</span>
+      <span style="text-align:center">${isDE_h?'×':'×'}</span>
     </div>` +
-    filtered.map(h => `
-    <div class="hist-row">
-      <span class="hist-date">${fmtDt(h.searched_at)}</span>
-      <span class="log-svc ${h.service}">${h.service}</span>
-      <span style="font-size:10px;color:var(--muted2)">${h.item_type||'—'}</span>
-      <span style="font-size:11px;color:var(--muted2);font-weight:600">${h.release_year||'—'}</span>
-      <span class="hist-title" title="${escHtml(String(h.title||h.item_id||'')).slice(0,120)}">${escHtml(String(h.title||h.item_id||''))}</span>
-      <span class="${h.on_cooldown?'on-cooldown':'off-cooldown'}" style="font-size:10px">
-        ${h.on_cooldown ? `🔒 ${isDE_h?'bis':'until'} ${h.expires_label||'?'}` : (isDE_h?'✓ Frei':'✓ Free')}
-      </span>
-      <span class="hist-count-badge">${h.search_count||1}×</span>
-    </div>`).join('');
+    filtered.map((h, idx) => {
+      const rowId   = `hist-row-${idx}`;
+      const detId   = `hist-det-${idx}`;
+      const isSonarr = (h.inst_type || 'sonarr') === 'sonarr';
+      const arrLabel = isSonarr ? 'Sonarr' : 'Radarr';
+      const arrClass = isSonarr ? 'sonarr' : 'radarr';
+      const arrIcon  = isSonarr ? '📺' : '🎬';
+      const instName = h.instance_name || h.service;
+
+      // Detail panel fields
+      let detFields = '';
+      if (h.searched_at) {
+        const dt = new Date(h.searched_at.includes('T') ? h.searched_at+'Z' : h.searched_at);
+        const full = dt.toLocaleString(isDE_h ? 'de-DE' : 'en-GB');
+        detFields += `<div class="hist-detail-field"><span class="hist-detail-label">${isDE_h?'Zeitstempel':'Timestamp'}</span><span class="hist-detail-value">${full}</span></div>`;
+      }
+      if (h.duration_label) {
+        detFields += `<div class="hist-detail-field"><span class="hist-detail-label">${isDE_h?'Dauer':'Duration'}</span><span class="hist-detail-value">${h.duration_label}</span></div>`;
+      }
+      detFields += `<div class="hist-detail-field"><span class="hist-detail-label">${isDE_h?'Instanz':'Instance'}</span><span class="hist-detail-value">${escHtml(instName)}</span></div>`;
+      detFields += `<div class="hist-detail-field"><span class="hist-detail-label">${isDE_h?'Suchen gesamt':'Total searches'}</span><span class="hist-detail-value">${h.search_count||1}×</span></div>`;
+      if (h.result) {
+        const rMap = {triggered: isDE_h?'Ausgelöst':'Triggered', dry_run:'Dry Run', downloaded:isDE_h?'Gefunden':'Found'};
+        detFields += `<div class="hist-detail-field"><span class="hist-detail-label">Result</span><span class="hist-detail-value">${rMap[h.result]||h.result}</span></div>`;
+      }
+
+      // Open in arr button
+      let arrBtn = '';
+      if (h.arr_url) {
+        arrBtn = `<a href="${escHtml(h.arr_url)}" target="_blank" rel="noopener" class="hist-arr-btn ${arrClass}">${arrIcon} ${isDE_h?'In':'Open in'} ${arrLabel}</a>`;
+      }
+
+      return `
+    <div>
+      <div class="hist-row" id="${rowId}" onclick="toggleHistRow('${rowId}','${detId}')"
+           style="display:grid;grid-template-columns:22px 80px 55px 80px 40px 1fr 100px 46px;gap:6px;padding:5px 6px;align-items:center">
+        <span class="hist-status-icon" style="text-align:center">${statusIcon(h.item_type)}</span>
+        <span class="hist-date">${fmtDt(h.searched_at)}</span>
+        <span class="log-svc ${h.inst_type||'sonarr'}" style="font-size:9px;padding:1px 5px">${escHtml(instName.slice(0,8))}</span>
+        <span style="font-size:10px;color:var(--muted2)">${typeLabel(h.item_type, isDE_h)}</span>
+        <span style="font-size:11px;color:var(--muted2);font-weight:600">${h.release_year||'—'}</span>
+        <span class="hist-title" title="${escHtml(String(h.title||h.item_id||'')).slice(0,120)}">${escHtml(String(h.title||h.item_id||''))}</span>
+        <span class="${h.on_cooldown?'on-cooldown':'off-cooldown'}" style="font-size:10px">
+          ${h.on_cooldown ? `🔒 ${isDE_h?'bis':'until'} ${h.expires_label||'?'}` : (isDE_h?'✓ Frei':'✓ Free')}
+        </span>
+        <span class="hist-count-badge" style="text-align:center">${h.search_count||1}</span>
+      </div>
+      <div class="hist-detail" id="${detId}">
+        ${detFields}
+        ${arrBtn ? `<div class="hist-detail-field" style="justify-content:flex-end;flex:1;align-items:flex-end">${arrBtn}</div>` : ''}
+      </div>
+    </div>`;
+    }).join('');
+}
+
+function toggleHistRow(rowId, detId) {
+  const row = document.getElementById(rowId);
+  const det = document.getElementById(detId);
+  if (!row || !det) return;
+  const isOpen = det.classList.contains('open');
+  // Close all others
+  document.querySelectorAll('.hist-detail.open').forEach(d => {
+    d.classList.remove('open');
+    d.previousElementSibling?.classList.remove('open');
+  });
+  if (!isOpen) {
+    det.classList.add('open');
+    row.classList.add('open');
+  }
 }
 
 async function confirmClear(target) {
