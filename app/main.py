@@ -2467,6 +2467,116 @@ def api_state():
         },
     })
 
+
+@app.route("/api/integrations/fenrus/status")
+def api_fenrus_status():
+    api_key = (request.headers.get("X-Api-Key") or "").strip()
+    has_session = bool(session.get("authenticated"))
+    public_allowed = bool(CONFIG.get("public_api_state", False))
+    api_key_ok = bool(_PASSWORD) and bool(api_key) and secrets.compare_digest(api_key, _PASSWORD)
+
+    if _PASSWORD and not has_session and not public_allowed and not api_key_ok:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    inst_stats = STATE.get("inst_stats", {}) or {}
+    active_instances = [i for i in CONFIG.get("instances", []) if i.get("enabled", True)]
+    online = 0
+    offline = 0
+    missing_found = 0
+    missing_searched = 0
+    upgrades_found = 0
+    upgrades_searched = 0
+    skipped_cooldown = 0
+    skipped_daily = 0
+    skipped_unreleased = 0
+
+    for inst in active_instances:
+        stats = inst_stats.get(inst.get("id"), {}) or {}
+        if stats.get("status") == "online":
+            online += 1
+        elif stats.get("status") == "offline":
+            offline += 1
+        missing_found += int(stats.get("missing_found", 0) or 0)
+        missing_searched += int(stats.get("missing_searched", 0) or 0)
+        upgrades_found += int(stats.get("upgrades_found", 0) or 0)
+        upgrades_searched += int(stats.get("upgrades_searched", 0) or 0)
+        skipped_cooldown += int(stats.get("skipped_cooldown", 0) or 0)
+        skipped_daily += int(stats.get("skipped_daily", 0) or 0)
+        skipped_unreleased += int(stats.get("skipped_unreleased", 0) or 0)
+
+    total_searches = db.total_count()
+    today_searches = db.count_today()
+    global_limit = int(CONFIG.get("daily_limit", 0) or 0)
+    remaining = max(0, global_limit - today_searches) if global_limit > 0 else None
+    history_7d = db.daily_counts(7)
+
+    level = "ok"
+    if not STATE.get("running", False):
+        level = "warning"
+    if offline > 0 and online == 0 and active_instances:
+        level = "error"
+    elif offline > 0:
+        level = "warning"
+
+    if not active_instances:
+        message = "No instances configured"
+    elif not STATE.get("running", False):
+        message = "Paused"
+    elif offline > 0 and online == 0:
+        message = "All instances offline"
+    elif offline > 0:
+        message = f"{offline} instance(s) offline"
+    else:
+        message = "Running"
+
+    return jsonify({
+        "service": "mediastarr",
+        "display_name": "Mediastarr",
+        "version": _CURRENT_VERSION,
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "state": {
+            "level": level,
+            "message": message,
+            "running": bool(STATE.get("running", False)),
+            "last_run": STATE.get("last_run"),
+            "next_run": STATE.get("next_run"),
+        },
+        "metrics": {
+            "instances_total": len(CONFIG.get("instances", [])),
+            "instances_enabled": len(active_instances),
+            "instances_online": online,
+            "instances_offline": offline,
+            "cycle_count": int(STATE.get("cycle_count", 0) or 0),
+            "total_searches": total_searches,
+            "searches_today": today_searches,
+            "daily_limit": global_limit,
+            "daily_remaining": remaining,
+            "missing_found": missing_found,
+            "missing_searched": missing_searched,
+            "upgrades_found": upgrades_found,
+            "upgrades_searched": upgrades_searched,
+            "skipped_cooldown": skipped_cooldown,
+            "skipped_daily": skipped_daily,
+            "skipped_unreleased": skipped_unreleased,
+        },
+        "series": {
+            "daily_searches": history_7d,
+        },
+        "summary": {
+            "primary": [
+                {"label": "Today", "value": today_searches},
+                {"label": "Online", "value": online},
+                {"label": "Missing", "value": missing_found},
+                {"label": "Upgrades", "value": upgrades_found},
+            ]
+        },
+        "links": {
+            "app": "/",
+            "state_api": "/api/state",
+            "history_stats_api": "/api/history/stats",
+        },
+    })
+
 @app.route("/api/control", methods=["POST"])
 @_api_auth_required
 def api_control():

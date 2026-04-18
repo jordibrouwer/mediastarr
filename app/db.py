@@ -264,6 +264,29 @@ def year_stats() -> list:
     return [dict(r) for r in rows]
 
 
+def daily_counts(days: int = 7) -> list:
+    """Count of triggered/downloaded searches grouped by UTC day for the last N days."""
+    _require_init()
+    days = max(1, int(days or 7))
+    start = (datetime.utcnow() - timedelta(days=days - 1)).strftime("%Y-%m-%d")
+    with _lock:
+        rows = _conn.execute("""
+            SELECT substr(searched_at, 1, 10) AS day, COUNT(*) AS count
+            FROM search_history
+            WHERE substr(searched_at, 1, 10) >= ?
+              AND result IN ('triggered', 'dry_run', 'downloaded')
+            GROUP BY substr(searched_at, 1, 10)
+            ORDER BY day ASC
+        """, (start,)).fetchall()
+
+    row_map = {r["day"]: r["count"] for r in rows}
+    output = []
+    for offset in range(days):
+        day = (datetime.utcnow() - timedelta(days=days - 1 - offset)).strftime("%Y-%m-%d")
+        output.append({"day": day, "count": int(row_map.get(day, 0) or 0)})
+    return output
+
+
 # ─── Purge / Clear ────────────────────────────────────────────────────────────
 
 def purge_expired(cooldown_days: int) -> int:
